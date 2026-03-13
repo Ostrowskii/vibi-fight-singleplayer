@@ -1591,75 +1591,82 @@ def render(state: GameState) -> HTML(FightEvent):
         </button>
       </section>
 
-      <section class="board-wrap">
-        <div class="board">{...board}</div>
-        {_winner_modal(state)}
-      </section>
+      <section class="content-grid">
+        <section class="stage-column">
+          <section class="board-wrap">
+            <div class="board">{...board}</div>
+            {_winner_modal(state)}
+          </section>
 
-      <section class="underbar">
-        <div class="panel panel--hp">
-          <div class="panel__label">Player HP</div>
-          <div class="panel__value">{text{_hp_text(_state_player_hp(state))}}</div>
-        </div>
-        <div class="panel panel--queue">
-          <div class="panel__label">Slots</div>
-          <div class="queue-row">
-            {_queue_slot(state, 0)}
-            {_queue_slot(state, 1)}
-            {_queue_slot(state, 2)}
-          </div>
-        </div>
-      </section>
+          <section class="underbar">
+            <div class="panel panel--hp">
+              <div class="panel__label">Player HP</div>
+              <div class="panel__value">{text{_hp_text(_state_player_hp(state))}}</div>
+            </div>
 
-      <section class="controls-grid">
-        <div class="panel">
-          <div class="panel__label">Moves</div>
-          <div class="dpad">
-            <div></div>
-            <button {..._button_attrs("button", evt_move_up{})}>{text{"Up"}}</button>
-            <div></div>
-            <button {..._button_attrs("button", evt_move_left{})}>{text{"Left"}}</button>
-            <button {..._button_attrs("button", evt_move_down{})}>{text{"Down"}}</button>
-            <button {..._button_attrs("button", evt_move_right{})}>{text{"Right"}}</button>
-          </div>
-        </div>
+            <div class="panel panel--queue">
+              <div class="panel__label">Slots</div>
+              <div class="queue-inline">
+                {_queue_slot(state, 0)}
+                {_queue_slot(state, 1)}
+                {_queue_slot(state, 2)}
+              </div>
+            </div>
 
-        <div class="panel">
-          <div class="panel__label">Skills</div>
-          <div class="button-row">
-            <button {..._skill_button_attrs(state, 1)}>{text{"Skill 1"}}</button>
-            <button {..._skill_button_attrs(state, 2)}>{text{"Skill 2"}}</button>
-            <button {..._skill_button_attrs(state, 3)}>{text{"Skill 3"}}</button>
-          </div>
-          <div class="button-row button-row--compact">
-            <button {..._button_attrs("button button--secondary", evt_rotate_left{})}>{text{"Q"}}</button>
-            <button {..._confirm_button_attrs(state)}>{text{"Space"}}</button>
-            <button {..._button_attrs("button button--secondary", evt_rotate_right{})}>{text{"E"}}</button>
-          </div>
-        </div>
+            <div class="panel panel--skills">
+              <div class="panel__label">Skills</div>
+              <div class="skill-strip">
+                {_skill_preview_card(state, 1)}
+                {_skill_preview_card(state, 2)}
+                {_skill_preview_card(state, 3)}
+              </div>
+            </div>
+          </section>
+        </section>
 
-        <div class="panel">
-          <div class="panel__label">Actions</div>
-          <div class="button-row">
-            <button {..._button_attrs("button", evt_ready{})}>{text{"Ready"}}</button>
-            <button {..._button_attrs("button button--secondary", evt_clear{})}>{text{"Clear"}}</button>
-            <button {..._button_attrs("button button--secondary", evt_escape{})}>{text{"Esc"}}</button>
-          </div>
-        </div>
-      </section>
+        <aside class="sidebar">
+          <section class="panel">
+            <div class="panel__label">State</div>
+            <p class="help">{text{_mode_text(state)}}</p>
+            <p class="help">{text{_playback_info_text(state)}}</p>
+            <p class="help">{text{"Player preview: " ++ _pos_text(planned)}}</p>
+          </section>
 
-      <section class="info-grid">
-        <div class="panel">
-          <div class="panel__label">State</div>
-          <p class="help">{text{_mode_text(state)}}</p>
-          <p class="help">{text{_playback_info_text(state)}}</p>
-          <p class="help">{text{"Player preview: " ++ _pos_text(planned)}}</p>
-          <p class="help">{text{"Enemy HP: " ++ _hp_text(_state_enemy_hp(state))}}</p>
-        </div>
-        <div class="panel">
-          <div class="panel__label">Controls</div>
-          <p class="help">{text{"WASD/setas movem ou mexem a mira. 1/2/3 entram na mira. Q/E giram. Space confirma e resolve em etapas. Enter inicia a resolucao. Esc cancela ou desfaz."}}</p>
-        </div>
+          <section class="panel">
+            <div class="panel__label">Moves</div>
+            <div class="dpad">
+              <div></div>
+              <button {..._button_attrs("button", evt_move_up{})}>{text{"Up"}}</button>
+              <div></div>
+              <button {..._button_attrs("button", evt_move_left{})}>{text{"Left"}}</button>
+              <button {..._button_attrs("button", evt_move_down{})}>{text{"Down"}}</button>
+              <button {..._button_attrs("button", evt_move_right{})}>{text{"Right"}}</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel__label">Target</div>
+            <div class="button-row">
+              <button {..._button_attrs("button button--secondary", evt_rotate_left{})}>{text{"Q"}}</button>
+              <button {..._confirm_button_attrs(state)}>{text{"Space"}}</button>
+              <button {..._button_attrs("button button--secondary", evt_rotate_right{})}>{text{"E"}}</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel__label">Actions</div>
+            <div class="button-row">
+              <button {..._button_attrs("button", evt_ready{})}>{text{"Ready"}}</button>
+              <button {..._button_attrs("button button--secondary", evt_clear{})}>{text{"Clear"}}</button>
+              <button {..._button_attrs("button button--secondary", evt_escape{})}>{text{"Esc"}}</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel__label">Controls</div>
+            <p class="help">{text{"WASD/setas movem ou mexem a mira. 1/2/3 entram na mira. Q/E giram. Space confirma e resolve em etapas. Enter inicia a resolucao. Esc cancela ou desfaz."}}</p>
+          </section>
+        </aside>
       </section>
     </main>
   </div>
@@ -1711,6 +1718,99 @@ def _tick_attrs_idle() -> List(Attr(FightEvent)):
 
 def _tick_attrs_playback() -> List(Attr(FightEvent)):
   [attr{"class", "timer-hook"}, every_ms{420, evt_tick{}}]
+
+def _skill_preview_card(state: GameState, skill: U32) -> HTML(FightEvent):
+  cells = U32.grid(HTML(FightEvent), _skill_preview_width(skill), _skill_preview_height(skill), _skill_preview_cell(skill));
+  <button {..._skill_preview_attrs(state, skill)}>
+    <span class="skill-key">{text{U32.show(skill)}}</span>
+    <span class="skill-grid" style={_skill_grid_style(skill)}>
+      {...cells}
+    </span>
+  </button>
+
+def _skill_preview_attrs(state: GameState, skill: U32) -> List(Attr(FightEvent)):
+  _button_attrs_enabled(_skill_preview_class(state, skill), _skill_preview_evt(skill), 1 ^ _state_playback_active(state))
+
+def _skill_preview_evt(skill: U32) -> FightEvent:
+  match skill:
+    case 1:
+      evt_skill_1{}
+    case 2:
+      evt_skill_2{}
+    case _:
+      evt_skill_3{}
+
+def _skill_preview_class(state: GameState, skill: U32) -> String:
+  _skill_preview_class_active(_state_target_skill_is(state, skill))
+
+def _skill_preview_class_active(active: U32) -> String:
+  match active:
+    case 0:
+      "skill-preview"
+    case _:
+      "skill-preview skill-preview--active"
+
+def _skill_grid_style(skill: U32) -> String:
+  "--mini-cols:"
+  ++ U32.show(_skill_preview_width(skill))
+  ++ ";--mini-rows:"
+  ++ U32.show(_skill_preview_height(skill))
+
+def _skill_preview_width(skill: U32) -> U32:
+  match skill:
+    case 1:
+      4
+    case 2:
+      3
+    case 3:
+      2
+    case _:
+      1
+
+def _skill_preview_height(skill: U32) -> U32:
+  match skill:
+    case 1:
+      4
+    case 2:
+      3
+    case 3:
+      4
+    case _:
+      1
+
+def _skill_preview_cell(skill: U32, x: U32, y: U32) -> HTML(FightEvent):
+  <span class={_skill_preview_cell_class(skill, x, y)}></span>
+
+def _skill_preview_cell_class(skill: U32, x: U32, y: U32) -> String:
+  _skill_preview_cell_class_active(_skill_preview_has_cell(skill, x, y, 0))
+
+def _skill_preview_cell_class_active(active: U32) -> String:
+  match active:
+    case 0:
+      "skill-mini-cell"
+    case _:
+      "skill-mini-cell skill-mini-cell--filled"
+
+def _skill_preview_has_cell(skill: U32, x: U32, y: U32, idx: U32) -> U32:
+  len = skill_len(skill);
+  match idx === len:
+    case 0:
+      point = skill_point(skill, 0, idx);
+      _skill_preview_has_cell_point(skill, x, y, idx, point)
+    case _:
+      0
+
+def _skill_preview_has_cell_point(skill: U32, x: U32, y: U32, idx: U32, point: Pos) -> U32:
+  match point:
+    case pos{px, py}:
+      _skill_preview_has_cell_xy(skill, x, y, idx, px, py)
+
+def _skill_preview_has_cell_xy(skill: U32, x: U32, y: U32, idx: U32, px: U32, py: U32) -> U32:
+  match (px === x) & (py === y):
+    case 0:
+      _skill_preview_has_cell(skill, x, y, idx + 1)
+    case _:
+      1
 
 def _queue_slot(state: GameState, idx: U32) -> HTML(FightEvent):
   <div class={_queue_slot_class(state, idx)}>
@@ -2152,18 +2252,20 @@ def base_css() -> String:
 
 def layout_css() -> String:
   ""
-  ++ ".shell{width:min(100%,1200px);min-height:100svh;height:100svh;margin:0 auto;padding:12px;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto auto;gap:12px;overflow:hidden;}"
+  ++ ".shell{width:min(100%,1240px);min-height:100svh;height:100svh;margin:0 auto;padding:12px;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px;overflow:hidden;}"
   ++ ".topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;}.topbar__left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}.chip{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}.chip--plan{background:#f2ead7;}.chip--target{background:#d9ecff;}.chip--over{background:#f8d2d2;}"
-  ++ ".board-wrap{position:relative;min-height:0;overflow:hidden;border:1px solid var(--border);background:var(--panel);border-radius:18px;padding:12px;display:grid;place-items:center;}.board{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));width:min(100%,calc((100svh - 360px) * 2));max-width:100%;border:1px solid var(--grid);background:var(--grid);gap:1px;}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit{box-shadow:inset 0 0 0 2px var(--hit);}.cell--route{outline:2px solid var(--route);outline-offset:-2px;}"
-  ++ ".underbar,.controls-grid,.info-grid{display:grid;gap:12px;}.underbar{grid-template-columns:220px minmax(0,1fr);}.controls-grid{grid-template-columns:1fr 1fr 1fr;}.info-grid{grid-template-columns:1fr 1fr;}.panel{padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--panel);min-width:0;}.panel__label{margin:0 0 10px;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}.panel__value{font-size:1.4rem;font-weight:700;}.queue-row,.button-row{display:flex;gap:8px;flex-wrap:wrap;}.button-row--compact{margin-top:8px;}.queue-slot{min-width:0;flex:1;padding:10px;border:1px solid var(--border);border-radius:14px;background:#fff;}.queue-slot--active{border-color:var(--player);box-shadow:inset 0 0 0 2px var(--player);}.queue-slot__index{font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.queue-slot__value{margin-top:6px;font-weight:700;}"
+  ++ ".content-grid{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px;align-items:start;}.stage-column{min-width:0;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px;}.sidebar{min-width:0;min-height:0;display:grid;gap:12px;align-content:start;overflow:auto;}"
+  ++ ".board-wrap{position:relative;min-height:0;overflow:hidden;border:1px solid var(--border);background:var(--panel);border-radius:18px;padding:12px;display:grid;place-items:center;}.board{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));width:min(100%,calc((100svh - 308px) * 2));max-width:100%;border:1px solid var(--grid);background:var(--grid);gap:1px;}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit{box-shadow:inset 0 0 0 2px var(--hit);}.cell--route{outline:2px solid var(--route);outline-offset:-2px;}"
+  ++ ".underbar{display:grid;grid-template-columns:160px minmax(0,1fr) auto;gap:12px;align-items:stretch;}.panel{padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--panel);min-width:0;}.panel--hp{display:grid;align-content:start;}.panel--queue{display:grid;align-content:start;}.panel--skills{display:grid;align-content:start;justify-items:start;}.panel__label{margin:0 0 10px;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}.panel__value{font-size:1.4rem;font-weight:700;}.button-row{display:flex;gap:8px;flex-wrap:wrap;}.queue-inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.queue-slot{min-width:0;padding:10px;border:1px solid var(--border);border-radius:14px;background:#fff;}.queue-slot--active{border-color:var(--player);box-shadow:inset 0 0 0 2px var(--player);}.queue-slot__index{font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.queue-slot__value{margin-top:6px;font-weight:700;}"
   ++ ".dpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}.help{margin:0;color:var(--muted);line-height:1.45;}"
-  ++ "@media (max-width:980px){.shell{grid-template-rows:auto minmax(0,1fr) auto auto auto;}.board{width:min(100%,calc((100svh - 430px) * 2));}.underbar,.controls-grid,.info-grid{grid-template-columns:1fr;}}"
+  ++ "@media (max-width:980px){.shell{width:100%;padding:10px;}.content-grid{grid-template-columns:1fr;}.sidebar{overflow:visible;}.board{width:min(100%,calc((100svh - 420px) * 2));}.underbar{grid-template-columns:1fr;}.skill-strip{overflow:auto;max-width:100%;}}"
 
 def component_css() -> String:
   ""
   ++ ".button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border:1px solid var(--button);border-radius:12px;background:var(--button);color:#fff;font-weight:700;}.button--secondary{background:var(--button-alt);color:var(--text);border-color:var(--border);}.button--ghost{background:transparent;color:var(--text);border-color:var(--border);}.button--active{outline:2px solid var(--player);outline-offset:1px;}.button:disabled{opacity:.45;cursor:not-allowed;}"
   ++ ".actor{position:relative;z-index:2;display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:4px 6px;border-radius:10px;font-weight:700;font-size:.74rem;border:1px solid rgba(0,0,0,.08);}.actor--player{background:var(--player);color:#fff;border-radius:999px;}.actor--enemy{background:var(--enemy);color:#fff;border-radius:4px;}"
   ++ ".ghost{position:absolute;inset:auto auto 6px 6px;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:var(--ghost);color:#fff;font-size:.68rem;font-weight:700;opacity:.85;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;z-index:1;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 4px;border-radius:999px;background:#fff;color:var(--text);font-size:.66rem;font-weight:700;border:1px solid var(--border);}.trail--hidden{display:none;}"
+  ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.skill-preview{display:grid;gap:8px;align-content:start;justify-items:start;padding:12px;border:1px solid var(--border);border-radius:14px;background:#fff;color:var(--text);min-width:88px;}.skill-preview--active{border-color:var(--player);box-shadow:inset 0 0 0 2px var(--player);}.skill-key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 8px;border-radius:999px;background:var(--button);color:#fff;font-weight:700;}.skill-grid{display:grid;grid-template-columns:repeat(var(--mini-cols),14px);grid-template-rows:repeat(var(--mini-rows),14px);gap:4px;}.skill-mini-cell{width:14px;height:14px;border-radius:3px;border:1px solid var(--border);background:var(--cell);}.skill-mini-cell--filled{background:var(--button);border-color:var(--button);}"
   ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(20,17,12,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(20,17,12,.38);}.modal__card{display:grid;gap:12px;justify-items:center;padding:20px;border-radius:18px;background:#fff;border:1px solid var(--border);min-width:min(100%,280px);}.modal__eyebrow{font-size:.76rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.modal__title{margin:0;font-size:1.5rem;}.timer-hook{display:none;}"
 
 def css() -> String:
