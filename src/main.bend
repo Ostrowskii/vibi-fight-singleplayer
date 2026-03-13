@@ -1,6 +1,11 @@
-# Runtime.bend
-# ============
-# Bend owns the combat rules and state transitions. JS only drives UI and animations.
+import /App/
+import /HTML/
+import /Attr/
+import /U32/ as U32
+
+# main.bend
+# =========
+# Single-file Bend web app for the fight prototype.
 
 type Pos {
   pos{x: U32, y: U32}
@@ -59,6 +64,24 @@ type ActionSim {
     player_died: U32,
     enemy_died: U32,
   }
+}
+
+type FightEvent {
+  evt_move_up{}
+  evt_move_down{}
+  evt_move_left{}
+  evt_move_right{}
+  evt_skill_1{}
+  evt_skill_2{}
+  evt_skill_3{}
+  evt_rotate_left{}
+  evt_rotate_right{}
+  evt_confirm{}
+  evt_ready{}
+  evt_escape{}
+  evt_clear{}
+  evt_reset{}
+  evt_ignore{}
 }
 
 def rules_get() -> Rules:
@@ -1291,3 +1314,614 @@ def _u32_gte(a: U32, b: U32) -> U32:
 
 def _abs_diff(a: U32, b: U32) -> U32:
   _sub_floor(a, b) + _sub_floor(b, a)
+
+# App logic
+
+def ready_round_state(state: GameState) -> GameState:
+  match state:
+    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
+      _ready_round_state_w(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+
+def _ready_round_state_w(
+  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
+  player: Pos, enemy: Pos, queue: List(Action),
+  queue_len: U32, queue_locked: U32, mode: Mode, winner: U32,
+) -> GameState:
+  match winner | _mode_is_target(mode):
+    case 0:
+      _ready_round_state_run(
+        _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner),
+        queue,
+        _build_bot_plan_w(round, player_hp, enemy_hp, player, enemy, winner)
+      )
+    case _:
+      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+
+def _ready_round_state_run(current: GameState, player_queue: List(Action), bot_queue: List(Action)) -> GameState:
+  s1 = _resolve_player_action_state(current, _action_at(player_queue, 0));
+  s2 = _resolve_enemy_action_state(s1, _action_at(bot_queue, 0));
+  s3 = _resolve_player_action_state(s2, _action_at(player_queue, 1));
+  s4 = _resolve_enemy_action_state(s3, _action_at(bot_queue, 1));
+  s5 = _resolve_player_action_state(s4, _action_at(player_queue, 2));
+  s6 = _resolve_enemy_action_state(s5, _action_at(bot_queue, 2));
+  _reset_round_planning_state(s6)
+
+def _confirm_and_ready_state(state: GameState) -> GameState:
+  active = _state_target_active(state);
+  match active:
+    case 0:
+      state
+    case _:
+      valid = target_valid(state);
+      match valid:
+        case 0:
+          state
+        case _:
+          ready_round_state(confirm_target_state(state))
+
+def _move_input_state(state: GameState, dir: U32) -> GameState:
+  active = _state_target_active(state);
+  match active:
+    case 0:
+      queue_move_state(state, dir)
+    case _:
+      move_target_state(state, dir)
+
+def _rotate_input_state(state: GameState, clockwise: U32) -> GameState:
+  active = _state_target_active(state);
+  match active:
+    case 0:
+      state
+    case _:
+      rotate_target_state(state, clockwise)
+
+def _escape_input_state(state: GameState) -> GameState:
+  active = _state_target_active(state);
+  match active:
+    case 0:
+      pop_last_planned_action_state(state)
+    case _:
+      cancel_target_state(state)
+
+def _skill_input_state(state: GameState, skill: U32) -> GameState:
+  start_target_state(state, skill)
+
+def key_event(key: U32) -> FightEvent:
+  match key:
+    case 37:
+      evt_move_left{}
+    case 65:
+      evt_move_left{}
+    case 38:
+      evt_move_up{}
+    case 87:
+      evt_move_up{}
+    case 39:
+      evt_move_right{}
+    case 68:
+      evt_move_right{}
+    case 40:
+      evt_move_down{}
+    case 83:
+      evt_move_down{}
+    case 49:
+      evt_skill_1{}
+    case 50:
+      evt_skill_2{}
+    case 51:
+      evt_skill_3{}
+    case 81:
+      evt_rotate_left{}
+    case 69:
+      evt_rotate_right{}
+    case 32:
+      evt_confirm{}
+    case 13:
+      evt_ready{}
+    case 27:
+      evt_escape{}
+    case 67:
+      evt_clear{}
+    case 82:
+      evt_reset{}
+    case _:
+      evt_ignore{}
+
+def on_event(evt: FightEvent, state: GameState) -> GameState:
+  match evt:
+    case evt_move_up{}:
+      _move_input_state(state, 0)
+    case evt_move_down{}:
+      _move_input_state(state, 1)
+    case evt_move_left{}:
+      _move_input_state(state, 2)
+    case evt_move_right{}:
+      _move_input_state(state, 3)
+    case evt_skill_1{}:
+      _skill_input_state(state, 1)
+    case evt_skill_2{}:
+      _skill_input_state(state, 2)
+    case evt_skill_3{}:
+      _skill_input_state(state, 3)
+    case evt_rotate_left{}:
+      _rotate_input_state(state, 0)
+    case evt_rotate_right{}:
+      _rotate_input_state(state, 1)
+    case evt_confirm{}:
+      _confirm_and_ready_state(state)
+    case evt_ready{}:
+      ready_round_state(state)
+    case evt_escape{}:
+      _escape_input_state(state)
+    case evt_clear{}:
+      clear_round_plan_state(state)
+    case evt_reset{}:
+      state_init()
+    case evt_ignore{}:
+      state
+
+# Rendering helpers
+
+init : GameState =
+  state_init()
+
+def render(state: GameState) -> HTML(FightEvent):
+  planned = planned_player_pos(state);
+  trail = movement_trail(state);
+  preview = preview_tiles(state);
+  hits = preview_hits(state);
+  valid = target_valid(state);
+  board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, planned, trail, preview, hits, valid));
+  <div class="page">
+    <style>{text{css()}}</style>
+    <main class="shell" tabindex="0" style="outline:none" on_key_down={key_event}>
+      <section class="topbar">
+        <div class="topbar__left">
+          <div class="chip">{text{"Round " ++ U32.show(_state_round(state))}}</div>
+          <div class={_phase_chip_class(state)}>{text{_phase_label(state)}}</div>
+        </div>
+        <button {..._button_attrs("button button--ghost", evt_reset{})}>
+          {text{"Reset"}}
+        </button>
+      </section>
+
+      <section class="board-wrap">
+        <div class="board">{...board}</div>
+        {_winner_modal(state)}
+      </section>
+
+      <section class="underbar">
+        <div class="panel panel--hp">
+          <div class="panel__label">Player HP</div>
+          <div class="panel__value">{text{_hp_text(_state_player_hp(state))}}</div>
+        </div>
+        <div class="panel panel--queue">
+          <div class="panel__label">Slots</div>
+          <div class="queue-row">
+            {_queue_slot(state, 0)}
+            {_queue_slot(state, 1)}
+            {_queue_slot(state, 2)}
+          </div>
+        </div>
+      </section>
+
+      <section class="controls-grid">
+        <div class="panel">
+          <div class="panel__label">Moves</div>
+          <div class="dpad">
+            <div></div>
+            <button {..._button_attrs("button", evt_move_up{})}>{text{"Up"}}</button>
+            <div></div>
+            <button {..._button_attrs("button", evt_move_left{})}>{text{"Left"}}</button>
+            <button {..._button_attrs("button", evt_move_down{})}>{text{"Down"}}</button>
+            <button {..._button_attrs("button", evt_move_right{})}>{text{"Right"}}</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel__label">Skills</div>
+          <div class="button-row">
+            <button {..._skill_button_attrs(state, 1)}>{text{"Skill 1"}}</button>
+            <button {..._skill_button_attrs(state, 2)}>{text{"Skill 2"}}</button>
+            <button {..._skill_button_attrs(state, 3)}>{text{"Skill 3"}}</button>
+          </div>
+          <div class="button-row button-row--compact">
+            <button {..._button_attrs("button button--secondary", evt_rotate_left{})}>{text{"Q"}}</button>
+            <button {..._confirm_button_attrs(state)}>{text{"Space"}}</button>
+            <button {..._button_attrs("button button--secondary", evt_rotate_right{})}>{text{"E"}}</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel__label">Actions</div>
+          <div class="button-row">
+            <button {..._button_attrs("button", evt_ready{})}>{text{"Ready"}}</button>
+            <button {..._button_attrs("button button--secondary", evt_clear{})}>{text{"Clear"}}</button>
+            <button {..._button_attrs("button button--secondary", evt_escape{})}>{text{"Esc"}}</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-grid">
+        <div class="panel">
+          <div class="panel__label">State</div>
+          <p class="help">{text{_mode_text(state)}}</p>
+          <p class="help">{text{"Player preview: " ++ _pos_text(planned)}}</p>
+          <p class="help">{text{"Enemy HP: " ++ _hp_text(_state_enemy_hp(state))}}</p>
+        </div>
+        <div class="panel">
+          <div class="panel__label">Controls</div>
+          <p class="help">{text{"WASD/setas movem ou mexem a mira. 1/2/3 entram na mira. Q/E giram. Space confirma e resolve. Enter da ready. Esc cancela ou desfaz."}}</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+def _queue_slot(state: GameState, idx: U32) -> HTML(FightEvent):
+  <div class="queue-slot">
+    <div class="queue-slot__index">{text{"Slot " ++ U32.show(idx + 1)}}</div>
+    <div class="queue-slot__value">{text{_action_label(_action_at(_state_queue(state), idx))}}</div>
+  </div>
+
+def _board_cell(
+  state: GameState,
+  planned: Pos,
+  trail: List(TrailStep),
+  preview: List(Pos),
+  hits: List(Pos),
+  valid: U32,
+  x: U32,
+  y: U32,
+) -> HTML(FightEvent):
+  _board_cell_at(state, planned, trail, preview, hits, valid, pos{x, y})
+
+def _board_cell_at(
+  state: GameState,
+  planned: Pos,
+  trail: List(TrailStep),
+  preview: List(Pos),
+  hits: List(Pos),
+  valid: U32,
+  cell_pos: Pos,
+) -> HTML(FightEvent):
+  <div class={_board_cell_class(state, planned, trail, preview, hits, valid, cell_pos)}>
+    {_board_cell_actor(state, cell_pos)}
+    {_board_cell_ghost(state, planned, cell_pos)}
+    {_board_cell_route(trail, cell_pos)}
+  </div>
+
+def _board_cell_class(
+  state: GameState,
+  planned: Pos,
+  trail: List(TrailStep),
+  preview: List(Pos),
+  hits: List(Pos),
+  valid: U32,
+  pos: Pos,
+) -> String:
+  ""
+  ++ "cell"
+  ++ _board_cell_preview_class(preview, valid, pos)
+  ++ _board_cell_hit_class(hits, pos)
+  ++ _board_cell_route_class(trail, pos)
+
+def _board_cell_preview_class(preview: List(Pos), valid: U32, cell_pos: Pos) -> String:
+  _board_cell_preview_class_hit(_pos_list_has(preview, cell_pos), valid)
+
+def _board_cell_preview_class_hit(hit: U32, valid: U32) -> String:
+  match hit:
+    case 0:
+      ""
+    case _:
+      match valid:
+        case 0:
+          " cell--preview cell--preview-invalid"
+        case _:
+          " cell--preview"
+
+def _board_cell_hit_class(hits: List(Pos), cell_pos: Pos) -> String:
+  _board_cell_hit_class_hit(_pos_list_has(hits, cell_pos))
+
+def _board_cell_hit_class_hit(hit: U32) -> String:
+  match hit:
+    case 0:
+      ""
+    case _:
+      " cell--hit"
+
+def _board_cell_route_class(trail: List(TrailStep), cell_pos: Pos) -> String:
+  _board_cell_route_class_step(_trail_step_at(trail, cell_pos))
+
+def _board_cell_route_class_step(step: U32) -> String:
+  match step:
+    case 0:
+      ""
+    case _:
+      " cell--route"
+
+def _board_cell_actor(state: GameState, cell_pos: Pos) -> HTML(FightEvent):
+  match _pos_eq(_state_player(state), cell_pos):
+    case 0:
+      _board_cell_enemy_actor(_pos_eq(_state_enemy(state), cell_pos), _hp_empty(_state_enemy_hp(state)), _state_enemy_hp(state))
+    case _:
+      <div class="actor actor--player">{text{"P"}}</div>
+
+def _board_cell_enemy_actor(enemy_here: U32, enemy_dead: U32, enemy_hp: U32) -> HTML(FightEvent):
+  match enemy_here:
+    case 0:
+      <div class="cell__actor-wrap"></div>
+    case _:
+      _board_cell_enemy_alive(enemy_dead, enemy_hp)
+
+def _board_cell_enemy_alive(enemy_dead: U32, enemy_hp: U32) -> HTML(FightEvent):
+  match enemy_dead:
+    case 0:
+      <div class="actor actor--enemy">{text{_hp_text(enemy_hp)}}</div>
+    case _:
+      <div class="cell__actor-wrap"></div>
+
+def _board_cell_ghost(state: GameState, planned: Pos, cell_pos: Pos) -> HTML(FightEvent):
+  _board_cell_ghost_flags(_pos_eq(_state_player(state), planned), _pos_eq(planned, cell_pos))
+
+def _board_cell_ghost_flags(same_now: U32, same_cell: U32) -> HTML(FightEvent):
+  match same_cell:
+    case 0:
+      <div class="ghost ghost--hidden"></div>
+    case _:
+      _board_cell_ghost_now(same_now)
+
+def _board_cell_ghost_now(same_now: U32) -> HTML(FightEvent):
+  match same_now:
+    case 0:
+      <div class="ghost">{text{"P"}}</div>
+    case _:
+      <div class="ghost ghost--hidden"></div>
+
+def _board_cell_route(trail: List(TrailStep), cell_pos: Pos) -> HTML(FightEvent):
+  _board_cell_route_step(_trail_step_at(trail, cell_pos))
+
+def _board_cell_route_step(step: U32) -> HTML(FightEvent):
+  match step:
+    case 0:
+      <div class="trail trail--hidden"></div>
+    case s:
+      <div class="trail">{text{U32.show(s)}}</div>
+
+def _winner_modal(state: GameState) -> HTML(FightEvent):
+  _winner_modal_w(_state_winner(state))
+
+def _winner_modal_w(winner: U32) -> HTML(FightEvent):
+  match winner:
+    case 0:
+      <div class="modal"></div>
+    case result:
+      <div class="modal modal--visible">
+        <div class="modal__card">
+          <div class="modal__eyebrow">{text{"Fim da partida"}}</div>
+          <h2 class="modal__title">{text{_winner_title(result)}}</h2>
+          <button {..._button_attrs("button", evt_reset{})}>
+            {text{"Jogar novamente"}}
+          </button>
+        </div>
+      </div>
+
+def _button_attrs(class_name: String, evt: FightEvent) -> List(Attr(FightEvent)):
+  [attr{"type", "button"}, attr{"class", class_name}, on_click{evt}]
+
+def _button_disabled_attrs(class_name: String) -> List(Attr(FightEvent)):
+  [attr{"type", "button"}, attr{"class", class_name}, attr{"disabled", "disabled"}]
+
+def _button_attrs_enabled(class_name: String, evt: FightEvent, enabled: U32) -> List(Attr(FightEvent)):
+  match enabled:
+    case 0:
+      _button_disabled_attrs(class_name)
+    case _:
+      _button_attrs(class_name, evt)
+
+def _confirm_button_attrs(state: GameState) -> List(Attr(FightEvent)):
+  enabled = _state_target_active(state) & target_valid(state);
+  _button_attrs_enabled("button", evt_confirm{}, enabled)
+
+def _skill_button_attrs(state: GameState, skill: U32) -> List(Attr(FightEvent)):
+  match skill:
+    case 1:
+      _button_attrs(_skill_button_class(state, 1), evt_skill_1{})
+    case 2:
+      _button_attrs(_skill_button_class(state, 2), evt_skill_2{})
+    case _:
+      _button_attrs(_skill_button_class(state, 3), evt_skill_3{})
+
+def _skill_button_class(state: GameState, skill: U32) -> String:
+  _skill_button_class_active(_state_target_skill_is(state, skill))
+
+def _skill_button_class_active(active: U32) -> String:
+  match active:
+    case 0:
+      "button button--secondary"
+    case _:
+      "button button--secondary button--active"
+
+def _action_label(action: Action) -> String:
+  match action:
+    case wait{}:
+      "Parado"
+    case move{dir}:
+      "Mover " ++ _dir_label(dir)
+    case attack{skill, anchor, rot}:
+      "Ataque " ++ U32.show(skill)
+
+def _dir_label(dir: U32) -> String:
+  match dir:
+    case 0:
+      "Up"
+    case 1:
+      "Down"
+    case 2:
+      "Left"
+    case 3:
+      "Right"
+    case _:
+      "Wait"
+
+def _mode_text(state: GameState) -> String:
+  _mode_text_w(_state_winner(state), _state_mode_value(state))
+
+def _mode_text_w(winner: U32, mode: Mode) -> String:
+  match winner:
+    case 0:
+      _mode_text_mode(mode)
+    case _:
+      "Combate encerrado"
+
+def _mode_text_mode(mode: Mode) -> String:
+  match mode:
+    case plan{}:
+      "Planejando round"
+    case target{skill, rot, origin}:
+      "Mira da skill " ++ U32.show(skill) ++ " rot " ++ U32.show(rot) ++ " origem " ++ _pos_text(origin)
+
+def _phase_label(state: GameState) -> String:
+  _phase_label_w(_state_winner(state), _state_mode_value(state), target_valid(state))
+
+def _phase_label_w(winner: U32, mode: Mode, valid: U32) -> String:
+  match winner:
+    case 0:
+      _phase_label_mode(mode, valid)
+    case result:
+      _winner_title(result)
+
+def _phase_label_mode(mode: Mode, valid: U32) -> String:
+  match mode:
+    case plan{}:
+      "Planning"
+    case target{_, _, _}:
+      _phase_label_target(valid)
+
+def _phase_label_target(valid: U32) -> String:
+  match valid:
+    case 0:
+      "Target Invalid"
+    case _:
+      "Target Ready"
+
+def _phase_chip_class(state: GameState) -> String:
+  _phase_chip_class_w(_state_winner(state), _state_mode_value(state))
+
+def _phase_chip_class_w(winner: U32, mode: Mode) -> String:
+  match winner:
+    case 0:
+      _phase_chip_class_mode(mode)
+    case _:
+      "chip chip--over"
+
+def _phase_chip_class_mode(mode: Mode) -> String:
+  match mode:
+    case plan{}:
+      "chip chip--plan"
+    case target{_, _, _}:
+      "chip chip--target"
+
+def _winner_title(winner: U32) -> String:
+  match winner:
+    case 1:
+      "Vitoria"
+    case 2:
+      "Derrota"
+    case 3:
+      "Empate"
+    case _:
+      ""
+
+def _hp_text(hp: U32) -> String:
+  U32.show(hp) ++ "/50"
+
+def _pos_text(pos_value: Pos) -> String:
+  match pos_value:
+    case pos{x, y}:
+      "(" ++ U32.show(x) ++ ", " ++ U32.show(y) ++ ")"
+
+def _pos_list_has(items: List(Pos), target: Pos) -> U32:
+  match items:
+    case []:
+      0
+    case head<>tail:
+      match _pos_eq(head, target):
+        case 0:
+          _pos_list_has(tail, target)
+        case _:
+          1
+
+def _trail_step_at(items: List(TrailStep), target: Pos) -> U32:
+  match items:
+    case []:
+      0
+    case trail_step{x, y, step}<>tail:
+      match _pos_eq(pos{x, y}, target):
+        case 0:
+          _trail_step_at(tail, target)
+        case _:
+          step
+
+def _state_round(state: GameState) -> U32:
+  match state:
+    case game_state{round, _, _, _, _, _, _, _, _, _, _}:
+      round
+
+def _state_winner(state: GameState) -> U32:
+  match state:
+    case game_state{_, _, _, _, _, _, _, _, _, _, winner}:
+      winner
+
+def _state_mode_value(state: GameState) -> Mode:
+  match state:
+    case game_state{_, _, _, _, _, _, _, _, _, mode, _}:
+      mode
+
+def _state_target_active(state: GameState) -> U32:
+  _mode_is_target(_state_mode_value(state))
+
+def _state_target_skill(state: GameState) -> U32:
+  _mode_skill(_state_mode_value(state))
+
+def _state_target_rot(state: GameState) -> U32:
+  _mode_rot(_state_mode_value(state))
+
+def _state_target_origin(state: GameState) -> Pos:
+  _mode_origin(_state_mode_value(state))
+
+def _state_target_skill_is(state: GameState, skill: U32) -> U32:
+  active = _state_target_active(state);
+  match active:
+    case 0:
+      0
+    case _:
+      _state_target_skill(state) === skill
+
+def base_css() -> String:
+  ""
+  ++ ":root{--bg:#f3f1ea;--panel:#fbfaf6;--border:#c7c0af;--text:#1f1c17;--muted:#6b6252;--grid:#b5ad98;--cell:#efe8d7;--preview:#d9ecff;--invalid:#f8d2d2;--hit:#ef4d4d;--route:#e6d9a8;--player:#2f63d8;--enemy:#218354;--ghost:#8db1ff;--button:#201d18;--button-alt:#e6dfcf;}"
+  ++ "*{box-sizing:border-box;}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:'Trebuchet MS',sans-serif;}body{overflow:hidden;}button{font:inherit;cursor:pointer;}#app,.page{min-height:100svh;}"
+
+def layout_css() -> String:
+  ""
+  ++ ".shell{width:min(100%,1200px);min-height:100svh;height:100svh;margin:0 auto;padding:12px;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto auto;gap:12px;overflow:hidden;}"
+  ++ ".topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;}.topbar__left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}.chip{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}.chip--plan{background:#f2ead7;}.chip--target{background:#d9ecff;}.chip--over{background:#f8d2d2;}"
+  ++ ".board-wrap{position:relative;min-height:0;overflow:auto;border:1px solid var(--border);background:var(--panel);border-radius:18px;padding:12px;}.board{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));min-width:900px;border:1px solid var(--grid);background:var(--grid);gap:1px;}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit{box-shadow:inset 0 0 0 2px var(--hit);}.cell--route{outline:2px solid var(--route);outline-offset:-2px;}"
+  ++ ".underbar,.controls-grid,.info-grid{display:grid;gap:12px;}.underbar{grid-template-columns:220px minmax(0,1fr);}.controls-grid{grid-template-columns:1fr 1fr 1fr;}.info-grid{grid-template-columns:1fr 1fr;}.panel{padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--panel);min-width:0;}.panel__label{margin:0 0 10px;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}.panel__value{font-size:1.4rem;font-weight:700;}.queue-row,.button-row{display:flex;gap:8px;flex-wrap:wrap;}.button-row--compact{margin-top:8px;}.queue-slot{min-width:0;flex:1;padding:10px;border:1px solid var(--border);border-radius:14px;background:#fff;}.queue-slot__index{font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.queue-slot__value{margin-top:6px;font-weight:700;}"
+  ++ ".dpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}.help{margin:0;color:var(--muted);line-height:1.45;}"
+  ++ "@media (max-width:980px){.shell{grid-template-rows:auto minmax(0,1fr) auto auto auto;}.underbar,.controls-grid,.info-grid{grid-template-columns:1fr;}}"
+
+def component_css() -> String:
+  ""
+  ++ ".button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border:1px solid var(--button);border-radius:12px;background:var(--button);color:#fff;font-weight:700;}.button--secondary{background:var(--button-alt);color:var(--text);border-color:var(--border);}.button--ghost{background:transparent;color:var(--text);border-color:var(--border);}.button--active{outline:2px solid var(--player);outline-offset:1px;}.button:disabled{opacity:.45;cursor:not-allowed;}"
+  ++ ".actor{position:relative;z-index:2;display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:4px 6px;border-radius:999px;font-weight:700;font-size:.74rem;border:1px solid rgba(0,0,0,.08);}.actor--player{background:var(--player);color:#fff;}.actor--enemy{background:var(--enemy);color:#fff;}"
+  ++ ".ghost{position:absolute;inset:auto auto 6px 6px;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:var(--ghost);color:#fff;font-size:.68rem;font-weight:700;opacity:.85;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;z-index:1;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 4px;border-radius:999px;background:#fff;color:var(--text);font-size:.66rem;font-weight:700;border:1px solid var(--border);}.trail--hidden{display:none;}"
+  ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(20,17,12,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(20,17,12,.38);}.modal__card{display:grid;gap:12px;justify-items:center;padding:20px;border-radius:18px;background:#fff;border:1px solid var(--border);min-width:min(100%,280px);}.modal__eyebrow{font-size:.76rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.modal__title{margin:0;font-size:1.5rem;}"
+
+def css() -> String:
+  base_css()
+  ++ layout_css()
+  ++ component_css()
+
+main : App =
+  app{GameState, FightEvent, init, render, on_event}

@@ -1,22 +1,22 @@
 Bend visual TODO
 
-Base funcional priorizada:
-- motor, IA e simulacao de acao devem continuar em Bend
-- JS deve ficar so com browser, render, input e timeline visual
+Estado atual da migracao:
+- app web inteira unificada em `src/main.bend`
+- logica funcional, IA, render HTML e CSS base em Bend
+- camada JS antiga removida do repo
 
-Melhorias visuais para recolocar depois, de forma Bend-driven:
-- exportar um snapshot unico de planejamento em vez de varias funcoes separadas
-- exportar uma lista de eventos do round inteiro, para o JS nao montar mais a ordem slot a slot
-- exportar payloads de animacao mais ricos por acao
-  exemplo: tiles de flash, alvo atingido, morte, bloqueio de movimento
-- exportar metadados de preview das skills
-  exemplo: bounding box normalizado, celulas normalizadas, tamanho logico
-- revisar quais overlays ainda podem ser simplificados no JS
-  exemplo: ghost, trail badge, destaque do slot atual
+Feedbacks visuais simplificados nesta migracao:
+- animacoes por slot removidas
+- flash de ataque removido
+- morte piscando preto removida
+- previews desenhados das skills removidos
+- layout rico de HUD reduzido para uma versao funcional
 
-Coisas que continuam no JS por natureza:
-- DOM e HTML
-- CSS e layout responsivo
-- timers de animacao
-- eventos de teclado e clique
-- modais e textos de interface
+Melhorias visuais para recolocar depois, ainda em Bend:
+- timeline visual de round por slot
+- transicao de movimento entre tiles
+- piscadas de ataque nos tiles acertados
+- feedback visual de morte e desaparecimento
+- cards/miniaturas reais das skills
+- hud mais proxima da versao anterior
+- ajustes finos de responsividade e polish visual
