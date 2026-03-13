@@ -31,6 +31,7 @@ type Action {
 type Mode {
   plan{}
   target{skill: U32, rot: U32, origin: Pos}
+  playback{idx: U32, bot_queue: List(Action)}
 }
 
 type GameState {
@@ -81,6 +82,7 @@ type FightEvent {
   evt_escape{}
   evt_clear{}
   evt_reset{}
+  evt_tick{}
   evt_ignore{}
 }
 
@@ -318,7 +320,7 @@ def confirm_target_state(state: GameState) -> GameState:
 def clear_round_plan_state(state: GameState) -> GameState:
   match state:
     case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
-      match winner:
+      match winner | _mode_is_playback(mode):
         case 0:
           _state(round, level, player_hp, enemy_hp, player, enemy, _queue_waits(), 0, 0, _plan_mode(), 0)
         case k:
@@ -360,6 +362,11 @@ def _state(
 ) -> GameState:
   game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}
 
+def _set_mode_state(state: GameState, mode: Mode) -> GameState:
+  match state:
+    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, _, winner}:
+      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+
 def _wait_action() -> Action:
   wait{}
 
@@ -389,6 +396,9 @@ def _plan_mode() -> Mode:
 
 def _target_mode(skill: U32, rot: U32, origin: Pos) -> Mode:
   target{skill, rot, origin}
+
+def _playback_mode(idx: U32, bot_queue: List(Action)) -> Mode:
+  playback{idx, bot_queue}
 
 def _queue_waits() -> List(Action):
   _queue3(_wait_action(), _wait_action(), _wait_action())
@@ -1196,6 +1206,13 @@ def _mode_is_target(mode: Mode) -> U32:
     case _:
       0
 
+def _mode_is_playback(mode: Mode) -> U32:
+  match mode:
+    case playback{_, _}:
+      1
+    case _:
+      0
+
 def _mode_skill(mode: Mode) -> U32:
   match mode:
     case target{skill, _, _}:
@@ -1216,6 +1233,20 @@ def _mode_origin(mode: Mode) -> Pos:
       origin
     case _:
       pos{0, 0}
+
+def _mode_playback_idx(mode: Mode) -> U32:
+  match mode:
+    case playback{idx, _}:
+      idx
+    case _:
+      0
+
+def _mode_playback_bot(mode: Mode) -> List(Action):
+  match mode:
+    case playback{_, bot_queue}:
+      bot_queue
+    case _:
+      _queue_waits()
 
 def _pos_eq(a: Pos, b: Pos) -> U32:
   match a:
@@ -1327,12 +1358,20 @@ def _ready_round_state_w(
   player: Pos, enemy: Pos, queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, winner: U32,
 ) -> GameState:
-  match winner | _mode_is_target(mode):
+  match winner | _mode_is_target(mode) | _mode_is_playback(mode):
     case 0:
-      _ready_round_state_run(
-        _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner),
+      _state(
+        round,
+        level,
+        player_hp,
+        enemy_hp,
+        player,
+        enemy,
         queue,
-        _build_bot_plan_w(round, player_hp, enemy_hp, player, enemy, winner)
+        queue_len,
+        queue_locked,
+        _playback_mode(0, _build_bot_plan_w(round, player_hp, enemy_hp, player, enemy, winner)),
+        winner
       )
     case _:
       _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
@@ -1347,20 +1386,68 @@ def _ready_round_state_run(current: GameState, player_queue: List(Action), bot_q
   _reset_round_planning_state(s6)
 
 def _confirm_and_ready_state(state: GameState) -> GameState:
-  active = _state_target_active(state);
+  match _state_playback_active(state):
+    case 0:
+      _confirm_and_ready_target(state, _state_target_active(state))
+    case _:
+      state
+
+def _confirm_and_ready_target(state: GameState, active: U32) -> GameState:
   match active:
     case 0:
       state
     case _:
-      valid = target_valid(state);
-      match valid:
-        case 0:
-          state
-        case _:
-          ready_round_state(confirm_target_state(state))
+      _confirm_and_ready_valid(state, target_valid(state))
+
+def _confirm_and_ready_valid(state: GameState, valid: U32) -> GameState:
+  match valid:
+    case 0:
+      state
+    case _:
+      ready_round_state(confirm_target_state(state))
+
+def playback_tick_state(state: GameState) -> GameState:
+  _playback_tick_mode(state, _state_mode_value(state))
+
+def _playback_tick_mode(state: GameState, mode: Mode) -> GameState:
+  match mode:
+    case playback{idx, bot_queue}:
+      _playback_tick_idx(state, idx, bot_queue)
+    case _:
+      state
+
+def _playback_tick_idx(state: GameState, idx: U32, bot_queue: List(Action)) -> GameState:
+  match idx:
+    case 0:
+      _playback_continue(_resolve_player_action_state(state, _action_at(_state_queue(state), 0)), 1, bot_queue)
+    case 1:
+      _playback_continue(_resolve_enemy_action_state(state, _action_at(bot_queue, 0)), 2, bot_queue)
+    case 2:
+      _playback_continue(_resolve_player_action_state(state, _action_at(_state_queue(state), 1)), 3, bot_queue)
+    case 3:
+      _playback_continue(_resolve_enemy_action_state(state, _action_at(bot_queue, 1)), 4, bot_queue)
+    case 4:
+      _playback_continue(_resolve_player_action_state(state, _action_at(_state_queue(state), 2)), 5, bot_queue)
+    case 5:
+      _reset_round_planning_state(_resolve_enemy_action_state(state, _action_at(bot_queue, 2)))
+    case _:
+      _reset_round_planning_state(state)
+
+def _playback_continue(next_state: GameState, next_idx: U32, bot_queue: List(Action)) -> GameState:
+  match _state_winner(next_state):
+    case 0:
+      _set_mode_state(next_state, _playback_mode(next_idx, bot_queue))
+    case _:
+      _reset_round_planning_state(next_state)
 
 def _move_input_state(state: GameState, dir: U32) -> GameState:
-  active = _state_target_active(state);
+  match _state_playback_active(state):
+    case 0:
+      _move_input_target(state, dir, _state_target_active(state))
+    case _:
+      state
+
+def _move_input_target(state: GameState, dir: U32, active: U32) -> GameState:
   match active:
     case 0:
       queue_move_state(state, dir)
@@ -1368,7 +1455,13 @@ def _move_input_state(state: GameState, dir: U32) -> GameState:
       move_target_state(state, dir)
 
 def _rotate_input_state(state: GameState, clockwise: U32) -> GameState:
-  active = _state_target_active(state);
+  match _state_playback_active(state):
+    case 0:
+      _rotate_input_target(state, clockwise, _state_target_active(state))
+    case _:
+      state
+
+def _rotate_input_target(state: GameState, clockwise: U32, active: U32) -> GameState:
   match active:
     case 0:
       state
@@ -1376,7 +1469,13 @@ def _rotate_input_state(state: GameState, clockwise: U32) -> GameState:
       rotate_target_state(state, clockwise)
 
 def _escape_input_state(state: GameState) -> GameState:
-  active = _state_target_active(state);
+  match _state_playback_active(state):
+    case 0:
+      _escape_input_target(state, _state_target_active(state))
+    case _:
+      state
+
+def _escape_input_target(state: GameState, active: U32) -> GameState:
   match active:
     case 0:
       pop_last_planned_action_state(state)
@@ -1384,7 +1483,11 @@ def _escape_input_state(state: GameState) -> GameState:
       cancel_target_state(state)
 
 def _skill_input_state(state: GameState, skill: U32) -> GameState:
-  start_target_state(state, skill)
+  match _state_playback_active(state):
+    case 0:
+      start_target_state(state, skill)
+    case _:
+      state
 
 def key_event(key: U32) -> FightEvent:
   match key:
@@ -1457,6 +1560,8 @@ def on_event(evt: FightEvent, state: GameState) -> GameState:
       clear_round_plan_state(state)
     case evt_reset{}:
       state_init()
+    case evt_tick{}:
+      playback_tick_state(state)
     case evt_ignore{}:
       state
 
@@ -1466,14 +1571,15 @@ init : GameState =
   state_init()
 
 def render(state: GameState) -> HTML(FightEvent):
-  planned = planned_player_pos(state);
-  trail = movement_trail(state);
-  preview = preview_tiles(state);
-  hits = preview_hits(state);
-  valid = target_valid(state);
+  planned = _render_planned_pos(state);
+  trail = _render_trail(state);
+  preview = _render_preview_tiles(state);
+  hits = _render_preview_hits(state);
+  valid = _render_target_valid(state);
   board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, planned, trail, preview, hits, valid));
   <div class="page">
     <style>{text{css()}}</style>
+    <div {..._tick_attrs(state)}></div>
     <main class="shell" tabindex="0" style="outline:none" on_key_down={key_event}>
       <section class="topbar">
         <div class="topbar__left">
@@ -1546,22 +1652,88 @@ def render(state: GameState) -> HTML(FightEvent):
         <div class="panel">
           <div class="panel__label">State</div>
           <p class="help">{text{_mode_text(state)}}</p>
+          <p class="help">{text{_playback_info_text(state)}}</p>
           <p class="help">{text{"Player preview: " ++ _pos_text(planned)}}</p>
           <p class="help">{text{"Enemy HP: " ++ _hp_text(_state_enemy_hp(state))}}</p>
         </div>
         <div class="panel">
           <div class="panel__label">Controls</div>
-          <p class="help">{text{"WASD/setas movem ou mexem a mira. 1/2/3 entram na mira. Q/E giram. Space confirma e resolve. Enter da ready. Esc cancela ou desfaz."}}</p>
+          <p class="help">{text{"WASD/setas movem ou mexem a mira. 1/2/3 entram na mira. Q/E giram. Space confirma e resolve em etapas. Enter inicia a resolucao. Esc cancela ou desfaz."}}</p>
         </div>
       </section>
     </main>
   </div>
 
+def _render_planned_pos(state: GameState) -> Pos:
+  match _state_playback_active(state):
+    case 0:
+      planned_player_pos(state)
+    case _:
+      _state_player(state)
+
+def _render_trail(state: GameState) -> List(TrailStep):
+  match _state_playback_active(state):
+    case 0:
+      movement_trail(state)
+    case _:
+      _trail_nil()
+
+def _render_preview_tiles(state: GameState) -> List(Pos):
+  match _state_playback_active(state):
+    case 0:
+      preview_tiles(state)
+    case _:
+      _pos_nil()
+
+def _render_preview_hits(state: GameState) -> List(Pos):
+  match _state_playback_active(state):
+    case 0:
+      preview_hits(state)
+    case _:
+      _pos_nil()
+
+def _render_target_valid(state: GameState) -> U32:
+  match _state_playback_active(state):
+    case 0:
+      target_valid(state)
+    case _:
+      0
+
+def _tick_attrs(state: GameState) -> List(Attr(FightEvent)):
+  match _state_playback_active(state):
+    case 0:
+      _tick_attrs_idle()
+    case _:
+      _tick_attrs_playback()
+
+def _tick_attrs_idle() -> List(Attr(FightEvent)):
+  [attr{"class", "timer-hook"}]
+
+def _tick_attrs_playback() -> List(Attr(FightEvent)):
+  [attr{"class", "timer-hook"}, every_ms{420, evt_tick{}}]
+
 def _queue_slot(state: GameState, idx: U32) -> HTML(FightEvent):
-  <div class="queue-slot">
+  <div class={_queue_slot_class(state, idx)}>
     <div class="queue-slot__index">{text{"Slot " ++ U32.show(idx + 1)}}</div>
     <div class="queue-slot__value">{text{_action_label(_action_at(_state_queue(state), idx))}}</div>
   </div>
+
+def _queue_slot_class(state: GameState, idx: U32) -> String:
+  _queue_slot_class_active(_queue_slot_is_active(state, idx))
+
+def _queue_slot_class_active(active: U32) -> String:
+  match active:
+    case 0:
+      "queue-slot"
+    case _:
+      "queue-slot queue-slot--active"
+
+def _queue_slot_is_active(state: GameState, idx: U32) -> U32:
+  match _state_playback_active(state):
+    case 0:
+      0
+    case _:
+      _playback_slot_of_idx(_state_playback_idx(state)) === idx
 
 def _board_cell(
   state: GameState,
@@ -1763,6 +1935,67 @@ def _dir_label(dir: U32) -> String:
     case _:
       "Wait"
 
+def _playback_slot_of_idx(idx: U32) -> U32:
+  match idx:
+    case 0:
+      0
+    case 1:
+      0
+    case 2:
+      1
+    case 3:
+      1
+    case _:
+      2
+
+def _playback_action(queue: List(Action), bot_queue: List(Action), idx: U32) -> Action:
+  match idx:
+    case 0:
+      _action_at(queue, 0)
+    case 1:
+      _action_at(bot_queue, 0)
+    case 2:
+      _action_at(queue, 1)
+    case 3:
+      _action_at(bot_queue, 1)
+    case 4:
+      _action_at(queue, 2)
+    case _:
+      _action_at(bot_queue, 2)
+
+def _playback_actor_label(idx: U32) -> String:
+  match idx:
+    case 0:
+      "Player"
+    case 1:
+      "Enemy"
+    case 2:
+      "Player"
+    case 3:
+      "Enemy"
+    case 4:
+      "Player"
+    case _:
+      "Enemy"
+
+def _playback_info_text(state: GameState) -> String:
+  _playback_info_text_active(state, _state_playback_active(state))
+
+def _playback_info_text_active(state: GameState, active: U32) -> String:
+  match active:
+    case 0:
+      ""
+    case _:
+      _playback_info_text_now(state, _state_playback_idx(state), _state_playback_bot(state))
+
+def _playback_info_text_now(state: GameState, idx: U32, bot_queue: List(Action)) -> String:
+  "Executando slot "
+  ++ U32.show(_playback_slot_of_idx(idx) + 1)
+  ++ ": "
+  ++ _playback_actor_label(idx)
+  ++ " - "
+  ++ _action_label(_playback_action(_state_queue(state), bot_queue, idx))
+
 def _mode_text(state: GameState) -> String:
   _mode_text_w(_state_winner(state), _state_mode_value(state))
 
@@ -1779,6 +2012,8 @@ def _mode_text_mode(mode: Mode) -> String:
       "Planejando round"
     case target{skill, rot, origin}:
       "Mira da skill " ++ U32.show(skill) ++ " rot " ++ U32.show(rot) ++ " origem " ++ _pos_text(origin)
+    case playback{idx, bot_queue}:
+      "Resolvendo round"
 
 def _phase_label(state: GameState) -> String:
   _phase_label_w(_state_winner(state), _state_mode_value(state), target_valid(state))
@@ -1796,6 +2031,8 @@ def _phase_label_mode(mode: Mode, valid: U32) -> String:
       "Planning"
     case target{_, _, _}:
       _phase_label_target(valid)
+    case playback{_, _}:
+      "Playback"
 
 def _phase_label_target(valid: U32) -> String:
   match valid:
@@ -1819,6 +2056,8 @@ def _phase_chip_class_mode(mode: Mode) -> String:
     case plan{}:
       "chip chip--plan"
     case target{_, _, _}:
+      "chip chip--target"
+    case playback{_, _}:
       "chip chip--target"
 
 def _winner_title(winner: U32) -> String:
@@ -1897,6 +2136,15 @@ def _state_target_skill_is(state: GameState, skill: U32) -> U32:
     case _:
       _state_target_skill(state) === skill
 
+def _state_playback_active(state: GameState) -> U32:
+  _mode_is_playback(_state_mode_value(state))
+
+def _state_playback_idx(state: GameState) -> U32:
+  _mode_playback_idx(_state_mode_value(state))
+
+def _state_playback_bot(state: GameState) -> List(Action):
+  _mode_playback_bot(_state_mode_value(state))
+
 def base_css() -> String:
   ""
   ++ ":root{--bg:#f3f1ea;--panel:#fbfaf6;--border:#c7c0af;--text:#1f1c17;--muted:#6b6252;--grid:#b5ad98;--cell:#efe8d7;--preview:#d9ecff;--invalid:#f8d2d2;--hit:#ef4d4d;--route:#e6d9a8;--player:#2f63d8;--enemy:#218354;--ghost:#8db1ff;--button:#201d18;--button-alt:#e6dfcf;}"
@@ -1907,7 +2155,7 @@ def layout_css() -> String:
   ++ ".shell{width:min(100%,1200px);min-height:100svh;height:100svh;margin:0 auto;padding:12px;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto auto;gap:12px;overflow:hidden;}"
   ++ ".topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;}.topbar__left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}.chip{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}.chip--plan{background:#f2ead7;}.chip--target{background:#d9ecff;}.chip--over{background:#f8d2d2;}"
   ++ ".board-wrap{position:relative;min-height:0;overflow:auto;border:1px solid var(--border);background:var(--panel);border-radius:18px;padding:12px;}.board{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));min-width:900px;border:1px solid var(--grid);background:var(--grid);gap:1px;}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit{box-shadow:inset 0 0 0 2px var(--hit);}.cell--route{outline:2px solid var(--route);outline-offset:-2px;}"
-  ++ ".underbar,.controls-grid,.info-grid{display:grid;gap:12px;}.underbar{grid-template-columns:220px minmax(0,1fr);}.controls-grid{grid-template-columns:1fr 1fr 1fr;}.info-grid{grid-template-columns:1fr 1fr;}.panel{padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--panel);min-width:0;}.panel__label{margin:0 0 10px;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}.panel__value{font-size:1.4rem;font-weight:700;}.queue-row,.button-row{display:flex;gap:8px;flex-wrap:wrap;}.button-row--compact{margin-top:8px;}.queue-slot{min-width:0;flex:1;padding:10px;border:1px solid var(--border);border-radius:14px;background:#fff;}.queue-slot__index{font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.queue-slot__value{margin-top:6px;font-weight:700;}"
+  ++ ".underbar,.controls-grid,.info-grid{display:grid;gap:12px;}.underbar{grid-template-columns:220px minmax(0,1fr);}.controls-grid{grid-template-columns:1fr 1fr 1fr;}.info-grid{grid-template-columns:1fr 1fr;}.panel{padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--panel);min-width:0;}.panel__label{margin:0 0 10px;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}.panel__value{font-size:1.4rem;font-weight:700;}.queue-row,.button-row{display:flex;gap:8px;flex-wrap:wrap;}.button-row--compact{margin-top:8px;}.queue-slot{min-width:0;flex:1;padding:10px;border:1px solid var(--border);border-radius:14px;background:#fff;}.queue-slot--active{border-color:var(--player);box-shadow:inset 0 0 0 2px var(--player);}.queue-slot__index{font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.queue-slot__value{margin-top:6px;font-weight:700;}"
   ++ ".dpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}.help{margin:0;color:var(--muted);line-height:1.45;}"
   ++ "@media (max-width:980px){.shell{grid-template-rows:auto minmax(0,1fr) auto auto auto;}.underbar,.controls-grid,.info-grid{grid-template-columns:1fr;}}"
 
@@ -1916,7 +2164,7 @@ def component_css() -> String:
   ++ ".button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border:1px solid var(--button);border-radius:12px;background:var(--button);color:#fff;font-weight:700;}.button--secondary{background:var(--button-alt);color:var(--text);border-color:var(--border);}.button--ghost{background:transparent;color:var(--text);border-color:var(--border);}.button--active{outline:2px solid var(--player);outline-offset:1px;}.button:disabled{opacity:.45;cursor:not-allowed;}"
   ++ ".actor{position:relative;z-index:2;display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:4px 6px;border-radius:999px;font-weight:700;font-size:.74rem;border:1px solid rgba(0,0,0,.08);}.actor--player{background:var(--player);color:#fff;}.actor--enemy{background:var(--enemy);color:#fff;}"
   ++ ".ghost{position:absolute;inset:auto auto 6px 6px;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:var(--ghost);color:#fff;font-size:.68rem;font-weight:700;opacity:.85;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;z-index:1;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 4px;border-radius:999px;background:#fff;color:var(--text);font-size:.66rem;font-weight:700;border:1px solid var(--border);}.trail--hidden{display:none;}"
-  ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(20,17,12,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(20,17,12,.38);}.modal__card{display:grid;gap:12px;justify-items:center;padding:20px;border-radius:18px;background:#fff;border:1px solid var(--border);min-width:min(100%,280px);}.modal__eyebrow{font-size:.76rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.modal__title{margin:0;font-size:1.5rem;}"
+  ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(20,17,12,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(20,17,12,.38);}.modal__card{display:grid;gap:12px;justify-items:center;padding:20px;border-radius:18px;background:#fff;border:1px solid var(--border);min-width:min(100%,280px);}.modal__eyebrow{font-size:.76rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.modal__title{margin:0;font-size:1.5rem;}.timer-hook{display:none;}"
 
 def css() -> String:
   base_css()
