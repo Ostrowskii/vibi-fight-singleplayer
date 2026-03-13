@@ -1,0 +1,8 @@
+{
+  "name": "vibi-fight-singleplayer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:bend": "bash ./scripts/build-bend.sh"
+  }
+}
