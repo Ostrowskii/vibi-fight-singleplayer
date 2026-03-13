@@ -23,14 +23,11 @@ jobs:
       - name: Checkout app
         uses: actions/checkout@v4
 
-      - name: Checkout Bend2
-        uses: actions/checkout@v4
-        with:
-          repository: HigherOrderCO/bend2
-          path: vendor/bend2
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+
+      - name: Fetch Bend2
+        run: git clone --depth 1 https://github.com/HigherOrderCO/bend2.git vendor/bend2
 
       - name: Build site
         run: |
