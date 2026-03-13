@@ -594,9 +594,9 @@ function controlsMarkup(snap) {
     return "Reset partida para recomecar.";
   }
   if (snap.mode.kind === "target") {
-    return "WASD/setas movem a preview. Q/E giram. Space confirma. Esc cancela a mira. Limpar jogada apaga a fila atual.";
+    return "WASD/setas movem a preview. Q/E giram. Space confirma o ataque e ja resolve o round. Esc cancela a mira. Limpar jogada apaga a fila atual.";
   }
-  return "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Esc desfaz a ultima decisao. Enter resolve o round. Limpar jogada apaga a fila atual.";
+  return "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Space em uma mira valida confirma o ataque e ja da Ready. Esc desfaz a ultima decisao. Enter resolve o round. Limpar jogada apaga a fila atual.";
 }
 
 async function animateActorAction(slot, actor, action) {
@@ -868,7 +868,13 @@ window.addEventListener("keydown", (event) => {
     } else if (key === "e") {
       game = rotateTargetState(game, true);
     } else if (key === " ") {
-      game = confirmTargetState(game);
+      const next = confirmTargetState(game);
+      const confirmed = next !== game;
+      game = next;
+      if (confirmed) {
+        void resolveRoundAnimated();
+        return;
+      }
     } else if (key === "Escape") {
       game = cancelTargetState(game);
     }
