@@ -28,6 +28,35 @@ const SKILLS = {
   3: [0, 1, 2, 3].map((rot) => getSkillCells(3, rot)),
 };
 
+function buildSkillPreview(cells) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const cell of cells) {
+    minX = Math.min(minX, cell.x);
+    minY = Math.min(minY, cell.y);
+    maxX = Math.max(maxX, cell.x);
+    maxY = Math.max(maxY, cell.y);
+  }
+
+  return {
+    width: maxX - minX + 1,
+    height: maxY - minY + 1,
+    cells: cells.map((cell) => ({
+      x: cell.x - minX,
+      y: cell.y - minY,
+    })),
+  };
+}
+
+const SKILL_PREVIEWS = {
+  1: buildSkillPreview(SKILLS[1][0]),
+  2: buildSkillPreview(SKILLS[2][0]),
+  3: buildSkillPreview(SKILLS[3][0]),
+};
+
 function waitAction() {
   return { kind: "wait" };
 }
@@ -419,12 +448,12 @@ function actorLabel(actor) {
   return actor === "player" ? "Player" : "IA";
 }
 
-function actorToken(actor) {
-  return actor === "player" ? "P" : "AI";
-}
-
 function actorClass(actor) {
   return actor === "player" ? "player" : "enemy";
+}
+
+function hpText(hp) {
+  return `${hp}/${rules.maxHp}`;
 }
 
 function playbackLabel(action) {
@@ -526,9 +555,37 @@ function boardOverlayMarkup(snap) {
       <div
         class="${classes.join(" ")}"
         style="--grid-x:${from.x}; --grid-y:${from.y}; --delta-x:${deltaX}; --delta-y:${deltaY}; --bump-x:${bump.x}; --bump-y:${bump.y}"
-      >${actorToken(actor)}</div>
+      >${actor === "player" ? "P" : hpText(snap.enemyHp)}</div>
     </div>
   `;
+}
+
+function skillPreviewMarkup(snap) {
+  return [1, 2, 3]
+    .map((skill) => {
+      const preview = SKILL_PREVIEWS[skill];
+      const filled = new Set(preview.cells.map((cell) => keyForPos(cell)));
+      const active = snap.mode.kind === "target" && snap.mode.skill === skill;
+      const disabled = snap.resolving ? "disabled" : "";
+      const cells = [];
+
+      for (let y = 0; y < preview.height; y += 1) {
+        for (let x = 0; x < preview.width; x += 1) {
+          const key = `${x}:${y}`;
+          cells.push(`<span class="skill-mini-cell ${filled.has(key) ? "filled" : ""}"></span>`);
+        }
+      }
+
+      return `
+        <button class="skill-preview ${active ? "active" : ""}" data-skill="${skill}" ${disabled} aria-label="Skill ${skill}">
+          <span class="skill-key">${skill}</span>
+          <span class="skill-grid" style="--mini-cols:${preview.width}; --mini-rows:${preview.height}">
+            ${cells.join("")}
+          </span>
+        </button>
+      `;
+    })
+    .join("");
 }
 
 function boardCellMarkup(snap) {
@@ -570,7 +627,7 @@ function boardCellMarkup(snap) {
       if (snap.player.x === x && snap.player.y === y && !hidingMovingPlayer) {
         actor = '<div class="actor player">P</div>';
       } else if (snap.enemy.x === x && snap.enemy.y === y && !hidingMovingEnemy) {
-        actor = '<div class="actor enemy">AI</div>';
+        actor = `<div class="actor enemy enemy-hp">${hpText(snap.enemyHp)}</div>`;
       }
       if (trailStep !== null) {
         overlay += `<div class="trail-badge">${trailStep}</div>`;
@@ -695,33 +752,45 @@ function render() {
       <div class="left-rail" aria-hidden="true"></div>
 
       <section class="board-stage">
-        <div class="board-wrap board-wrap-large">
-          <div class="board">${boardCellMarkup(snap)}${boardOverlayMarkup(snap)}</div>
+        <div class="board-stack">
+          <div class="board-wrap board-wrap-large">
+            <div class="board">${boardCellMarkup(snap)}${boardOverlayMarkup(snap)}</div>
+          </div>
+
+          <section class="board-underbar">
+            <div class="player-hp-card">
+              <div class="stat-label">Player HP</div>
+              <div class="stat-value">${hpText(snap.playerHp)}</div>
+            </div>
+
+            <div class="queue-inline">
+              ${snap.queue
+                .map(
+                  (action, index) => `
+                    <div class="queue-slot ${snap.playback?.slot === index + 1 ? "active" : ""} ${
+                      snap.playback?.slot === index + 1 && snap.playback.actor === "enemy" ? "enemy-turn" : ""
+                    }">
+                      <div class="slot-index">Slot ${index + 1}</div>
+                      <div class="slot-value">${actionLabel(action)}</div>
+                    </div>
+                  `
+                )
+                .join("")}
+            </div>
+
+            <div class="skill-strip">
+              ${skillPreviewMarkup(snap)}
+            </div>
+          </section>
         </div>
       </section>
 
       <aside class="panel sidebar">
-        <section class="card hero-card">
-          <div class="eyebrow">Single Player Prototype</div>
-          <h1 class="title title-side">Vibi Fight</h1>
-          <p class="subtitle subtitle-side">Grid 9x18, round em 3 slots, 3 skills e fila de acoes em teclado.</p>
-          <div class="round-chip round-chip-side">Round ${snap.round}</div>
-        </section>
-
-        <section class="stat-grid">
-          <div class="card">
-            <div class="stat-label">Player HP</div>
-            <div class="stat-value">${snap.playerHp}</div>
-          </div>
-          <div class="card">
-            <div class="stat-label">Enemy HP</div>
-            <div class="stat-value">${snap.enemyHp}</div>
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="stat-label">Estado</div>
-          <p class="stat-value" style="font-size:22px">${phaseLabel(snap)}</p>
+        <section class="card sidebar-status">
+          <div class="stat-label">Round</div>
+          <div class="stat-value sidebar-round">${snap.round}</div>
+          <div class="stat-label" style="margin-top:12px">Estado</div>
+          <p class="sidebar-phase">${phaseLabel(snap)}</p>
           ${
             snap.winner !== 0
               ? `<p class="winner" style="margin-top:10px">${winnerText(snap.winner)}</p>`
@@ -739,33 +808,6 @@ function render() {
                 )}.</p>`
               : ""
           }
-        </section>
-
-        <section class="card">
-          <div class="stat-label">Fila do Player</div>
-          <div class="queue">
-            ${snap.queue
-              .map(
-                (action, index) => `
-                  <div class="queue-slot ${snap.playback?.slot === index + 1 ? "active" : ""} ${
-                    snap.playback?.slot === index + 1 && snap.playback.actor === "enemy" ? "enemy-turn" : ""
-                  }">
-                    <div class="slot-index">Slot ${index + 1}</div>
-                    <div class="slot-value">${actionLabel(action)}</div>
-                  </div>
-                `
-              )
-              .join("")}
-          </div>
-        </section>
-
-        <section class="card">
-          <div class="stat-label">Habilidades</div>
-          <div class="skills" style="margin-top:12px">
-            <button data-skill="1" ${controlsDisabled}>Skill 1</button>
-            <button data-skill="2" ${controlsDisabled}>Skill 2</button>
-            <button data-skill="3" ${controlsDisabled}>Skill 3</button>
-          </div>
         </section>
 
         <section class="card">
