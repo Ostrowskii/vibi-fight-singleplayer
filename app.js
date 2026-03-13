@@ -105,6 +105,24 @@ function plannedPlayerPos(state) {
   return pos;
 }
 
+function plannedPlayerTrail(state) {
+  let pos = clonePos(state.player);
+  const trail = [];
+
+  for (const action of state.queue) {
+    if (action.kind === "move") {
+      pos = stepFree(pos, action.dir);
+      trail.push({
+        x: pos.x,
+        y: pos.y,
+        step: trail.length + 1,
+      });
+    }
+  }
+
+  return trail;
+}
+
 function previewCellsFor(skill, rot, origin) {
   return SKILLS[skill][rot].map((cell) => addPos(origin, cell)).filter((cell) => inBounds(cell.x, cell.y));
 }
@@ -204,6 +222,19 @@ function confirmTargetState(state) {
   newState.queue[newState.queueLen] = attackAction(state.mode.skill, state.mode.origin, state.mode.rot);
   newState.queueLen += 1;
   newState.queueLocked = true;
+  newState.mode = { kind: "plan" };
+  return newState;
+}
+
+function clearRoundPlanState(state) {
+  if (state.winner) {
+    return state;
+  }
+
+  const newState = structuredClone(state);
+  newState.queue = [waitAction(), waitAction(), waitAction()];
+  newState.queueLen = 0;
+  newState.queueLocked = false;
   newState.mode = { kind: "plan" };
   return newState;
 }
@@ -353,6 +384,7 @@ function readyRoundState(state) {
 
 function getViewState(state) {
   const actorPos = plannedPlayerPos(state);
+  const movementTrail = plannedPlayerTrail(state);
   const targetValid =
     state.mode.kind === "target"
       ? placementValid(state.mode.skill, state.mode.rot, state.mode.origin, actorPos)
@@ -360,6 +392,8 @@ function getViewState(state) {
 
   return {
     ...state,
+    plannedPlayer: actorPos,
+    movementTrail,
     previewTiles:
       state.mode.kind === "target"
         ? previewCellsFor(state.mode.skill, state.mode.rot, state.mode.origin)
@@ -410,31 +444,44 @@ function keyForPos(pos) {
 function boardCellMarkup(snap) {
   const previewSet = new Set(snap.previewTiles.map(keyForPos));
   const hitSet = new Set(snap.previewHits.map(keyForPos));
+  const trailMap = new Map(snap.movementTrail.map((step) => [keyForPos(step), step.step]));
   const previewInvalid = snap.mode.kind === "target" && !snap.targetValid;
+  const showPlannedPlayer = !samePos(snap.player, snap.plannedPlayer);
   const cells = [];
 
   for (let y = 0; y < BOARD_H; y += 1) {
     for (let x = 0; x < BOARD_W; x += 1) {
       const key = `${x}:${y}`;
       const classes = ["cell"];
+      const trailStep = trailMap.get(key) ?? null;
       if (previewSet.has(key)) {
         classes.push("preview");
         if (previewInvalid) {
           classes.push("invalid");
         }
       }
+      if (trailStep !== null) {
+        classes.push("route");
+      }
       if (hitSet.has(key)) {
         classes.push("hit");
       }
 
       let actor = "";
+      let overlay = "";
       if (snap.player.x === x && snap.player.y === y) {
         actor = '<div class="actor player">P</div>';
       } else if (snap.enemy.x === x && snap.enemy.y === y) {
         actor = '<div class="actor enemy">AI</div>';
       }
+      if (trailStep !== null) {
+        overlay += `<div class="trail-badge">${trailStep}</div>`;
+      }
+      if (showPlannedPlayer && snap.plannedPlayer.x === x && snap.plannedPlayer.y === y) {
+        overlay += '<div class="actor ghost">P</div>';
+      }
 
-      cells.push(`<div class="${classes.join(" ")}">${actor}</div>`);
+      cells.push(`<div class="${classes.join(" ")}">${actor}${overlay}</div>`);
     }
   }
 
@@ -443,12 +490,12 @@ function boardCellMarkup(snap) {
 
 function controlsMarkup(snap) {
   if (snap.winner !== 0) {
-    return "Reset para recomecar.";
+    return "Reset partida para recomecar.";
   }
   if (snap.mode.kind === "target") {
-    return "WASD/setas movem a preview. Q/E giram. Space confirma. Esc cancela.";
+    return "WASD/setas movem a preview. Q/E giram. Space confirma. Esc cancela. Limpar jogada apaga a fila atual.";
   }
-  return "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Enter resolve o round.";
+  return "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Enter resolve o round. Limpar jogada apaga a fila atual.";
 }
 
 function render() {
@@ -456,21 +503,22 @@ function render() {
 
   root.innerHTML = `
     <div class="shell">
-      <section class="panel board-panel">
-        <div class="board-head">
-          <div>
-            <div class="eyebrow">Single Player Prototype</div>
-            <h1 class="title">Vibi Fight</h1>
-            <p class="subtitle">Grid 9x18, round em 3 slots, 3 skills e fila de acoes em teclado.</p>
-          </div>
-          <div class="round-chip">Round ${snap.round}</div>
-        </div>
-        <div class="board-wrap">
+      <div class="left-rail" aria-hidden="true"></div>
+
+      <section class="board-stage">
+        <div class="board-wrap board-wrap-large">
           <div class="board">${boardCellMarkup(snap)}</div>
         </div>
       </section>
 
       <aside class="panel sidebar">
+        <section class="card hero-card">
+          <div class="eyebrow">Single Player Prototype</div>
+          <h1 class="title title-side">Vibi Fight</h1>
+          <p class="subtitle subtitle-side">Grid 9x18, round em 3 slots, 3 skills e fila de acoes em teclado.</p>
+          <div class="round-chip round-chip-side">Round ${snap.round}</div>
+        </section>
+
         <section class="stat-grid">
           <div class="card">
             <div class="stat-label">Player HP</div>
@@ -488,6 +536,11 @@ function render() {
           ${
             snap.winner !== 0
               ? `<p class="winner" style="margin-top:10px">${winnerText(snap.winner)}</p>`
+              : ""
+          }
+          ${
+            snap.queueLen > 0 || snap.mode.kind === "target"
+              ? `<p class="help" style="margin-top:10px">Preview do player: (${snap.plannedPlayer.x}, ${snap.plannedPlayer.y})</p>`
               : ""
           }
         </section>
@@ -521,7 +574,8 @@ function render() {
           <div class="stat-label">Acoes</div>
           <div class="controls" style="margin-top:12px">
             <button class="alt" data-ready>Ready</button>
-            <button class="ghost" data-reset>Reset</button>
+            <button data-clear>Limpar jogada</button>
+            <button class="ghost" data-reset>Reset partida</button>
           </div>
         </section>
 
@@ -550,6 +604,11 @@ function render() {
 
   root.querySelector("[data-ready]")?.addEventListener("click", () => {
     game = readyRoundState(game);
+    render();
+  });
+
+  root.querySelector("[data-clear]")?.addEventListener("click", () => {
+    game = clearRoundPlanState(game);
     render();
   });
 

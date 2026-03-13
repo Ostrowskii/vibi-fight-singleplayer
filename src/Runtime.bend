@@ -22,7 +22,7 @@ def rules_get() -> Rules:
     18,
     9,
     pos{6, 4},
-    pos{12, 4},
+    pos{11, 4},
     50,
     10,
   }
