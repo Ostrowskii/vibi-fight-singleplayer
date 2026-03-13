@@ -48,6 +48,19 @@ type TrailStep {
   trail_step{x: U32, y: U32, step: U32}
 }
 
+type ActionSim {
+  action_sim{
+    from: Pos,
+    to: Pos,
+    target_pos: Pos,
+    attack_tiles: List(Pos),
+    next_state: GameState,
+    hit: U32,
+    player_died: U32,
+    enemy_died: U32,
+  }
+}
+
 def rules_get() -> Rules:
   rules{
     18,
@@ -309,6 +322,13 @@ def reset_round_planning_state(state: GameState) -> GameState:
   match state:
     case game_state{round, level, player_hp, enemy_hp, player, enemy, _, _, _, _, winner}:
       _reset_round_planning_w(round, level, player_hp, enemy_hp, player, enemy, winner)
+
+def simulate_actor_action(state: GameState, actor: U32, action: Action) -> ActionSim:
+  match actor:
+    case 0:
+      _simulate_player_action(state, action)
+    case _:
+      _simulate_enemy_action(state, action)
 
 def _state(
   round: U32, level: U32, player_hp: U32, enemy_hp: U32,
@@ -883,6 +903,48 @@ def _resolve_enemy_action(
           next_winner = _compute_winner(next_player_hp, enemy_hp);
           _state(round, level, next_player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, next_winner)
 
+def _simulate_player_action(state: GameState, action: Action) -> ActionSim:
+  match state action:
+    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} wait{}:
+      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
+      _action_sim(player, player, enemy, _pos_nil(), current_state, 0, 0, 0)
+    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} move{dir}:
+      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
+      next_state = _resolve_player_action_state(current_state, move{dir});
+      _action_sim(player, _state_player(next_state), enemy, _pos_nil(), next_state, 0, 0, 0)
+    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} attack{skill, anchor, rot}:
+      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
+      origin = _origin_from_anchor(player, anchor);
+      attack_tiles = _preview_hits_for(skill, rot, origin, player, 0);
+      hit = _attack_hits(skill, rot, origin, player, enemy);
+      next_state = _resolve_player_action_state(current_state, attack{skill, anchor, rot});
+      enemy_died = _died_between(enemy_hp, _state_enemy_hp(next_state));
+      _action_sim(player, player, enemy, attack_tiles, next_state, hit, 0, enemy_died)
+
+def _simulate_enemy_action(state: GameState, action: Action) -> ActionSim:
+  match state action:
+    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} wait{}:
+      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
+      _action_sim(enemy, enemy, player, _pos_nil(), current_state, 0, 0, 0)
+    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} move{dir}:
+      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
+      next_state = _resolve_enemy_action_state(current_state, move{dir});
+      _action_sim(enemy, _state_enemy(next_state), player, _pos_nil(), next_state, 0, 0, 0)
+    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} attack{skill, anchor, rot}:
+      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
+      origin = _origin_from_anchor(enemy, anchor);
+      attack_tiles = _preview_hits_for(skill, rot, origin, enemy, 0);
+      hit = _attack_hits(skill, rot, origin, enemy, player);
+      next_state = _resolve_enemy_action_state(current_state, attack{skill, anchor, rot});
+      player_died = _died_between(player_hp, _state_player_hp(next_state));
+      _action_sim(enemy, enemy, player, attack_tiles, next_state, hit, player_died, 0)
+
+def _action_sim(
+  from: Pos, to: Pos, target_pos: Pos, attack_tiles: List(Pos),
+  next_state: GameState, hit: U32, player_died: U32, enemy_died: U32,
+) -> ActionSim:
+  action_sim{from, to, target_pos, attack_tiles, next_state, hit, player_died, enemy_died}
+
 def _reset_round_planning_state(state: GameState) -> GameState:
   match state:
     case game_state{round, level, player_hp, enemy_hp, player, enemy, _, _, _, _, winner}:
@@ -911,6 +973,9 @@ def _hp_empty(hp: U32) -> U32:
       1
     case _:
       0
+
+def _died_between(before: U32, after: U32) -> U32:
+  (1 ^ _hp_empty(before)) & _hp_empty(after)
 
 def _compute_winner(player_hp: U32, enemy_hp: U32) -> U32:
   both = _hp_empty(player_hp) & _hp_empty(enemy_hp);
@@ -1044,6 +1109,26 @@ def _state_queue(state: GameState) -> List(Action):
   match state:
     case game_state{_, _, _, _, _, _, queue, _, _, _, _}:
       queue
+
+def _state_player(state: GameState) -> Pos:
+  match state:
+    case game_state{_, _, _, _, player, _, _, _, _, _, _}:
+      player
+
+def _state_enemy(state: GameState) -> Pos:
+  match state:
+    case game_state{_, _, _, _, _, enemy, _, _, _, _, _}:
+      enemy
+
+def _state_player_hp(state: GameState) -> U32:
+  match state:
+    case game_state{_, _, player_hp, _, _, _, _, _, _, _, _}:
+      player_hp
+
+def _state_enemy_hp(state: GameState) -> U32:
+  match state:
+    case game_state{_, _, _, enemy_hp, _, _, _, _, _, _, _}:
+      enemy_hp
 
 def _trail_step_of_pos(p: Pos, step: U32) -> TrailStep:
   match p:

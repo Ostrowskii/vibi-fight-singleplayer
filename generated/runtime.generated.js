@@ -11,6 +11,8 @@ export const n2f52756e74696d652f47616d655374617465 = null;
 
 export const n2f52756e74696d652f547261696c53746570 = null;
 
+export const n2f52756e74696d652f416374696f6e53696d = null;
+
 export function $n2f52756e74696d652f72756c65735f676574() {
   var r0;
   var v1;
@@ -1727,6 +1729,29 @@ export function $n2f52756e74696d652f72657365745f726f756e645f706c616e6e696e675f73
 }
 
 export const n2f52756e74696d652f72657365745f726f756e645f706c616e6e696e675f7374617465 = () => ((a0) => ($n2f52756e74696d652f72657365745f726f756e645f706c616e6e696e675f7374617465(a0)));
+
+export function $n2f52756e74696d652f73696d756c6174655f6163746f725f616374696f6e(v0_state, v1_x, v2_x) {
+  var r0;
+  if (((v1_x) >>> 0) === 0) {
+    var v3_action = v2_x;
+    var v1;
+    v1 = v0_state;
+    var v2;
+    v2 = v3_action;
+    r0 = $n2f52756e74696d65235f73696d756c6174655f706c617965725f616374696f6e(v1, v2);
+  } else {
+    var v3__ = v1_x;
+    var v4_action = v2_x;
+    var v3;
+    v3 = v0_state;
+    var v4;
+    v4 = v4_action;
+    r0 = $n2f52756e74696d65235f73696d756c6174655f656e656d795f616374696f6e(v3, v4);
+  }
+  return r0;
+}
+
+export const n2f52756e74696d652f73696d756c6174655f6163746f725f616374696f6e = () => ((a0) => ((a1) => ((a2) => ($n2f52756e74696d652f73696d756c6174655f6163746f725f616374696f6e(a0, a1, a2)))));
 
 export function $n2f52756e74696d65235f7374617465(v0_round, v1_level, v2_player_hp, v3_enemy_hp, v4_player, v5_enemy, v6_queue, v7_queue_len, v8_queue_locked, v9_mode, v10_winner) {
   var r0;
@@ -5803,6 +5828,1028 @@ export function $n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e(v
 
 export const n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e = () => ((a0) => ((a1) => ((a2) => ((a3) => ((a4) => ((a5) => ((a6) => ((a7) => ((a8) => ((a9) => ((a10) => ((a11) => ($n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11))))))))))))));
 
+export function $n2f52756e74696d65235f73696d756c6174655f706c617965725f616374696f6e(v0_x, v1_x) {
+  var r0;
+  switch (v0_x.$) {
+    case "game_state": {
+      var v2_round = v0_x.round;
+      var v3_level = v0_x.level;
+      var v4_player_hp = v0_x.player_hp;
+      var v5_enemy_hp = v0_x.enemy_hp;
+      var v6_player = v0_x.player;
+      var v7_enemy = v0_x.enemy;
+      var v8_queue = v0_x.queue;
+      var v9_queue_len = v0_x.queue_len;
+      var v10_queue_locked = v0_x.queue_locked;
+      var v11_mode = v0_x.mode;
+      var v12_winner = v0_x.winner;
+      switch (v1_x.$) {
+        case "wait": {
+          var v13_current_state;
+          var v1;
+          v1 = v2_round;
+          var v2;
+          v2 = v3_level;
+          var v3;
+          v3 = v4_player_hp;
+          var v4;
+          v4 = v5_enemy_hp;
+          var v5;
+          v5 = v6_player;
+          var v6;
+          v6 = v7_enemy;
+          var v7;
+          v7 = v8_queue;
+          var v8;
+          v8 = v9_queue_len;
+          var v9;
+          v9 = v10_queue_locked;
+          var v10;
+          v10 = v11_mode;
+          var v11;
+          v11 = v12_winner;
+          v13_current_state = $n2f52756e74696d65235f7374617465(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11);
+          var v12;
+          v12 = v6_player;
+          var v13;
+          v13 = v6_player;
+          var v14;
+          v14 = v7_enemy;
+          var v15;
+          v15 = n2f52756e74696d65235f706f735f6e696c();
+          var v16;
+          var v17;
+          v17 = v2_round;
+          var v18;
+          v18 = v3_level;
+          var v19;
+          v19 = v4_player_hp;
+          var v20;
+          v20 = v5_enemy_hp;
+          var v21;
+          v21 = v6_player;
+          var v22;
+          v22 = v7_enemy;
+          var v23;
+          v23 = v8_queue;
+          var v24;
+          v24 = v9_queue_len;
+          var v25;
+          v25 = v10_queue_locked;
+          var v26;
+          v26 = v11_mode;
+          var v27;
+          v27 = v12_winner;
+          v16 = $n2f52756e74696d65235f7374617465(v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27);
+          var v28;
+          v28 = 0;
+          var v29;
+          v29 = 0;
+          var v30;
+          v30 = 0;
+          r0 = $n2f52756e74696d65235f616374696f6e5f73696d(v12, v13, v14, v15, v16, v28, v29, v30);
+          break;
+        }
+        default: {
+          switch (v1_x.$) {
+            case "move": {
+              var v13_dir = v1_x.dir;
+              var v14_current_state;
+              var v31;
+              v31 = v2_round;
+              var v32;
+              v32 = v3_level;
+              var v33;
+              v33 = v4_player_hp;
+              var v34;
+              v34 = v5_enemy_hp;
+              var v35;
+              v35 = v6_player;
+              var v36;
+              v36 = v7_enemy;
+              var v37;
+              v37 = v8_queue;
+              var v38;
+              v38 = v9_queue_len;
+              var v39;
+              v39 = v10_queue_locked;
+              var v40;
+              v40 = v11_mode;
+              var v41;
+              v41 = v12_winner;
+              v14_current_state = $n2f52756e74696d65235f7374617465(v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41);
+              var v15_next_state;
+              var v42;
+              var v43;
+              v43 = v2_round;
+              var v44;
+              v44 = v3_level;
+              var v45;
+              v45 = v4_player_hp;
+              var v46;
+              v46 = v5_enemy_hp;
+              var v47;
+              v47 = v6_player;
+              var v48;
+              v48 = v7_enemy;
+              var v49;
+              v49 = v8_queue;
+              var v50;
+              v50 = v9_queue_len;
+              var v51;
+              v51 = v10_queue_locked;
+              var v52;
+              v52 = v11_mode;
+              var v53;
+              v53 = v12_winner;
+              v42 = $n2f52756e74696d65235f7374617465(v43, v44, v45, v46, v47, v48, v49, v50, v51, v52, v53);
+              var v54;
+              var v55;
+              v55 = v13_dir;
+              v54 = ({$: "move", dir: v55});
+              v15_next_state = $n2f52756e74696d65235f7265736f6c76655f706c617965725f616374696f6e5f7374617465(v42, v54);
+              var v56;
+              v56 = v6_player;
+              var v57;
+              var v58;
+              var v59;
+              var v60;
+              v60 = v2_round;
+              var v61;
+              v61 = v3_level;
+              var v62;
+              v62 = v4_player_hp;
+              var v63;
+              v63 = v5_enemy_hp;
+              var v64;
+              v64 = v6_player;
+              var v65;
+              v65 = v7_enemy;
+              var v66;
+              v66 = v8_queue;
+              var v67;
+              v67 = v9_queue_len;
+              var v68;
+              v68 = v10_queue_locked;
+              var v69;
+              v69 = v11_mode;
+              var v70;
+              v70 = v12_winner;
+              v59 = $n2f52756e74696d65235f7374617465(v60, v61, v62, v63, v64, v65, v66, v67, v68, v69, v70);
+              var v71;
+              var v72;
+              v72 = v13_dir;
+              v71 = ({$: "move", dir: v72});
+              v58 = $n2f52756e74696d65235f7265736f6c76655f706c617965725f616374696f6e5f7374617465(v59, v71);
+              v57 = $n2f52756e74696d65235f73746174655f706c61796572(v58);
+              var v73;
+              v73 = v7_enemy;
+              var v74;
+              v74 = n2f52756e74696d65235f706f735f6e696c();
+              var v75;
+              var v76;
+              var v77;
+              v77 = v2_round;
+              var v78;
+              v78 = v3_level;
+              var v79;
+              v79 = v4_player_hp;
+              var v80;
+              v80 = v5_enemy_hp;
+              var v81;
+              v81 = v6_player;
+              var v82;
+              v82 = v7_enemy;
+              var v83;
+              v83 = v8_queue;
+              var v84;
+              v84 = v9_queue_len;
+              var v85;
+              v85 = v10_queue_locked;
+              var v86;
+              v86 = v11_mode;
+              var v87;
+              v87 = v12_winner;
+              v76 = $n2f52756e74696d65235f7374617465(v77, v78, v79, v80, v81, v82, v83, v84, v85, v86, v87);
+              var v88;
+              var v89;
+              v89 = v13_dir;
+              v88 = ({$: "move", dir: v89});
+              v75 = $n2f52756e74696d65235f7265736f6c76655f706c617965725f616374696f6e5f7374617465(v76, v88);
+              var v90;
+              v90 = 0;
+              var v91;
+              v91 = 0;
+              var v92;
+              v92 = 0;
+              r0 = $n2f52756e74696d65235f616374696f6e5f73696d(v56, v57, v73, v74, v75, v90, v91, v92);
+              break;
+            }
+            default: {
+              switch (v1_x.$) {
+                case "attack": {
+                  var v13_skill = v1_x.skill;
+                  var v14_anchor = v1_x.anchor;
+                  var v15_rot = v1_x.rot;
+                  var v16_current_state;
+                  var v93;
+                  v93 = v2_round;
+                  var v94;
+                  v94 = v3_level;
+                  var v95;
+                  v95 = v4_player_hp;
+                  var v96;
+                  v96 = v5_enemy_hp;
+                  var v97;
+                  v97 = v6_player;
+                  var v98;
+                  v98 = v7_enemy;
+                  var v99;
+                  v99 = v8_queue;
+                  var v100;
+                  v100 = v9_queue_len;
+                  var v101;
+                  v101 = v10_queue_locked;
+                  var v102;
+                  v102 = v11_mode;
+                  var v103;
+                  v103 = v12_winner;
+                  v16_current_state = $n2f52756e74696d65235f7374617465(v93, v94, v95, v96, v97, v98, v99, v100, v101, v102, v103);
+                  var v17_origin;
+                  var v104;
+                  v104 = v6_player;
+                  var v105;
+                  v105 = v14_anchor;
+                  v17_origin = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v104, v105);
+                  var v18_attack_tiles;
+                  var v106;
+                  v106 = v13_skill;
+                  var v107;
+                  v107 = v15_rot;
+                  var v108;
+                  var v109;
+                  v109 = v6_player;
+                  var v110;
+                  v110 = v14_anchor;
+                  v108 = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v109, v110);
+                  var v111;
+                  v111 = v6_player;
+                  var v112;
+                  v112 = 0;
+                  v18_attack_tiles = $n2f52756e74696d65235f707265766965775f686974735f666f72(v106, v107, v108, v111, v112);
+                  var v19_hit;
+                  var v113;
+                  v113 = v13_skill;
+                  var v114;
+                  v114 = v15_rot;
+                  var v115;
+                  var v116;
+                  v116 = v6_player;
+                  var v117;
+                  v117 = v14_anchor;
+                  v115 = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v116, v117);
+                  var v118;
+                  v118 = v6_player;
+                  var v119;
+                  v119 = v7_enemy;
+                  v19_hit = $n2f52756e74696d65235f61747461636b5f68697473(v113, v114, v115, v118, v119);
+                  var v20_next_state;
+                  var v120;
+                  var v121;
+                  v121 = v2_round;
+                  var v122;
+                  v122 = v3_level;
+                  var v123;
+                  v123 = v4_player_hp;
+                  var v124;
+                  v124 = v5_enemy_hp;
+                  var v125;
+                  v125 = v6_player;
+                  var v126;
+                  v126 = v7_enemy;
+                  var v127;
+                  v127 = v8_queue;
+                  var v128;
+                  v128 = v9_queue_len;
+                  var v129;
+                  v129 = v10_queue_locked;
+                  var v130;
+                  v130 = v11_mode;
+                  var v131;
+                  v131 = v12_winner;
+                  v120 = $n2f52756e74696d65235f7374617465(v121, v122, v123, v124, v125, v126, v127, v128, v129, v130, v131);
+                  var v132;
+                  var v133;
+                  v133 = v13_skill;
+                  var v134;
+                  v134 = v14_anchor;
+                  var v135;
+                  v135 = v15_rot;
+                  v132 = ({$: "attack", skill: v133, anchor: v134, rot: v135});
+                  v20_next_state = $n2f52756e74696d65235f7265736f6c76655f706c617965725f616374696f6e5f7374617465(v120, v132);
+                  var v21_enemy_died;
+                  var v136;
+                  v136 = v5_enemy_hp;
+                  var v137;
+                  var v138;
+                  var v139;
+                  var v140;
+                  v140 = v2_round;
+                  var v141;
+                  v141 = v3_level;
+                  var v142;
+                  v142 = v4_player_hp;
+                  var v143;
+                  v143 = v5_enemy_hp;
+                  var v144;
+                  v144 = v6_player;
+                  var v145;
+                  v145 = v7_enemy;
+                  var v146;
+                  v146 = v8_queue;
+                  var v147;
+                  v147 = v9_queue_len;
+                  var v148;
+                  v148 = v10_queue_locked;
+                  var v149;
+                  v149 = v11_mode;
+                  var v150;
+                  v150 = v12_winner;
+                  v139 = $n2f52756e74696d65235f7374617465(v140, v141, v142, v143, v144, v145, v146, v147, v148, v149, v150);
+                  var v151;
+                  var v152;
+                  v152 = v13_skill;
+                  var v153;
+                  v153 = v14_anchor;
+                  var v154;
+                  v154 = v15_rot;
+                  v151 = ({$: "attack", skill: v152, anchor: v153, rot: v154});
+                  v138 = $n2f52756e74696d65235f7265736f6c76655f706c617965725f616374696f6e5f7374617465(v139, v151);
+                  v137 = $n2f52756e74696d65235f73746174655f656e656d795f6870(v138);
+                  v21_enemy_died = $n2f52756e74696d65235f646965645f6265747765656e(v136, v137);
+                  var v155;
+                  v155 = v6_player;
+                  var v156;
+                  v156 = v6_player;
+                  var v157;
+                  v157 = v7_enemy;
+                  var v158;
+                  var v159;
+                  v159 = v13_skill;
+                  var v160;
+                  v160 = v15_rot;
+                  var v161;
+                  var v162;
+                  v162 = v6_player;
+                  var v163;
+                  v163 = v14_anchor;
+                  v161 = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v162, v163);
+                  var v164;
+                  v164 = v6_player;
+                  var v165;
+                  v165 = 0;
+                  v158 = $n2f52756e74696d65235f707265766965775f686974735f666f72(v159, v160, v161, v164, v165);
+                  var v166;
+                  var v167;
+                  var v168;
+                  v168 = v2_round;
+                  var v169;
+                  v169 = v3_level;
+                  var v170;
+                  v170 = v4_player_hp;
+                  var v171;
+                  v171 = v5_enemy_hp;
+                  var v172;
+                  v172 = v6_player;
+                  var v173;
+                  v173 = v7_enemy;
+                  var v174;
+                  v174 = v8_queue;
+                  var v175;
+                  v175 = v9_queue_len;
+                  var v176;
+                  v176 = v10_queue_locked;
+                  var v177;
+                  v177 = v11_mode;
+                  var v178;
+                  v178 = v12_winner;
+                  v167 = $n2f52756e74696d65235f7374617465(v168, v169, v170, v171, v172, v173, v174, v175, v176, v177, v178);
+                  var v179;
+                  var v180;
+                  v180 = v13_skill;
+                  var v181;
+                  v181 = v14_anchor;
+                  var v182;
+                  v182 = v15_rot;
+                  v179 = ({$: "attack", skill: v180, anchor: v181, rot: v182});
+                  v166 = $n2f52756e74696d65235f7265736f6c76655f706c617965725f616374696f6e5f7374617465(v167, v179);
+                  var v183;
+                  var v184;
+                  v184 = v13_skill;
+                  var v185;
+                  v185 = v15_rot;
+                  var v186;
+                  var v187;
+                  v187 = v6_player;
+                  var v188;
+                  v188 = v14_anchor;
+                  v186 = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v187, v188);
+                  var v189;
+                  v189 = v6_player;
+                  var v190;
+                  v190 = v7_enemy;
+                  v183 = $n2f52756e74696d65235f61747461636b5f68697473(v184, v185, v186, v189, v190);
+                  var v191;
+                  v191 = 0;
+                  var v192;
+                  var v193;
+                  v193 = v5_enemy_hp;
+                  var v194;
+                  var v195;
+                  var v196;
+                  var v197;
+                  v197 = v2_round;
+                  var v198;
+                  v198 = v3_level;
+                  var v199;
+                  v199 = v4_player_hp;
+                  var v200;
+                  v200 = v5_enemy_hp;
+                  var v201;
+                  v201 = v6_player;
+                  var v202;
+                  v202 = v7_enemy;
+                  var v203;
+                  v203 = v8_queue;
+                  var v204;
+                  v204 = v9_queue_len;
+                  var v205;
+                  v205 = v10_queue_locked;
+                  var v206;
+                  v206 = v11_mode;
+                  var v207;
+                  v207 = v12_winner;
+                  v196 = $n2f52756e74696d65235f7374617465(v197, v198, v199, v200, v201, v202, v203, v204, v205, v206, v207);
+                  var v208;
+                  var v209;
+                  v209 = v13_skill;
+                  var v210;
+                  v210 = v14_anchor;
+                  var v211;
+                  v211 = v15_rot;
+                  v208 = ({$: "attack", skill: v209, anchor: v210, rot: v211});
+                  v195 = $n2f52756e74696d65235f7265736f6c76655f706c617965725f616374696f6e5f7374617465(v196, v208);
+                  v194 = $n2f52756e74696d65235f73746174655f656e656d795f6870(v195);
+                  v192 = $n2f52756e74696d65235f646965645f6265747765656e(v193, v194);
+                  r0 = $n2f52756e74696d65235f616374696f6e5f73696d(v155, v156, v157, v158, v166, v183, v191, v192);
+                  break;
+                }
+                default: {
+                  throw new Error("EFQ applied");
+                  break;
+                }
+              }
+              break;
+            }
+          }
+          break;
+        }
+      }
+      break;
+    }
+    default: {
+      throw new Error("EFQ applied");
+      break;
+    }
+  }
+  return r0;
+}
+
+export const n2f52756e74696d65235f73696d756c6174655f706c617965725f616374696f6e = () => ((a0) => ((a1) => ($n2f52756e74696d65235f73696d756c6174655f706c617965725f616374696f6e(a0, a1))));
+
+export function $n2f52756e74696d65235f73696d756c6174655f656e656d795f616374696f6e(v0_x, v1_x) {
+  var r0;
+  switch (v0_x.$) {
+    case "game_state": {
+      var v2_round = v0_x.round;
+      var v3_level = v0_x.level;
+      var v4_player_hp = v0_x.player_hp;
+      var v5_enemy_hp = v0_x.enemy_hp;
+      var v6_player = v0_x.player;
+      var v7_enemy = v0_x.enemy;
+      var v8_queue = v0_x.queue;
+      var v9_queue_len = v0_x.queue_len;
+      var v10_queue_locked = v0_x.queue_locked;
+      var v11_mode = v0_x.mode;
+      var v12_winner = v0_x.winner;
+      switch (v1_x.$) {
+        case "wait": {
+          var v13_current_state;
+          var v1;
+          v1 = v2_round;
+          var v2;
+          v2 = v3_level;
+          var v3;
+          v3 = v4_player_hp;
+          var v4;
+          v4 = v5_enemy_hp;
+          var v5;
+          v5 = v6_player;
+          var v6;
+          v6 = v7_enemy;
+          var v7;
+          v7 = v8_queue;
+          var v8;
+          v8 = v9_queue_len;
+          var v9;
+          v9 = v10_queue_locked;
+          var v10;
+          v10 = v11_mode;
+          var v11;
+          v11 = v12_winner;
+          v13_current_state = $n2f52756e74696d65235f7374617465(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11);
+          var v12;
+          v12 = v7_enemy;
+          var v13;
+          v13 = v7_enemy;
+          var v14;
+          v14 = v6_player;
+          var v15;
+          v15 = n2f52756e74696d65235f706f735f6e696c();
+          var v16;
+          var v17;
+          v17 = v2_round;
+          var v18;
+          v18 = v3_level;
+          var v19;
+          v19 = v4_player_hp;
+          var v20;
+          v20 = v5_enemy_hp;
+          var v21;
+          v21 = v6_player;
+          var v22;
+          v22 = v7_enemy;
+          var v23;
+          v23 = v8_queue;
+          var v24;
+          v24 = v9_queue_len;
+          var v25;
+          v25 = v10_queue_locked;
+          var v26;
+          v26 = v11_mode;
+          var v27;
+          v27 = v12_winner;
+          v16 = $n2f52756e74696d65235f7374617465(v17, v18, v19, v20, v21, v22, v23, v24, v25, v26, v27);
+          var v28;
+          v28 = 0;
+          var v29;
+          v29 = 0;
+          var v30;
+          v30 = 0;
+          r0 = $n2f52756e74696d65235f616374696f6e5f73696d(v12, v13, v14, v15, v16, v28, v29, v30);
+          break;
+        }
+        default: {
+          switch (v1_x.$) {
+            case "move": {
+              var v13_dir = v1_x.dir;
+              var v14_current_state;
+              var v31;
+              v31 = v2_round;
+              var v32;
+              v32 = v3_level;
+              var v33;
+              v33 = v4_player_hp;
+              var v34;
+              v34 = v5_enemy_hp;
+              var v35;
+              v35 = v6_player;
+              var v36;
+              v36 = v7_enemy;
+              var v37;
+              v37 = v8_queue;
+              var v38;
+              v38 = v9_queue_len;
+              var v39;
+              v39 = v10_queue_locked;
+              var v40;
+              v40 = v11_mode;
+              var v41;
+              v41 = v12_winner;
+              v14_current_state = $n2f52756e74696d65235f7374617465(v31, v32, v33, v34, v35, v36, v37, v38, v39, v40, v41);
+              var v15_next_state;
+              var v42;
+              var v43;
+              v43 = v2_round;
+              var v44;
+              v44 = v3_level;
+              var v45;
+              v45 = v4_player_hp;
+              var v46;
+              v46 = v5_enemy_hp;
+              var v47;
+              v47 = v6_player;
+              var v48;
+              v48 = v7_enemy;
+              var v49;
+              v49 = v8_queue;
+              var v50;
+              v50 = v9_queue_len;
+              var v51;
+              v51 = v10_queue_locked;
+              var v52;
+              v52 = v11_mode;
+              var v53;
+              v53 = v12_winner;
+              v42 = $n2f52756e74696d65235f7374617465(v43, v44, v45, v46, v47, v48, v49, v50, v51, v52, v53);
+              var v54;
+              var v55;
+              v55 = v13_dir;
+              v54 = ({$: "move", dir: v55});
+              v15_next_state = $n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e5f7374617465(v42, v54);
+              var v56;
+              v56 = v7_enemy;
+              var v57;
+              var v58;
+              var v59;
+              var v60;
+              v60 = v2_round;
+              var v61;
+              v61 = v3_level;
+              var v62;
+              v62 = v4_player_hp;
+              var v63;
+              v63 = v5_enemy_hp;
+              var v64;
+              v64 = v6_player;
+              var v65;
+              v65 = v7_enemy;
+              var v66;
+              v66 = v8_queue;
+              var v67;
+              v67 = v9_queue_len;
+              var v68;
+              v68 = v10_queue_locked;
+              var v69;
+              v69 = v11_mode;
+              var v70;
+              v70 = v12_winner;
+              v59 = $n2f52756e74696d65235f7374617465(v60, v61, v62, v63, v64, v65, v66, v67, v68, v69, v70);
+              var v71;
+              var v72;
+              v72 = v13_dir;
+              v71 = ({$: "move", dir: v72});
+              v58 = $n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e5f7374617465(v59, v71);
+              v57 = $n2f52756e74696d65235f73746174655f656e656d79(v58);
+              var v73;
+              v73 = v6_player;
+              var v74;
+              v74 = n2f52756e74696d65235f706f735f6e696c();
+              var v75;
+              var v76;
+              var v77;
+              v77 = v2_round;
+              var v78;
+              v78 = v3_level;
+              var v79;
+              v79 = v4_player_hp;
+              var v80;
+              v80 = v5_enemy_hp;
+              var v81;
+              v81 = v6_player;
+              var v82;
+              v82 = v7_enemy;
+              var v83;
+              v83 = v8_queue;
+              var v84;
+              v84 = v9_queue_len;
+              var v85;
+              v85 = v10_queue_locked;
+              var v86;
+              v86 = v11_mode;
+              var v87;
+              v87 = v12_winner;
+              v76 = $n2f52756e74696d65235f7374617465(v77, v78, v79, v80, v81, v82, v83, v84, v85, v86, v87);
+              var v88;
+              var v89;
+              v89 = v13_dir;
+              v88 = ({$: "move", dir: v89});
+              v75 = $n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e5f7374617465(v76, v88);
+              var v90;
+              v90 = 0;
+              var v91;
+              v91 = 0;
+              var v92;
+              v92 = 0;
+              r0 = $n2f52756e74696d65235f616374696f6e5f73696d(v56, v57, v73, v74, v75, v90, v91, v92);
+              break;
+            }
+            default: {
+              switch (v1_x.$) {
+                case "attack": {
+                  var v13_skill = v1_x.skill;
+                  var v14_anchor = v1_x.anchor;
+                  var v15_rot = v1_x.rot;
+                  var v16_current_state;
+                  var v93;
+                  v93 = v2_round;
+                  var v94;
+                  v94 = v3_level;
+                  var v95;
+                  v95 = v4_player_hp;
+                  var v96;
+                  v96 = v5_enemy_hp;
+                  var v97;
+                  v97 = v6_player;
+                  var v98;
+                  v98 = v7_enemy;
+                  var v99;
+                  v99 = v8_queue;
+                  var v100;
+                  v100 = v9_queue_len;
+                  var v101;
+                  v101 = v10_queue_locked;
+                  var v102;
+                  v102 = v11_mode;
+                  var v103;
+                  v103 = v12_winner;
+                  v16_current_state = $n2f52756e74696d65235f7374617465(v93, v94, v95, v96, v97, v98, v99, v100, v101, v102, v103);
+                  var v17_origin;
+                  var v104;
+                  v104 = v7_enemy;
+                  var v105;
+                  v105 = v14_anchor;
+                  v17_origin = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v104, v105);
+                  var v18_attack_tiles;
+                  var v106;
+                  v106 = v13_skill;
+                  var v107;
+                  v107 = v15_rot;
+                  var v108;
+                  var v109;
+                  v109 = v7_enemy;
+                  var v110;
+                  v110 = v14_anchor;
+                  v108 = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v109, v110);
+                  var v111;
+                  v111 = v7_enemy;
+                  var v112;
+                  v112 = 0;
+                  v18_attack_tiles = $n2f52756e74696d65235f707265766965775f686974735f666f72(v106, v107, v108, v111, v112);
+                  var v19_hit;
+                  var v113;
+                  v113 = v13_skill;
+                  var v114;
+                  v114 = v15_rot;
+                  var v115;
+                  var v116;
+                  v116 = v7_enemy;
+                  var v117;
+                  v117 = v14_anchor;
+                  v115 = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v116, v117);
+                  var v118;
+                  v118 = v7_enemy;
+                  var v119;
+                  v119 = v6_player;
+                  v19_hit = $n2f52756e74696d65235f61747461636b5f68697473(v113, v114, v115, v118, v119);
+                  var v20_next_state;
+                  var v120;
+                  var v121;
+                  v121 = v2_round;
+                  var v122;
+                  v122 = v3_level;
+                  var v123;
+                  v123 = v4_player_hp;
+                  var v124;
+                  v124 = v5_enemy_hp;
+                  var v125;
+                  v125 = v6_player;
+                  var v126;
+                  v126 = v7_enemy;
+                  var v127;
+                  v127 = v8_queue;
+                  var v128;
+                  v128 = v9_queue_len;
+                  var v129;
+                  v129 = v10_queue_locked;
+                  var v130;
+                  v130 = v11_mode;
+                  var v131;
+                  v131 = v12_winner;
+                  v120 = $n2f52756e74696d65235f7374617465(v121, v122, v123, v124, v125, v126, v127, v128, v129, v130, v131);
+                  var v132;
+                  var v133;
+                  v133 = v13_skill;
+                  var v134;
+                  v134 = v14_anchor;
+                  var v135;
+                  v135 = v15_rot;
+                  v132 = ({$: "attack", skill: v133, anchor: v134, rot: v135});
+                  v20_next_state = $n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e5f7374617465(v120, v132);
+                  var v21_player_died;
+                  var v136;
+                  v136 = v4_player_hp;
+                  var v137;
+                  var v138;
+                  var v139;
+                  var v140;
+                  v140 = v2_round;
+                  var v141;
+                  v141 = v3_level;
+                  var v142;
+                  v142 = v4_player_hp;
+                  var v143;
+                  v143 = v5_enemy_hp;
+                  var v144;
+                  v144 = v6_player;
+                  var v145;
+                  v145 = v7_enemy;
+                  var v146;
+                  v146 = v8_queue;
+                  var v147;
+                  v147 = v9_queue_len;
+                  var v148;
+                  v148 = v10_queue_locked;
+                  var v149;
+                  v149 = v11_mode;
+                  var v150;
+                  v150 = v12_winner;
+                  v139 = $n2f52756e74696d65235f7374617465(v140, v141, v142, v143, v144, v145, v146, v147, v148, v149, v150);
+                  var v151;
+                  var v152;
+                  v152 = v13_skill;
+                  var v153;
+                  v153 = v14_anchor;
+                  var v154;
+                  v154 = v15_rot;
+                  v151 = ({$: "attack", skill: v152, anchor: v153, rot: v154});
+                  v138 = $n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e5f7374617465(v139, v151);
+                  v137 = $n2f52756e74696d65235f73746174655f706c617965725f6870(v138);
+                  v21_player_died = $n2f52756e74696d65235f646965645f6265747765656e(v136, v137);
+                  var v155;
+                  v155 = v7_enemy;
+                  var v156;
+                  v156 = v7_enemy;
+                  var v157;
+                  v157 = v6_player;
+                  var v158;
+                  var v159;
+                  v159 = v13_skill;
+                  var v160;
+                  v160 = v15_rot;
+                  var v161;
+                  var v162;
+                  v162 = v7_enemy;
+                  var v163;
+                  v163 = v14_anchor;
+                  v161 = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v162, v163);
+                  var v164;
+                  v164 = v7_enemy;
+                  var v165;
+                  v165 = 0;
+                  v158 = $n2f52756e74696d65235f707265766965775f686974735f666f72(v159, v160, v161, v164, v165);
+                  var v166;
+                  var v167;
+                  var v168;
+                  v168 = v2_round;
+                  var v169;
+                  v169 = v3_level;
+                  var v170;
+                  v170 = v4_player_hp;
+                  var v171;
+                  v171 = v5_enemy_hp;
+                  var v172;
+                  v172 = v6_player;
+                  var v173;
+                  v173 = v7_enemy;
+                  var v174;
+                  v174 = v8_queue;
+                  var v175;
+                  v175 = v9_queue_len;
+                  var v176;
+                  v176 = v10_queue_locked;
+                  var v177;
+                  v177 = v11_mode;
+                  var v178;
+                  v178 = v12_winner;
+                  v167 = $n2f52756e74696d65235f7374617465(v168, v169, v170, v171, v172, v173, v174, v175, v176, v177, v178);
+                  var v179;
+                  var v180;
+                  v180 = v13_skill;
+                  var v181;
+                  v181 = v14_anchor;
+                  var v182;
+                  v182 = v15_rot;
+                  v179 = ({$: "attack", skill: v180, anchor: v181, rot: v182});
+                  v166 = $n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e5f7374617465(v167, v179);
+                  var v183;
+                  var v184;
+                  v184 = v13_skill;
+                  var v185;
+                  v185 = v15_rot;
+                  var v186;
+                  var v187;
+                  v187 = v7_enemy;
+                  var v188;
+                  v188 = v14_anchor;
+                  v186 = $n2f52756e74696d65235f6f726967696e5f66726f6d5f616e63686f72(v187, v188);
+                  var v189;
+                  v189 = v7_enemy;
+                  var v190;
+                  v190 = v6_player;
+                  v183 = $n2f52756e74696d65235f61747461636b5f68697473(v184, v185, v186, v189, v190);
+                  var v191;
+                  var v192;
+                  v192 = v4_player_hp;
+                  var v193;
+                  var v194;
+                  var v195;
+                  var v196;
+                  v196 = v2_round;
+                  var v197;
+                  v197 = v3_level;
+                  var v198;
+                  v198 = v4_player_hp;
+                  var v199;
+                  v199 = v5_enemy_hp;
+                  var v200;
+                  v200 = v6_player;
+                  var v201;
+                  v201 = v7_enemy;
+                  var v202;
+                  v202 = v8_queue;
+                  var v203;
+                  v203 = v9_queue_len;
+                  var v204;
+                  v204 = v10_queue_locked;
+                  var v205;
+                  v205 = v11_mode;
+                  var v206;
+                  v206 = v12_winner;
+                  v195 = $n2f52756e74696d65235f7374617465(v196, v197, v198, v199, v200, v201, v202, v203, v204, v205, v206);
+                  var v207;
+                  var v208;
+                  v208 = v13_skill;
+                  var v209;
+                  v209 = v14_anchor;
+                  var v210;
+                  v210 = v15_rot;
+                  v207 = ({$: "attack", skill: v208, anchor: v209, rot: v210});
+                  v194 = $n2f52756e74696d65235f7265736f6c76655f656e656d795f616374696f6e5f7374617465(v195, v207);
+                  v193 = $n2f52756e74696d65235f73746174655f706c617965725f6870(v194);
+                  v191 = $n2f52756e74696d65235f646965645f6265747765656e(v192, v193);
+                  var v211;
+                  v211 = 0;
+                  r0 = $n2f52756e74696d65235f616374696f6e5f73696d(v155, v156, v157, v158, v166, v183, v191, v211);
+                  break;
+                }
+                default: {
+                  throw new Error("EFQ applied");
+                  break;
+                }
+              }
+              break;
+            }
+          }
+          break;
+        }
+      }
+      break;
+    }
+    default: {
+      throw new Error("EFQ applied");
+      break;
+    }
+  }
+  return r0;
+}
+
+export const n2f52756e74696d65235f73696d756c6174655f656e656d795f616374696f6e = () => ((a0) => ((a1) => ($n2f52756e74696d65235f73696d756c6174655f656e656d795f616374696f6e(a0, a1))));
+
+export function $n2f52756e74696d65235f616374696f6e5f73696d(v0_from, v1_to, v2_target_pos, v3_attack_tiles, v4_next_state, v5_hit, v6_player_died, v7_enemy_died) {
+  var r0;
+  var v1;
+  v1 = v0_from;
+  var v2;
+  v2 = v1_to;
+  var v3;
+  v3 = v2_target_pos;
+  var v4;
+  v4 = v3_attack_tiles;
+  var v5;
+  v5 = v4_next_state;
+  var v6;
+  v6 = v5_hit;
+  var v7;
+  v7 = v6_player_died;
+  var v8;
+  v8 = v7_enemy_died;
+  r0 = ({$: "action_sim", from: v1, to: v2, target_pos: v3, attack_tiles: v4, next_state: v5, hit: v6, player_died: v7, enemy_died: v8});
+  return r0;
+}
+
+export const n2f52756e74696d65235f616374696f6e5f73696d = () => ((a0) => ((a1) => ((a2) => ((a3) => ((a4) => ((a5) => ((a6) => ((a7) => ($n2f52756e74696d65235f616374696f6e5f73696d(a0, a1, a2, a3, a4, a5, a6, a7))))))))));
+
 export function $n2f52756e74696d65235f72657365745f726f756e645f706c616e6e696e675f7374617465(v0_x) {
   var r0;
   switch (v0_x.$) {
@@ -5926,6 +6973,26 @@ export function $n2f52756e74696d65235f68705f656d707479(v0_x) {
 }
 
 export const n2f52756e74696d65235f68705f656d707479 = () => ((a0) => ($n2f52756e74696d65235f68705f656d707479(a0)));
+
+export function $n2f52756e74696d65235f646965645f6265747765656e(v0_before, v1_after) {
+  var r0;
+  var v1;
+  var v2;
+  v2 = 1;
+  var v3;
+  var v4;
+  v4 = v0_before;
+  v3 = $n2f52756e74696d65235f68705f656d707479(v4);
+  v1 = (((v2) ^ (v3)) >>> 0);
+  var v5;
+  var v6;
+  v6 = v1_after;
+  v5 = $n2f52756e74696d65235f68705f656d707479(v6);
+  r0 = (((v1) & (v5)) >>> 0);
+  return r0;
+}
+
+export const n2f52756e74696d65235f646965645f6265747765656e = () => ((a0) => ((a1) => ($n2f52756e74696d65235f646965645f6265747765656e(a0, a1))));
 
 export function $n2f52756e74696d65235f636f6d707574655f77696e6e6572(v0_player_hp, v1_enemy_hp) {
   var r0;
@@ -6447,6 +7514,118 @@ export function $n2f52756e74696d65235f73746174655f7175657565(v0_x) {
 }
 
 export const n2f52756e74696d65235f73746174655f7175657565 = () => ((a0) => ($n2f52756e74696d65235f73746174655f7175657565(a0)));
+
+export function $n2f52756e74696d65235f73746174655f706c61796572(v0_x) {
+  var r0;
+  switch (v0_x.$) {
+    case "game_state": {
+      var v1__ = v0_x.round;
+      var v2__ = v0_x.level;
+      var v3__ = v0_x.player_hp;
+      var v4__ = v0_x.enemy_hp;
+      var v5_player = v0_x.player;
+      var v6__ = v0_x.enemy;
+      var v7__ = v0_x.queue;
+      var v8__ = v0_x.queue_len;
+      var v9__ = v0_x.queue_locked;
+      var v10__ = v0_x.mode;
+      var v11__ = v0_x.winner;
+      r0 = v5_player;
+      break;
+    }
+    default: {
+      throw new Error("EFQ applied");
+      break;
+    }
+  }
+  return r0;
+}
+
+export const n2f52756e74696d65235f73746174655f706c61796572 = () => ((a0) => ($n2f52756e74696d65235f73746174655f706c61796572(a0)));
+
+export function $n2f52756e74696d65235f73746174655f656e656d79(v0_x) {
+  var r0;
+  switch (v0_x.$) {
+    case "game_state": {
+      var v1__ = v0_x.round;
+      var v2__ = v0_x.level;
+      var v3__ = v0_x.player_hp;
+      var v4__ = v0_x.enemy_hp;
+      var v5__ = v0_x.player;
+      var v6_enemy = v0_x.enemy;
+      var v7__ = v0_x.queue;
+      var v8__ = v0_x.queue_len;
+      var v9__ = v0_x.queue_locked;
+      var v10__ = v0_x.mode;
+      var v11__ = v0_x.winner;
+      r0 = v6_enemy;
+      break;
+    }
+    default: {
+      throw new Error("EFQ applied");
+      break;
+    }
+  }
+  return r0;
+}
+
+export const n2f52756e74696d65235f73746174655f656e656d79 = () => ((a0) => ($n2f52756e74696d65235f73746174655f656e656d79(a0)));
+
+export function $n2f52756e74696d65235f73746174655f706c617965725f6870(v0_x) {
+  var r0;
+  switch (v0_x.$) {
+    case "game_state": {
+      var v1__ = v0_x.round;
+      var v2__ = v0_x.level;
+      var v3_player_hp = v0_x.player_hp;
+      var v4__ = v0_x.enemy_hp;
+      var v5__ = v0_x.player;
+      var v6__ = v0_x.enemy;
+      var v7__ = v0_x.queue;
+      var v8__ = v0_x.queue_len;
+      var v9__ = v0_x.queue_locked;
+      var v10__ = v0_x.mode;
+      var v11__ = v0_x.winner;
+      r0 = v3_player_hp;
+      break;
+    }
+    default: {
+      throw new Error("EFQ applied");
+      break;
+    }
+  }
+  return r0;
+}
+
+export const n2f52756e74696d65235f73746174655f706c617965725f6870 = () => ((a0) => ($n2f52756e74696d65235f73746174655f706c617965725f6870(a0)));
+
+export function $n2f52756e74696d65235f73746174655f656e656d795f6870(v0_x) {
+  var r0;
+  switch (v0_x.$) {
+    case "game_state": {
+      var v1__ = v0_x.round;
+      var v2__ = v0_x.level;
+      var v3__ = v0_x.player_hp;
+      var v4_enemy_hp = v0_x.enemy_hp;
+      var v5__ = v0_x.player;
+      var v6__ = v0_x.enemy;
+      var v7__ = v0_x.queue;
+      var v8__ = v0_x.queue_len;
+      var v9__ = v0_x.queue_locked;
+      var v10__ = v0_x.mode;
+      var v11__ = v0_x.winner;
+      r0 = v4_enemy_hp;
+      break;
+    }
+    default: {
+      throw new Error("EFQ applied");
+      break;
+    }
+  }
+  return r0;
+}
+
+export const n2f52756e74696d65235f73746174655f656e656d795f6870 = () => ((a0) => ($n2f52756e74696d65235f73746174655f656e656d795f6870(a0)));
 
 export function $n2f52756e74696d65235f747261696c5f737465705f6f665f706f73(v0_x, v1_x) {
   var r0;

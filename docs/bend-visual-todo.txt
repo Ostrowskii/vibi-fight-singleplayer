@@ -1,0 +1,22 @@
+Bend visual TODO
+
+Base funcional priorizada:
+- motor, IA e simulacao de acao devem continuar em Bend
+- JS deve ficar so com browser, render, input e timeline visual
+
+Melhorias visuais para recolocar depois, de forma Bend-driven:
+- exportar um snapshot unico de planejamento em vez de varias funcoes separadas
+- exportar uma lista de eventos do round inteiro, para o JS nao montar mais a ordem slot a slot
+- exportar payloads de animacao mais ricos por acao
+  exemplo: tiles de flash, alvo atingido, morte, bloqueio de movimento
+- exportar metadados de preview das skills
+  exemplo: bounding box normalizado, celulas normalizadas, tamanho logico
+- revisar quais overlays ainda podem ser simplificados no JS
+  exemplo: ghost, trail badge, destaque do slot atual
+
+Coisas que continuam no JS por natureza:
+- DOM e HTML
+- CSS e layout responsivo
+- timers de animacao
+- eventos de teclado e clique
+- modais e textos de interface

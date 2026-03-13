@@ -16,8 +16,8 @@ import {
   clearRoundPlanState as bendClearRoundPlanState,
   popLastPlannedActionState as bendPopLastPlannedActionState,
   getBotPlan as bendGetBotPlan,
-  resolveActorActionState as bendResolveActorActionState,
   resetRoundPlanningState as bendResetRoundPlanningState,
+  simulateActorAction as bendSimulateActorAction,
 } from "./generated/bend-api.js";
 
 const root = document.querySelector("#app");
@@ -112,63 +112,8 @@ function isResolving() {
   return playback !== null;
 }
 
-function inBounds(x, y) {
-  return x >= 0 && x < BOARD_W && y >= 0 && y < BOARD_H;
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function addPos(pos, cell) {
-  return {
-    x: pos.x + cell.x,
-    y: pos.y + cell.y,
-  };
-}
-
 function samePos(a, b) {
   return a.x === b.x && a.y === b.y;
-}
-
-function stepFree(pos, dir) {
-  const delta = DIRECTIONS[dir];
-  if (!delta) return clonePos(pos);
-  return {
-    x: clamp(pos.x + delta.x, 0, BOARD_W - 1),
-    y: clamp(pos.y + delta.y, 0, BOARD_H - 1),
-  };
-}
-
-function previewCellsFor(skill, rot, origin) {
-  return SKILLS[skill][rot].map((cell) => addPos(origin, cell)).filter((cell) => inBounds(cell.x, cell.y));
-}
-
-function placementValid(skill, rot, origin, actorPos) {
-  const shape = SKILLS[skill][rot];
-  const world = shape.map((cell) => addPos(origin, cell));
-  if (world.some((cell) => !inBounds(cell.x, cell.y))) {
-    return false;
-  }
-  return world.some((cell) => samePos(cell, actorPos));
-}
-
-function previewHitsFor(skill, rot, origin, actorPos) {
-  return previewCellsFor(skill, rot, origin).filter((cell) => !samePos(cell, actorPos));
-}
-
-function attackHits(skill, rot, origin, actorPos, targetPos) {
-  if (!placementValid(skill, rot, origin, actorPos)) {
-    return false;
-  }
-  return previewHitsFor(skill, rot, origin, actorPos).some((cell) => samePos(cell, targetPos));
-}
-
-function resolveAttackOrigin(action, actorPos) {
-  return {
-    x: Math.max(0, actorPos.x - action.anchor.x),
-    y: Math.max(0, actorPos.y - action.anchor.y),
-  };
 }
 
 function queueMoveState(state, dir) {
@@ -446,20 +391,20 @@ async function animateActorAction(slot, actor, action) {
     return;
   }
 
-  const selfKey = actor === "player" ? "player" : "enemy";
-  const otherKey = actor === "player" ? "enemy" : "player";
+  const outcome = bendSimulateActorAction(game, actor, action);
+
   if (action.kind === "wait") {
     playback = { slot, actor, action, move: null, attackTiles: [], death: null };
+    game = outcome.nextState;
     render();
     await sleep(WAIT_ANIM_MS);
     return;
   }
 
   if (action.kind === "move") {
-    const from = clonePos(game[selfKey]);
-    const next = bendResolveActorActionState(game, actor, action);
-    const to = clonePos(next[selfKey]);
-    game = next;
+    const from = clonePos(outcome.from);
+    const to = clonePos(outcome.to);
+    game = outcome.nextState;
     playback = {
       slot,
       actor,
@@ -481,17 +426,12 @@ async function animateActorAction(slot, actor, action) {
     return;
   }
 
-  const actorPos = clonePos(game[selfKey]);
-  const origin = resolveAttackOrigin(action, actorPos);
-  const attackTiles = previewHitsFor(action.skill, action.rot, origin, actorPos);
-  playback = { slot, actor, action, move: null, attackTiles, death: null };
+  const deathPos = clonePos(outcome.targetPos);
+  playback = { slot, actor, action, move: null, attackTiles: outcome.attackTiles, death: null };
   render();
   await sleep(ATTACK_ANIM_MS);
-  const before = game;
-  const next = bendResolveActorActionState(before, actor, action);
-  const enemyDied = otherKey === "enemy" && before.enemyHp > 0 && next.enemyHp <= 0;
-  game = next;
-  if (enemyDied) {
+  game = outcome.nextState;
+  if (outcome.enemyDied) {
     playback = {
       slot,
       actor,
@@ -500,7 +440,7 @@ async function animateActorAction(slot, actor, action) {
       attackTiles: [],
       death: {
         actor: "enemy",
-        pos: clonePos(before.enemy),
+        pos: deathPos,
       },
     };
     render();

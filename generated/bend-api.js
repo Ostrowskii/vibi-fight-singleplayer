@@ -128,6 +128,19 @@ function trailStepToJs(step) {
   };
 }
 
+function actionSimToJs(sim) {
+  return {
+    from: posToJs(sim.from),
+    to: posToJs(sim.to),
+    targetPos: posToJs(sim.target_pos),
+    attackTiles: listToJs(sim.attack_tiles, posToJs),
+    nextState: stateToJs(sim.next_state),
+    hit: sim.hit >>> 0,
+    playerDied: sim.player_died >>> 0,
+    enemyDied: sim.enemy_died >>> 0,
+  };
+}
+
 function stateToJs(state) {
   return {
     round: state.round >>> 0,
@@ -181,6 +194,7 @@ const popLastPlannedActionStateRaw = resolve("Runtime/pop_last_planned_action_st
 const buildBotPlanRaw = resolve("Runtime/build_bot_plan");
 const resolveActorActionStateRaw = resolve("Runtime/resolve_actor_action_state");
 const resetRoundPlanningStateRaw = resolve("Runtime/reset_round_planning_state");
+const simulateActorActionRaw = resolve("Runtime/simulate_actor_action");
 
 export function getRules() {
   return {
@@ -272,4 +286,11 @@ export function resolveActorActionState(state, actor, action) {
 
 export function resetRoundPlanningState(state) {
   return stateToJs(resetRoundPlanningStateRaw(stateToBend(state)));
+}
+
+export function simulateActorAction(state, actor, action) {
+  const actorId = actor === "enemy" || actor === 1 ? 1 : 0;
+  return actionSimToJs(
+    simulateActorActionRaw(stateToBend(state))(actorId >>> 0)(actionToBend(action))
+  );
 }
