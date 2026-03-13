@@ -1,0 +1,103 @@
+
+
++ jogo single player 
+
+visualização dividida em duas partes. o jogo / outras coisas
+
+1. o jogo fica a esquerda e contempla um mapa de grid 9 altura x 18 largura 
+player azul comecando na linha 4 coluna 6
+inimigo verde comecando na linha 4 coluna 12
+movimentação awsd e seta,
+jogo de turno contra ai.
+cada turno o jogador vai poder se mover 2 blocos (movimentação inteira e não digaonal)
+e ativar uma de suas habilidades para atacar o inimigo.
+ambos tem 50 de vida.
+vão ter 3 habilidades.
+as habilidades vão a partir do player até o inimigo, e tem formato de um conjunto de tiles, por exemplo:
+
+ [
+    [T,   , T],
+    [  , T,   ],
+    [T,   , T]
+  ]
+a pessoa para usar ahbilidade ela obrigatoriamente tem q encaixar o player em um dos T e os outros T serão aplicados o efeito da habilidade (por enquanto
+é só dano, mas poderemos ter veneno para ficar no tile entre outras coisas. o T q o player está, não é afetado.)
+
+vou dar exemplo de habilidade q funciona e que vao ser usados nesse primeiro player.
+na versao atual nao precisa de mouse. a habilidade entra num modo de edicao por teclado.
+• [
+    [null, null, null, "T"],
+    [null, null, "T", null],
+    [null, "T", null, null],
+    ["T", null, null, null]
+  ]
+ [
+    [T,   , T],
+    [  , T,   ],
+    [T,   , T]
+  ]
+
+ [
+    ["T", null, null, null],
+    ["T", null, null, null],
+    ["T", null, null, null],
+    ["T", "T", null, null]
+  ]
+
+
+  eu quero q o ataque tenha uma preview de onde vai cair.
+  quando o ataque for confirmado, ele precisa ser resolvido a partir da posicao real atual do ator no momento do slot.
+  se um move anterior bloquear, a skill nao pode sair de onde o ator estaria; ela tem q sair de onde ele realmente ficou.
+  a shape do ataque deve manter o mesmo encaixe relativo ao ator e ser deslocada junto com ele.
+  quando o player estiver planejando os 2 moves, eu quero tbm uma preview de onde o player vai parar.
+  essa preview do player pode mostrar a trilha dos moves e a posicao final planejada.
+  atalho de 1 2 3 para cada um dos 3 ataques defauts.
+  quando apertar 1 2 ou 3, entra no modo de mira da habilidade.
+  nesse modo, awsd/setas movem a preview, q/e giram, space confirma e esc cancela.
+  e quero q todos os ataques tirem 10 de vida (por enquanto, tu pode fazer o objeto normal, só q com 10 para todos)
+  quero um botao para limpar/refazer a jogada atual antes do ready, sem resetar a partida inteira.
+  
+  como é o round? ambos escolhem teus movimentos, (o player e o bot)
+  quando ready, os movimentos acontecem 1 por 1. são 3, 2 movimentos de andar e 1 de ataque. se atacar, não pode mais se mover. então pode ser:
+  - ataque parado parado
+  - move ataque parado
+  - move move ataque
+  - move move parado      (se der reay antes de completar os 3 moves)
+  - move parado parado    (se der reay antes de completar os 3 moves)
+  - parado parado parado  (se der reay antes de completar os 3 moves)
+
+  ordem de resolucao:
+  slot a slot, com o player agindo primeiro e depois a ai no mesmo slot.
+  o ataque precisa ser deferido para a posicao real atual do ator no momento do slot.
+  se um move anterior bloquear, a skill nao sai de onde o ator estaria; ela sai de onde ele realmente ficou.
+  a shape do ataque mantem o mesmo encaixe relativo ao ator e anda junto com ele.
+
+  como o inimigo vai pensar:
+  ele vai calcular se ele consegue alcançar você com um ataque. se não conseguir, ele calcula se consegue te atacar com um move e um ataque,
+  se não conseguir ele vai calcular se consegue com 2 moves e um ataque. e se não tiver nada nada q funcione, ele caminha em direção ao player e solta
+  uma das 3 habilidades de forma aleatoria.
+
+a primeira situação q satisfazer, é a que ocorre. mais para frente eu melhoro essa linha de pensamento.
+ 
+
+2.
+numero de level, qqr info q não seja para jogar o jogo fica aqui. (o lv ate podia ficar no game, mas n preciso)
+
+hud atual:
+- embaixo do mapa fica primeiro a vida do player
+- na direita da vida do player ficam os 3 slots de moves lado a lado
+- na direita dos slots ficam as 3 habilidades como preview visual, cada uma mostrando a tecla 1 2 ou 3
+- a vida do bot fica no proprio tile dele, no lugar do texto AI
+
+fim de partida:
+- quando o bot verde morre, ele pisca preto e desaparece do board
+- quando o player vence, aparece um popup com "vitoria", "jogar novamente?" e botao de reset
+- quando o player perde, aparece um popup com "derrota", "jogar novamente?" e botao de reset
+
+hud atual:
+- embaixo do mapa fica primeiro a vida do player
+- na direita da vida do player ficam os 3 slots de moves lado a lado
+- na direita dos slots ficam as 3 habilidades como preview visual, cada uma mostrando a tecla 1 2 ou 3
+- a vida do bot fica no proprio tile dele, no lugar do texto AI, para facilitar no futuro ter mais de um bot
+
+

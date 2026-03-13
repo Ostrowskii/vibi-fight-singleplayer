@@ -286,6 +286,16 @@ body {
   animation: slot-bump 180ms ease-in-out forwards;
 }
 
+.actor-death {
+  inset: auto;
+  left: calc(1px + (var(--grid-x) * (var(--cell-size) + 1px)) + (var(--cell-size) * 0.1));
+  top: calc(1px + (var(--grid-y) * (var(--cell-size) + 1px)) + (var(--cell-size) * 0.1));
+  width: calc(var(--cell-size) * 0.8);
+  height: calc(var(--cell-size) * 0.8);
+  animation: enemy-death 560ms steps(1, end) forwards;
+  z-index: 6;
+}
+
 .sidebar {
   min-width: 0;
   min-height: 0;
@@ -491,6 +501,36 @@ button:disabled {
   font-weight: 800;
 }
 
+.result-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(42, 33, 21, 0.46);
+  z-index: 20;
+}
+
+.result-modal {
+  width: min(100%, 340px);
+  padding: 24px 22px;
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.result-title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.result-text {
+  margin: 0;
+  color: var(--muted);
+}
+
 @keyframes slot-move {
   from {
     transform: translate(0, 0);
@@ -540,6 +580,33 @@ button:disabled {
   47%,
   61%,
   75% {
+    opacity: 0;
+  }
+}
+
+@keyframes enemy-death {
+  0% {
+    background: var(--enemy);
+    opacity: 1;
+  }
+
+  20% {
+    background: #111111;
+    opacity: 1;
+  }
+
+  40% {
+    background: var(--enemy);
+    opacity: 1;
+  }
+
+  60% {
+    background: #111111;
+    opacity: 1;
+  }
+
+  100% {
+    background: #111111;
     opacity: 0;
   }
 }

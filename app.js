@@ -14,6 +14,7 @@ const BLOCKED_MOVE_ANIM_MS = 180;
 const ATTACK_ANIM_MS = 520;
 const WAIT_ANIM_MS = 120;
 const SLOT_GAP_MS = 90;
+const DEATH_ANIM_MS = 560;
 
 const DIRECTIONS = [
   { x: 0, y: -1, label: "Up" },
@@ -65,11 +66,14 @@ function moveAction(dir) {
   return { kind: "move", dir };
 }
 
-function attackAction(skill, origin, rot) {
+function attackAction(skill, origin, rot, actorPos) {
   return {
     kind: "attack",
     skill,
-    origin: { x: origin.x, y: origin.y },
+    offset: {
+      x: origin.x - actorPos.x,
+      y: origin.y - actorPos.y,
+    },
     rot,
   };
 }
@@ -119,6 +123,13 @@ function addPos(pos, cell) {
   return {
     x: pos.x + cell.x,
     y: pos.y + cell.y,
+  };
+}
+
+function offsetPos(pos, delta) {
+  return {
+    x: pos.x + delta.x,
+    y: pos.y + delta.y,
   };
 }
 
@@ -190,6 +201,10 @@ function attackHits(skill, rot, origin, actorPos, targetPos) {
     return false;
   }
   return previewHitsFor(skill, rot, origin, actorPos).some((cell) => samePos(cell, targetPos));
+}
+
+function resolveAttackOrigin(action, actorPos) {
+  return offsetPos(actorPos, action.offset);
 }
 
 function defaultTargetOrigin(skill, actorPos) {
@@ -264,7 +279,12 @@ function confirmTargetState(state) {
     return state;
   }
   const newState = structuredClone(state);
-  newState.queue[newState.queueLen] = attackAction(state.mode.skill, state.mode.origin, state.mode.rot);
+  newState.queue[newState.queueLen] = attackAction(
+    state.mode.skill,
+    state.mode.origin,
+    state.mode.rot,
+    actorPos
+  );
   newState.queueLen += 1;
   newState.queueLocked = true;
   newState.mode = { kind: "plan" };
@@ -303,7 +323,7 @@ function firstValidAttack(skill, actorPos) {
       for (let x = 0; x < BOARD_W; x += 1) {
         const origin = { x, y };
         if (placementValid(skill, rot, origin, actorPos)) {
-          return attackAction(skill, origin, rot);
+          return attackAction(skill, origin, rot, actorPos);
         }
       }
     }
@@ -318,7 +338,7 @@ function findAttack(actorPos, targetPos) {
         for (let x = 0; x < BOARD_W; x += 1) {
           const origin = { x, y };
           if (attackHits(skill, rot, origin, actorPos, targetPos)) {
-            return attackAction(skill, origin, rot);
+            return attackAction(skill, origin, rot, actorPos);
           }
         }
       }
@@ -409,7 +429,8 @@ function resolveActorAction(state, actor, action) {
     return;
   }
 
-  if (attackHits(action.skill, action.rot, action.origin, state[selfKey], state[otherKey])) {
+  const origin = resolveAttackOrigin(action, state[selfKey]);
+  if (attackHits(action.skill, action.rot, origin, state[selfKey], state[otherKey])) {
     state[hpKey] = Math.max(0, state[hpKey] - DAMAGE);
     state.winner = computeWinner(state.playerHp, state.enemyHp);
   }
@@ -469,6 +490,13 @@ function playbackLabel(action) {
   return `ataque ${action.skill}`;
 }
 
+function winnerTitle(winner) {
+  if (winner === 1) return "Vitoria";
+  if (winner === 2) return "Derrota";
+  if (winner === 3) return "Empate";
+  return "";
+}
+
 function getViewState(state) {
   const resolving = isResolving();
   const actorPos = resolving ? clonePos(state.player) : plannedPlayerPos(state);
@@ -495,6 +523,7 @@ function getViewState(state) {
     playback,
     flashTiles: playback?.attackTiles ?? [],
     moveOverlay: playback?.move ?? null,
+    deathOverlay: playback?.death ?? null,
   };
 }
 
@@ -537,27 +566,40 @@ function keyForPos(pos) {
 }
 
 function boardOverlayMarkup(snap) {
-  if (!snap.moveOverlay) {
-    return "";
+  const layers = [];
+
+  if (snap.moveOverlay) {
+    const { actor, from, to, dir } = snap.moveOverlay;
+    const deltaX = to.x - from.x;
+    const deltaY = to.y - from.y;
+    const bump = DIRECTIONS[dir] ?? { x: 0, y: 0 };
+    const classes = ["actor-float", actorClass(actor)];
+    if (deltaX === 0 && deltaY === 0) {
+      classes.push("blocked");
+    }
+
+    layers.push(`
+      <div class="board-anim-layer" aria-hidden="true">
+        <div
+          class="${classes.join(" ")}"
+          style="--grid-x:${from.x}; --grid-y:${from.y}; --delta-x:${deltaX}; --delta-y:${deltaY}; --bump-x:${bump.x}; --bump-y:${bump.y}"
+        >${actor === "player" ? "P" : hpText(snap.enemyHp)}</div>
+      </div>
+    `);
   }
 
-  const { actor, from, to, dir } = snap.moveOverlay;
-  const deltaX = to.x - from.x;
-  const deltaY = to.y - from.y;
-  const bump = DIRECTIONS[dir] ?? { x: 0, y: 0 };
-  const classes = ["actor-float", actorClass(actor)];
-  if (deltaX === 0 && deltaY === 0) {
-    classes.push("blocked");
+  if (snap.deathOverlay) {
+    layers.push(`
+      <div class="board-anim-layer" aria-hidden="true">
+        <div
+          class="actor actor-death ${actorClass(snap.deathOverlay.actor)}"
+          style="--grid-x:${snap.deathOverlay.pos.x}; --grid-y:${snap.deathOverlay.pos.y}"
+        ></div>
+      </div>
+    `);
   }
 
-  return `
-    <div class="board-anim-layer" aria-hidden="true">
-      <div
-        class="${classes.join(" ")}"
-        style="--grid-x:${from.x}; --grid-y:${from.y}; --delta-x:${deltaX}; --delta-y:${deltaY}; --bump-x:${bump.x}; --bump-y:${bump.y}"
-      >${actor === "player" ? "P" : hpText(snap.enemyHp)}</div>
-    </div>
-  `;
+  return layers.join("");
 }
 
 function skillPreviewMarkup(snap) {
@@ -623,10 +665,12 @@ function boardCellMarkup(snap) {
       const hidingMovingPlayer =
         snap.moveOverlay?.actor === "player" && snap.player.x === x && snap.player.y === y;
       const hidingMovingEnemy =
-        snap.moveOverlay?.actor === "enemy" && snap.enemy.x === x && snap.enemy.y === y;
+        (snap.moveOverlay?.actor === "enemy" || snap.deathOverlay?.actor === "enemy") &&
+        snap.enemy.x === x &&
+        snap.enemy.y === y;
       if (snap.player.x === x && snap.player.y === y && !hidingMovingPlayer) {
         actor = '<div class="actor player">P</div>';
-      } else if (snap.enemy.x === x && snap.enemy.y === y && !hidingMovingEnemy) {
+      } else if (snap.enemyHp > 0 && snap.enemy.x === x && snap.enemy.y === y && !hidingMovingEnemy) {
         actor = `<div class="actor enemy enemy-hp">${hpText(snap.enemyHp)}</div>`;
       }
       if (trailStep !== null) {
@@ -672,7 +716,7 @@ async function animateActorAction(slot, actor, action) {
   const hpKey = actor === "player" ? "enemyHp" : "playerHp";
 
   if (action.kind === "wait") {
-    playback = { slot, actor, action, move: null, attackTiles: [] };
+    playback = { slot, actor, action, move: null, attackTiles: [], death: null };
     render();
     await sleep(WAIT_ANIM_MS);
     return;
@@ -693,25 +737,42 @@ async function animateActorAction(slot, actor, action) {
         to,
       },
       attackTiles: [],
+      death: null,
     };
     render();
     await sleep(samePos(from, to) ? BLOCKED_MOVE_ANIM_MS : MOVE_ANIM_MS);
-    playback = { slot, actor, action, move: null, attackTiles: [] };
+    playback = { slot, actor, action, move: null, attackTiles: [], death: null };
     render();
     await sleep(SLOT_GAP_MS);
     return;
   }
 
   const actorPos = clonePos(game[selfKey]);
-  const attackTiles = previewHitsFor(action.skill, action.rot, action.origin, actorPos);
-  playback = { slot, actor, action, move: null, attackTiles };
+  const origin = resolveAttackOrigin(action, actorPos);
+  const attackTiles = previewHitsFor(action.skill, action.rot, origin, actorPos);
+  playback = { slot, actor, action, move: null, attackTiles, death: null };
   render();
   await sleep(ATTACK_ANIM_MS);
-  if (attackHits(action.skill, action.rot, action.origin, actorPos, game[otherKey])) {
+  if (attackHits(action.skill, action.rot, origin, actorPos, game[otherKey])) {
     game[hpKey] = Math.max(0, game[hpKey] - DAMAGE);
     game.winner = computeWinner(game.playerHp, game.enemyHp);
+    if (otherKey === "enemy" && game.enemyHp <= 0) {
+      playback = {
+        slot,
+        actor,
+        action,
+        move: null,
+        attackTiles: [],
+        death: {
+          actor: "enemy",
+          pos: clonePos(game.enemy),
+        },
+      };
+      render();
+      await sleep(DEATH_ANIM_MS);
+    }
   }
-  playback = { slot, actor, action, move: null, attackTiles: [] };
+  playback = { slot, actor, action, move: null, attackTiles: [], death: null };
   render();
   await sleep(SLOT_GAP_MS);
 }
@@ -722,7 +783,7 @@ async function resolveRoundAnimated() {
   }
 
   const botQueue = buildBotPlan(game);
-  playback = { slot: 1, actor: "player", action: game.queue[0], move: null, attackTiles: [] };
+  playback = { slot: 1, actor: "player", action: game.queue[0], move: null, attackTiles: [], death: null };
   render();
 
   try {
@@ -831,6 +892,21 @@ function render() {
           }
         </section>
       </aside>
+
+      ${
+        snap.winner !== 0 && !snap.resolving
+          ? `
+            <div class="result-modal-backdrop">
+              <section class="result-modal">
+                <div class="eyebrow">Fim da partida</div>
+                <h2 class="result-title">${winnerTitle(snap.winner)}</h2>
+                <p class="result-text">Jogar novamente?</p>
+                <button class="alt" data-reset-modal>Reset partida</button>
+              </section>
+            </div>
+          `
+          : ""
+      }
     </div>
   `;
 
@@ -852,6 +928,12 @@ function render() {
   });
 
   root.querySelector("[data-reset]")?.addEventListener("click", () => {
+    game = makeInitialState();
+    playback = null;
+    render();
+  });
+
+  root.querySelector("[data-reset-modal]")?.addEventListener("click", () => {
     game = makeInitialState();
     playback = null;
     render();
