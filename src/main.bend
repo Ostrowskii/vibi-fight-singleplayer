@@ -31,7 +31,7 @@ type Action {
 type Mode {
   plan{}
   target{skill: U32, rot: U32, origin: Pos}
-  playback{idx: U32, bot_queue: List(Action)}
+  playback{idx: U32, phase: U32, actor: U32, action: Action, sim: ActionSim, bot_queue: List(Action)}
 }
 
 type GameState {
@@ -397,8 +397,8 @@ def _plan_mode() -> Mode:
 def _target_mode(skill: U32, rot: U32, origin: Pos) -> Mode:
   target{skill, rot, origin}
 
-def _playback_mode(idx: U32, bot_queue: List(Action)) -> Mode:
-  playback{idx, bot_queue}
+def _playback_mode(idx: U32, phase: U32, actor: U32, action: Action, sim: ActionSim, bot_queue: List(Action)) -> Mode:
+  playback{idx, phase, actor, action, sim, bot_queue}
 
 def _queue_waits() -> List(Action):
   _queue3(_wait_action(), _wait_action(), _wait_action())
@@ -978,6 +978,11 @@ def _action_sim(
 ) -> ActionSim:
   action_sim{from, to, target_pos, attack_tiles, next_state, hit, player_died, enemy_died}
 
+def _action_sim_next_state(sim: ActionSim) -> GameState:
+  match sim:
+    case action_sim{_, _, _, _, next_state, _, _, _}:
+      next_state
+
 def _reset_round_planning_state(state: GameState) -> GameState:
   match state:
     case game_state{round, level, player_hp, enemy_hp, player, enemy, _, _, _, _, winner}:
@@ -1208,7 +1213,7 @@ def _mode_is_target(mode: Mode) -> U32:
 
 def _mode_is_playback(mode: Mode) -> U32:
   match mode:
-    case playback{_, _}:
+    case playback{_, _, _, _, _, _}:
       1
     case _:
       0
@@ -1236,14 +1241,42 @@ def _mode_origin(mode: Mode) -> Pos:
 
 def _mode_playback_idx(mode: Mode) -> U32:
   match mode:
-    case playback{idx, _}:
+    case playback{idx, _, _, _, _, _}:
       idx
     case _:
       0
 
+def _mode_playback_phase(mode: Mode) -> U32:
+  match mode:
+    case playback{_, phase, _, _, _, _}:
+      phase
+    case _:
+      0
+
+def _mode_playback_actor(mode: Mode) -> U32:
+  match mode:
+    case playback{_, _, actor, _, _, _}:
+      actor
+    case _:
+      0
+
+def _mode_playback_action(mode: Mode) -> Action:
+  match mode:
+    case playback{_, _, _, action, _, _}:
+      action
+    case _:
+      _wait_action()
+
+def _mode_playback_sim(mode: Mode) -> ActionSim:
+  match mode:
+    case playback{_, _, _, _, sim, _}:
+      sim
+    case _:
+      _action_sim(pos{0, 0}, pos{0, 0}, pos{0, 0}, _pos_nil(), state_init(), 0, 0, 0)
+
 def _mode_playback_bot(mode: Mode) -> List(Action):
   match mode:
-    case playback{_, bot_queue}:
+    case playback{_, _, _, _, _, bot_queue}:
       bot_queue
     case _:
       _queue_waits()
@@ -1360,19 +1393,8 @@ def _ready_round_state_w(
 ) -> GameState:
   match winner | _mode_is_target(mode) | _mode_is_playback(mode):
     case 0:
-      _state(
-        round,
-        level,
-        player_hp,
-        enemy_hp,
-        player,
-        enemy,
-        queue,
-        queue_len,
-        queue_locked,
-        _playback_mode(0, _build_bot_plan_w(round, player_hp, enemy_hp, player, enemy, winner)),
-        winner
-      )
+      current = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
+      _playback_start_state(current, 0, _build_bot_plan_w(round, player_hp, enemy_hp, player, enemy, winner))
     case _:
       _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
 
@@ -1411,34 +1433,41 @@ def playback_tick_state(state: GameState) -> GameState:
 
 def _playback_tick_mode(state: GameState, mode: Mode) -> GameState:
   match mode:
-    case playback{idx, bot_queue}:
-      _playback_tick_idx(state, idx, bot_queue)
+    case playback{idx, phase, actor, action, sim, bot_queue}:
+      _playback_tick_idx(state, idx, phase, actor, action, sim, bot_queue)
     case _:
       state
 
-def _playback_tick_idx(state: GameState, idx: U32, bot_queue: List(Action)) -> GameState:
-  match idx:
+def _playback_tick_idx(state: GameState, idx: U32, phase: U32, actor: U32, action: Action, sim: ActionSim, bot_queue: List(Action)) -> GameState:
+  match phase:
     case 0:
-      _playback_continue(_resolve_player_action_state(state, _action_at(_state_queue(state), 0)), 1, bot_queue)
-    case 1:
-      _playback_continue(_resolve_enemy_action_state(state, _action_at(bot_queue, 0)), 2, bot_queue)
-    case 2:
-      _playback_continue(_resolve_player_action_state(state, _action_at(_state_queue(state), 1)), 3, bot_queue)
-    case 3:
-      _playback_continue(_resolve_enemy_action_state(state, _action_at(bot_queue, 1)), 4, bot_queue)
-    case 4:
-      _playback_continue(_resolve_player_action_state(state, _action_at(_state_queue(state), 2)), 5, bot_queue)
-    case 5:
-      _reset_round_planning_state(_resolve_enemy_action_state(state, _action_at(bot_queue, 2)))
+      _playback_apply_state(sim, idx, actor, action, bot_queue)
+    case _:
+      _playback_advance_state(_action_sim_next_state(sim), idx, bot_queue)
+
+def _playback_start_state(state: GameState, idx: U32, bot_queue: List(Action)) -> GameState:
+  actor = _playback_actor_of_idx(idx);
+  action = _playback_action(_state_queue(state), bot_queue, idx);
+  sim = simulate_actor_action(state, actor, action);
+  _set_mode_state(state, _playback_mode(idx, 0, actor, action, sim, bot_queue))
+
+def _playback_apply_state(sim: ActionSim, idx: U32, actor: U32, action: Action, bot_queue: List(Action)) -> GameState:
+  next_state = _action_sim_next_state(sim);
+  _set_mode_state(next_state, _playback_mode(idx, 1, actor, action, sim, bot_queue))
+
+def _playback_advance_state(state: GameState, idx: U32, bot_queue: List(Action)) -> GameState:
+  match _state_winner(state):
+    case 0:
+      _playback_advance_live(state, idx, bot_queue)
     case _:
       _reset_round_planning_state(state)
 
-def _playback_continue(next_state: GameState, next_idx: U32, bot_queue: List(Action)) -> GameState:
-  match _state_winner(next_state):
-    case 0:
-      _set_mode_state(next_state, _playback_mode(next_idx, bot_queue))
-    case _:
-      _reset_round_planning_state(next_state)
+def _playback_advance_live(state: GameState, idx: U32, bot_queue: List(Action)) -> GameState:
+  match idx:
+    case 5:
+      _reset_round_planning_state(state)
+    case step:
+      _playback_start_state(state, step + 1, bot_queue)
 
 def _move_input_state(state: GameState, dir: U32) -> GameState:
   match _state_playback_active(state):
@@ -1581,8 +1610,6 @@ def render(state: GameState) -> HTML(FightEvent):
     <style>{text{css()}}</style>
     <div {..._tick_attrs(state)}></div>
     <main class="shell" tabindex="0" style="outline:none" on_key_down={key_event}>
-      <div class="left-rail" aria-hidden="true"></div>
-
       <section class="board-stage">
         <div class="board-stack">
           <section class="board-wrap board-wrap-large">
@@ -1626,8 +1653,7 @@ def render(state: GameState) -> HTML(FightEvent):
           <div class="stat-label">Acoes</div>
           <div class="controls controls--actions">
             <button {..._button_attrs("button alt", evt_ready{})}>{text{"Ready"}}</button>
-            <button {..._button_attrs("button", evt_clear{})}>{text{"Limpar jogada"}}</button>
-            <button {..._button_attrs("button ghost", evt_reset{})}>{text{"Reset partida"}}</button>
+            <button {..._button_attrs("button", evt_reset{})}>{text{"Reset partida"}}</button>
           </div>
         </section>
 
@@ -1645,35 +1671,51 @@ def _winner_sidebar_text(state: GameState) -> HTML(FightEvent):
   _winner_sidebar_text_w(_state_winner(state))
 
 def _winner_sidebar_text_w(winner: U32) -> HTML(FightEvent):
+  <p class={_winner_sidebar_class(winner)}>{text{_winner_sidebar_text_value(winner)}}</p>
+
+def _winner_sidebar_class(winner: U32) -> String:
   match winner:
     case 0:
-      <div class="winner winner--hidden"></div>
+      "winner winner--hidden"
+    case _:
+      "winner"
+
+def _winner_sidebar_text_value(winner: U32) -> String:
+  match winner:
+    case 0:
+      ""
     case result:
-      <p class="winner">{text{_winner_title(result)}}</p>
+      _winner_title(result)
 
 def _preview_sidebar_text(state: GameState, planned: Pos) -> HTML(FightEvent):
   match _state_playback_active(state):
     case 0:
       _preview_sidebar_text_w(_state_queue_len_or_target(state), planned)
     case _:
-      <div class="help help--hidden"></div>
+      <p class="help help--spaced help--hidden">{text{""}}</p>
 
 def _preview_sidebar_text_w(show: U32, planned: Pos) -> HTML(FightEvent):
+  <p class={_help_spaced_class(show)}>{text{_preview_sidebar_text_value(show, planned)}}</p>
+
+def _preview_sidebar_text_value(show: U32, planned: Pos) -> String:
   match show:
     case 0:
-      <div class="help help--hidden"></div>
+      ""
     case _:
-      <p class="help help--spaced">{text{"Preview do player: " ++ _pos_text(planned)}}</p>
+      "Preview do player: " ++ _pos_text(planned)
 
 def _playback_sidebar_text(state: GameState) -> HTML(FightEvent):
   _playback_sidebar_text_active(_state_playback_active(state), state)
 
 def _playback_sidebar_text_active(active: U32, state: GameState) -> HTML(FightEvent):
+  <p class={_help_spaced_class(active)}>{text{_playback_sidebar_text_value(active, state)}}</p>
+
+def _playback_sidebar_text_value(active: U32, state: GameState) -> String:
   match active:
     case 0:
-      <div class="help help--hidden"></div>
+      ""
     case _:
-      <p class="help help--spaced">{text{"Ator atual: " ++ _playback_actor_label(_state_playback_idx(state)) ++ ". Acao atual: " ++ _action_label(_playback_action(_state_queue(state), _state_playback_bot(state), _state_playback_idx(state))) ++ "."}}</p>
+      "Ator atual: " ++ _actor_label(_state_playback_actor(state)) ++ ". Acao atual: " ++ _action_label(_state_playback_action(state)) ++ "."
 
 def _controls_text(state: GameState) -> String:
   _controls_text_active(_state_target_active(state))
@@ -1681,29 +1723,42 @@ def _controls_text(state: GameState) -> String:
 def _controls_text_active(active: U32) -> String:
   match active:
     case 0:
-      "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Space em uma mira valida confirma o ataque e ja da Ready. Esc desfaz a ultima decisao. Enter resolve o round. Limpar jogada apaga a fila atual."
+      "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Space em uma mira valida confirma o ataque e ja da Ready. Esc desfaz a ultima decisao. Enter resolve o round. Reset partida reinicia a luta."
     case _:
-      "WASD/setas movem a preview. Q/E giram. Space confirma o ataque e ja resolve o round. Esc cancela a mira. Limpar jogada apaga a fila atual."
+      "WASD/setas movem a preview. Q/E giram. Space confirma o ataque e ja resolve o round. Esc cancela a mira. Reset partida reinicia a luta."
 
 def _target_sidebar_text(state: GameState) -> HTML(FightEvent):
   _target_sidebar_text_active(_state_target_active(state), state)
 
 def _target_sidebar_text_active(active: U32, state: GameState) -> HTML(FightEvent):
+  <p class={_help_spaced_class(active)}>{text{_target_sidebar_text_value(active, state)}}</p>
+
+def _target_sidebar_text_value(active: U32, state: GameState) -> String:
   match active:
     case 0:
-      <div class="help help--hidden"></div>
+      ""
     case _:
-      <p class="help help--spaced">{text{"Skill " ++ U32.show(_state_target_skill(state)) ++ ", rotacao " ++ U32.show(_state_target_rot(state)) ++ ", origem " ++ _pos_text(_state_target_origin(state)) ++ ", preview " ++ _target_valid_text(target_valid(state)) ++ "."}}</p>
+      "Skill " ++ U32.show(_state_target_skill(state)) ++ ", rotacao " ++ U32.show(_state_target_rot(state)) ++ ", origem " ++ _pos_text(_state_target_origin(state)) ++ ", preview " ++ _target_valid_text(target_valid(state)) ++ "."
 
 def _playback_help_text(state: GameState) -> HTML(FightEvent):
   _playback_help_text_active(_state_playback_active(state), state)
 
 def _playback_help_text_active(active: U32, state: GameState) -> HTML(FightEvent):
+  <p class={_help_spaced_class(active)}>{text{_playback_help_text_value(active, state)}}</p>
+
+def _playback_help_text_value(active: U32, state: GameState) -> String:
   match active:
     case 0:
-      <div class="help help--hidden"></div>
+      ""
     case _:
-      <p class="help help--spaced">{text{_playback_info_text(state)}}</p>
+      _playback_info_text(state)
+
+def _help_spaced_class(active: U32) -> String:
+  match active:
+    case 0:
+      "help help--spaced help--hidden"
+    case _:
+      "help help--spaced"
 
 def _state_queue_len_or_target(state: GameState) -> U32:
   match _state_target_active(state):
@@ -2009,70 +2064,117 @@ def _board_cell_route_class_step(step: U32) -> String:
       " cell--route"
 
 def _board_cell_actor(state: GameState, cell_pos: Pos) -> HTML(FightEvent):
+  <div class={_board_cell_actor_class(state, cell_pos)}>{text{_board_cell_actor_text(state, cell_pos)}}</div>
+
+def _board_cell_actor_class(state: GameState, cell_pos: Pos) -> String:
   match _pos_eq(_state_player(state), cell_pos):
     case 0:
-      _board_cell_enemy_actor(_pos_eq(_state_enemy(state), cell_pos), _hp_empty(_state_enemy_hp(state)), _state_enemy_hp(state))
+      _board_cell_enemy_actor_class(_pos_eq(_state_enemy(state), cell_pos), _hp_empty(_state_enemy_hp(state)))
     case _:
-      <div class="actor actor--player">{text{"P"}}</div>
+      "actor actor--player"
 
-def _board_cell_enemy_actor(enemy_here: U32, enemy_dead: U32, enemy_hp: U32) -> HTML(FightEvent):
+def _board_cell_enemy_actor_class(enemy_here: U32, enemy_dead: U32) -> String:
   match enemy_here:
     case 0:
-      <div class="cell__actor-wrap"></div>
+      "actor actor--hidden"
     case _:
-      _board_cell_enemy_alive(enemy_dead, enemy_hp)
+      match enemy_dead:
+        case 0:
+          "actor actor--enemy"
+        case _:
+          "actor actor--hidden"
 
-def _board_cell_enemy_alive(enemy_dead: U32, enemy_hp: U32) -> HTML(FightEvent):
-  match enemy_dead:
+def _board_cell_actor_text(state: GameState, cell_pos: Pos) -> String:
+  match _pos_eq(_state_player(state), cell_pos):
     case 0:
-      <div class="actor actor--enemy">{text{_hp_text(enemy_hp)}}</div>
+      _board_cell_enemy_actor_text(_pos_eq(_state_enemy(state), cell_pos), _hp_empty(_state_enemy_hp(state)), _state_enemy_hp(state))
     case _:
-      <div class="cell__actor-wrap"></div>
+      "P"
+
+def _board_cell_enemy_actor_text(enemy_here: U32, enemy_dead: U32, enemy_hp: U32) -> String:
+  match enemy_here:
+    case 0:
+      ""
+    case _:
+      match enemy_dead:
+        case 0:
+          _hp_text(enemy_hp)
+        case _:
+          ""
 
 def _board_cell_ghost(state: GameState, planned: Pos, cell_pos: Pos) -> HTML(FightEvent):
-  _board_cell_ghost_flags(_pos_eq(_state_player(state), planned), _pos_eq(planned, cell_pos))
+  <div class={_board_cell_ghost_class(_pos_eq(_state_player(state), planned), _pos_eq(planned, cell_pos))}>{text{_board_cell_ghost_text(_pos_eq(_state_player(state), planned), _pos_eq(planned, cell_pos))}}</div>
 
-def _board_cell_ghost_flags(same_now: U32, same_cell: U32) -> HTML(FightEvent):
-  match same_cell:
-    case 0:
-      <div class="ghost ghost--hidden"></div>
-    case _:
-      _board_cell_ghost_now(same_now)
+def _board_cell_ghost_class(same_now: U32, same_cell: U32) -> String:
+  _board_cell_ghost_class_visible((1 ^ same_now) & same_cell)
 
-def _board_cell_ghost_now(same_now: U32) -> HTML(FightEvent):
-  match same_now:
+def _board_cell_ghost_class_visible(show: U32) -> String:
+  match show:
     case 0:
-      <div class="ghost">{text{"P"}}</div>
+      "ghost ghost--hidden"
     case _:
-      <div class="ghost ghost--hidden"></div>
+      "ghost"
+
+def _board_cell_ghost_text(same_now: U32, same_cell: U32) -> String:
+  _board_cell_ghost_text_visible((1 ^ same_now) & same_cell)
+
+def _board_cell_ghost_text_visible(show: U32) -> String:
+  match show:
+    case 0:
+      ""
+    case _:
+      "P"
 
 def _board_cell_route(trail: List(TrailStep), cell_pos: Pos) -> HTML(FightEvent):
-  _board_cell_route_step(_trail_step_at(trail, cell_pos))
+  step = _trail_step_at(trail, cell_pos);
+  <div class={_board_cell_route_badge_class(step)}>{text{_board_cell_route_badge_text(step)}}</div>
 
-def _board_cell_route_step(step: U32) -> HTML(FightEvent):
+def _board_cell_route_badge_class(step: U32) -> String:
   match step:
     case 0:
-      <div class="trail trail--hidden"></div>
+      "trail trail--hidden"
+    case _:
+      "trail"
+
+def _board_cell_route_badge_text(step: U32) -> String:
+  match step:
+    case 0:
+      ""
     case s:
-      <div class="trail">{text{U32.show(s)}}</div>
+      U32.show(s)
 
 def _winner_modal(state: GameState) -> HTML(FightEvent):
-  _winner_modal_w(_state_winner(state))
+  winner = _state_winner(state);
+  <div class={_winner_modal_class(winner)}>
+    <div class={_winner_modal_card_class(winner)}>
+      <div class="modal__eyebrow">{text{"Fim da partida"}}</div>
+      <h2 class="modal__title">{text{_winner_modal_title(winner)}}</h2>
+      <button {..._button_attrs("button", evt_reset{})}>
+        {text{"Jogar novamente"}}
+      </button>
+    </div>
+  </div>
 
-def _winner_modal_w(winner: U32) -> HTML(FightEvent):
+def _winner_modal_class(winner: U32) -> String:
   match winner:
     case 0:
-      <div class="modal"></div>
+      "modal"
+    case _:
+      "modal modal--visible"
+
+def _winner_modal_card_class(winner: U32) -> String:
+  match winner:
+    case 0:
+      "modal__card modal__card--hidden"
+    case _:
+      "modal__card"
+
+def _winner_modal_title(winner: U32) -> String:
+  match winner:
+    case 0:
+      ""
     case result:
-      <div class="modal modal--visible">
-        <div class="modal__card">
-          <div class="modal__eyebrow">{text{"Fim da partida"}}</div>
-          <h2 class="modal__title">{text{_winner_title(result)}}</h2>
-          <button {..._button_attrs("button", evt_reset{})}>
-            {text{"Jogar novamente"}}
-          </button>
-        </div>
-      </div>
+      _winner_title(result)
 
 def _button_attrs(class_name: String, evt: FightEvent) -> List(Attr(FightEvent)):
   [attr{"type", "button"}, attr{"class", class_name}, on_click{evt}]
@@ -2160,6 +2262,17 @@ def _playback_action(queue: List(Action), bot_queue: List(Action), idx: U32) -> 
     case _:
       _action_at(bot_queue, 2)
 
+def _playback_actor_of_idx(idx: U32) -> U32:
+  match idx:
+    case 0:
+      0
+    case 2:
+      0
+    case 4:
+      0
+    case _:
+      1
+
 def _playback_actor_label(idx: U32) -> String:
   match idx:
     case 0:
@@ -2171,6 +2284,13 @@ def _playback_actor_label(idx: U32) -> String:
     case 3:
       "Enemy"
     case 4:
+      "Player"
+    case _:
+      "Enemy"
+
+def _actor_label(actor: U32) -> String:
+  match actor:
+    case 0:
       "Player"
     case _:
       "Enemy"
@@ -2209,7 +2329,7 @@ def _mode_text_mode(mode: Mode) -> String:
       "Planejando round"
     case target{skill, rot, origin}:
       "Mira da skill " ++ U32.show(skill) ++ " rot " ++ U32.show(rot) ++ " origem " ++ _pos_text(origin)
-    case playback{idx, bot_queue}:
+    case playback{_, _, _, _, _, _}:
       "Resolvendo round"
 
 def _phase_label(state: GameState) -> String:
@@ -2228,7 +2348,7 @@ def _phase_label_mode(mode: Mode, valid: U32) -> String:
       "Planning"
     case target{_, _, _}:
       _phase_label_target(valid)
-    case playback{_, _}:
+    case playback{_, _, _, _, _, _}:
       "Playback"
 
 def _phase_label_target(valid: U32) -> String:
@@ -2254,7 +2374,7 @@ def _phase_chip_class_mode(mode: Mode) -> String:
       "chip chip--plan"
     case target{_, _, _}:
       "chip chip--target"
-    case playback{_, _}:
+    case playback{_, _, _, _, _, _}:
       "chip chip--target"
 
 def _winner_title(winner: U32) -> String:
@@ -2339,6 +2459,12 @@ def _state_playback_active(state: GameState) -> U32:
 def _state_playback_idx(state: GameState) -> U32:
   _mode_playback_idx(_state_mode_value(state))
 
+def _state_playback_actor(state: GameState) -> U32:
+  _mode_playback_actor(_state_mode_value(state))
+
+def _state_playback_action(state: GameState) -> Action:
+  _mode_playback_action(_state_mode_value(state))
+
 def _state_playback_bot(state: GameState) -> List(Action):
   _mode_playback_bot(_state_mode_value(state))
 
@@ -2349,12 +2475,12 @@ def base_css() -> String:
 
 def layout_css() -> String:
   ""
-  ++ ".shell{width:100%;height:100svh;display:grid;grid-template-columns:minmax(48px,1fr) minmax(0,var(--board-shell-width)) var(--sidebar-width);overflow:hidden;}.left-rail{min-width:0;min-height:0;}.board-stage{min-width:0;min-height:0;display:grid;place-items:center;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);}.board-stack{width:var(--board-shell-width);display:grid;gap:14px;}.board-wrap{position:relative;padding:var(--board-shell-padding);background:var(--board-frame);border:1px solid var(--border);overflow:hidden;}.board-wrap-large{width:var(--board-shell-width);}"
+  ++ ".shell{width:100%;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) var(--sidebar-width);overflow:hidden;}.board-stage{min-width:0;min-height:0;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,var(--board-shell-width)) minmax(0,1fr);align-items:center;overflow:auto;overscroll-behavior:contain;}.board-stack{width:var(--board-shell-width);display:grid;gap:14px;grid-column:2;}.board-wrap{position:relative;padding:var(--board-shell-padding);background:var(--board-frame);border:1px solid var(--border);overflow:hidden;}.board-wrap-large{width:var(--board-shell-width);}"
   ++ ".board{width:var(--board-width);display:grid;grid-template-columns:repeat(18,var(--cell-size));gap:1px;padding:1px;background:var(--grid);}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit{box-shadow:inset 0 0 0 2px var(--hit);}.cell--route{background:var(--route);}"
   ++ ".board-underbar{width:100%;padding:12px;display:flex;gap:12px;align-items:stretch;background:var(--panel);border:1px solid var(--border);}.player-hp-card{width:116px;padding:12px 14px;background:var(--card);border:1px solid #bda173;}.queue-inline{min-width:0;flex:1 1 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.queue-slot{padding:12px 14px;background:var(--panel);border:1px solid #c8ae83;}.queue-slot--active{background:#f1dfb8;border-color:var(--button);}.queue-slot--enemy-turn{border-color:var(--enemy);}.queue-slot__index{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}.queue-slot__value{margin-top:6px;font-weight:700;}"
-  ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.sidebar{min-width:0;min-height:0;padding:18px;display:grid;gap:14px;align-content:start;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);background:var(--panel);}.card{padding:14px 16px;background:var(--card);border:1px solid #bda173;}.stat-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.stat-label--spaced{margin-top:12px;display:block;}.stat-value{margin-top:6px;font-size:28px;font-weight:800;}.sidebar-round{margin-top:2px;}.sidebar-phase{margin:0;font-size:22px;font-weight:800;line-height:1.2;}.controls{display:flex;gap:10px;flex-wrap:wrap;}.controls--actions{margin-top:12px;}.help{margin:0;color:var(--muted);line-height:1.5;}.help--hidden,.winner--hidden{display:none;}.help--spaced{margin-top:10px;}.help--playback{margin-top:8px;}.winner{margin:10px 0 0;color:#8f2416;font-weight:800;}"
-  ++ "@media (max-width:1180px){.shell{grid-template-columns:minmax(24px,.5fr) minmax(0,var(--board-shell-width)) var(--sidebar-width);}}"
-  ++ "@media (max-width:980px){.shell{grid-template-columns:1fr;}.left-rail{display:none;}.board-stage{border-left:none;padding:10px;}.board-stack{width:min(100%,var(--board-shell-width));}.board-wrap-large{width:100%;}.board{width:min(100%,var(--board-width));grid-template-columns:repeat(18,minmax(0,1fr));}.board-underbar{flex-direction:column;}.player-hp-card{width:auto;}.sidebar{border-left:none;border-top:1px solid var(--border);padding:14px;}.skill-strip{overflow:auto;max-width:100%;}}"
+  ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.sidebar{min-width:0;min-height:0;padding:18px;display:grid;gap:14px;align-content:start;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);background:var(--panel);}.card{padding:14px 16px;background:var(--card);border:1px solid #bda173;}.stat-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.stat-label--spaced{margin-top:12px;display:block;}.stat-value{margin-top:6px;font-size:28px;font-weight:800;}.sidebar-round{margin-top:2px;}.sidebar-phase{margin:0;font-size:22px;font-weight:800;line-height:1.2;}.controls{display:flex;gap:10px;flex-wrap:wrap;}.controls--actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;}.help{margin:0;color:var(--muted);line-height:1.5;}.help--hidden,.winner--hidden,.modal__card--hidden,.actor--hidden{display:none;}.help--spaced{margin-top:10px;}.help--playback{margin-top:8px;}.winner{margin:10px 0 0;color:#8f2416;font-weight:800;}"
+  ++ "@media (max-width:1180px){.shell{grid-template-columns:minmax(0,1fr) var(--sidebar-width);}}"
+  ++ "@media (max-width:980px){.shell{grid-template-columns:1fr;}.board-stage{grid-template-columns:1fr;padding:10px;}.board-stack{width:min(100%,var(--board-shell-width));grid-column:auto;}.board-wrap-large{width:100%;}.board{width:min(100%,var(--board-width));grid-template-columns:repeat(18,minmax(0,1fr));}.board-underbar{flex-direction:column;}.player-hp-card{width:auto;}.sidebar{border-left:none;border-top:1px solid var(--border);padding:14px;}.skill-strip{overflow:auto;max-width:100%;}}"
 
 def component_css() -> String:
   ""
