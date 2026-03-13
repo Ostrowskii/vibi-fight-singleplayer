@@ -983,6 +983,11 @@ def _action_sim_next_state(sim: ActionSim) -> GameState:
     case action_sim{_, _, _, _, next_state, _, _, _}:
       next_state
 
+def _action_sim_attack_tiles(sim: ActionSim) -> List(Pos):
+  match sim:
+    case action_sim{_, _, _, attack_tiles, _, _, _, _}:
+      attack_tiles
+
 def _reset_round_planning_state(state: GameState) -> GameState:
   match state:
     case game_state{round, level, player_hp, enemy_hp, player, enemy, _, _, _, _, winner}:
@@ -1824,6 +1829,20 @@ def _render_preview_hits(state: GameState) -> List(Pos):
     case 0:
       preview_hits(state)
     case _:
+      _render_playback_attack_hits(state, _state_playback_action(state), _state_playback_phase(state))
+
+def _render_playback_attack_hits(state: GameState, action: Action, phase: U32) -> List(Pos):
+  match phase:
+    case 0:
+      _render_playback_attack_hits_action(state, action)
+    case _:
+      _pos_nil()
+
+def _render_playback_attack_hits_action(state: GameState, action: Action) -> List(Pos):
+  match action:
+    case attack{_, _, _}:
+      _action_sim_attack_tiles(_state_playback_sim(state))
+    case _:
       _pos_nil()
 
 def _render_target_valid(state: GameState) -> U32:
@@ -2051,7 +2070,7 @@ def _board_cell_hit_class_hit(hit: U32) -> String:
     case 0:
       ""
     case _:
-      " cell--hit"
+      " cell--hit cell--attack-flash"
 
 def _board_cell_route_class(trail: List(TrailStep), cell_pos: Pos) -> String:
   _board_cell_route_class_step(_trail_step_at(trail, cell_pos))
@@ -2459,11 +2478,17 @@ def _state_playback_active(state: GameState) -> U32:
 def _state_playback_idx(state: GameState) -> U32:
   _mode_playback_idx(_state_mode_value(state))
 
+def _state_playback_phase(state: GameState) -> U32:
+  _mode_playback_phase(_state_mode_value(state))
+
 def _state_playback_actor(state: GameState) -> U32:
   _mode_playback_actor(_state_mode_value(state))
 
 def _state_playback_action(state: GameState) -> Action:
   _mode_playback_action(_state_mode_value(state))
+
+def _state_playback_sim(state: GameState) -> ActionSim:
+  _mode_playback_sim(_state_mode_value(state))
 
 def _state_playback_bot(state: GameState) -> List(Action):
   _mode_playback_bot(_state_mode_value(state))
@@ -2485,7 +2510,7 @@ def layout_css() -> String:
 def component_css() -> String:
   ""
   ++ ".button{border:none;border-radius:999px;padding:11px 15px;cursor:pointer;font:inherit;font-weight:800;color:#fff8eb;background:var(--button);}.button.alt{background:var(--button-alt);}.button.ghost{background:var(--danger);}.button:disabled{opacity:.56;cursor:default;}"
-  ++ ".actor{position:absolute;inset:14%;display:grid;place-items:center;font-size:clamp(12px,1.25vw,18px);font-weight:900;color:#fff8eb;z-index:2;}.actor--player{background:var(--player);font-size:clamp(14px,1.15vw,18px);}.actor--enemy{background:var(--enemy);inset:10%;padding:0 4px;font-size:clamp(8px,.85vw,12px);line-height:1;letter-spacing:-.02em;text-align:center;}.ghost{position:absolute;inset:18%;display:grid;place-items:center;background:transparent;color:var(--ghost);border:3px solid var(--ghost);font-size:clamp(12px,1.05vw,16px);font-weight:900;z-index:1;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;min-width:18px;height:18px;padding:0 5px;display:grid;place-items:center;font-size:11px;font-weight:900;line-height:1;color:#fff8eb;background:var(--player);z-index:4;}.trail--hidden{display:none;}"
+  ++ ".actor{position:absolute;inset:14%;display:grid;place-items:center;font-size:clamp(12px,1.25vw,18px);font-weight:900;color:#fff8eb;z-index:2;}.actor--player{background:var(--player);font-size:clamp(14px,1.15vw,18px);}.actor--enemy{background:var(--enemy);inset:10%;padding:0 4px;font-size:clamp(8px,.85vw,12px);line-height:1;letter-spacing:-.02em;text-align:center;}.ghost{position:absolute;inset:18%;display:grid;place-items:center;background:transparent;color:var(--ghost);border:3px solid var(--ghost);font-size:clamp(12px,1.05vw,16px);font-weight:900;z-index:1;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;min-width:18px;height:18px;padding:0 5px;display:grid;place-items:center;font-size:11px;font-weight:900;line-height:1;color:#fff8eb;background:var(--player);z-index:4;}.trail--hidden{display:none;}.cell--attack-flash{animation:attack-flash .42s linear 1;}.cell--attack-flash .trail,.cell--attack-flash .ghost,.cell--attack-flash .actor{z-index:5;}@keyframes attack-flash{0%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}15%{background:var(--hit);box-shadow:inset 0 0 0 2px #8f2416;}30%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}45%{background:var(--hit);box-shadow:inset 0 0 0 2px #8f2416;}60%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}75%{background:var(--hit);box-shadow:inset 0 0 0 2px #8f2416;}100%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}}"
   ++ ".skill-preview{min-width:72px;padding:10px;display:grid;justify-items:start;align-items:start;align-content:start;gap:8px;border:1px solid #bda173;border-radius:14px;background:var(--card);color:var(--text);}.skill-preview--active{border-color:var(--button);background:#f1dfb8;}.skill-key{font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--muted);}.skill-grid{display:grid;align-self:start;justify-self:start;grid-template-columns:repeat(var(--mini-cols),12px);grid-template-rows:repeat(var(--mini-rows),12px);gap:1px;padding:1px;background:var(--grid);}.skill-mini-cell{width:12px;height:12px;background:var(--cell);}.skill-mini-cell--filled{background:var(--preview);}.skill-preview--active .skill-mini-cell--filled{background:var(--button);}"
   ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(42,33,21,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(42,33,21,.46);}.modal__card{width:min(100%,340px);display:grid;gap:12px;justify-items:center;padding:24px 22px;background:var(--card);border:1px solid #bda173;}.modal__eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;}.modal__title{margin:0;font-size:34px;line-height:1;}.timer-hook{display:none;}"
 
