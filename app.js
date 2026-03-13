@@ -1,4 +1,23 @@
-import { getRules, getSkillCells } from "./generated/bend-api.js";
+import {
+  getRules,
+  getSkillCells,
+  createInitialState,
+  getPlannedPlayerPos,
+  getMovementTrail,
+  getPreviewTiles,
+  getPreviewHits,
+  isTargetValid,
+  queueMoveState as bendQueueMoveState,
+  startTargetState as bendStartTargetState,
+  moveTargetState as bendMoveTargetState,
+  rotateTargetState as bendRotateTargetState,
+  cancelTargetState as bendCancelTargetState,
+  confirmTargetState as bendConfirmTargetState,
+  clearRoundPlanState as bendClearRoundPlanState,
+  popLastPlannedActionState as bendPopLastPlannedActionState,
+  resolveActorActionState as bendResolveActorActionState,
+  resetRoundPlanningState as bendResetRoundPlanningState,
+} from "./generated/bend-api.js";
 
 const root = document.querySelector("#app");
 if (!root) {
@@ -8,7 +27,6 @@ if (!root) {
 const rules = getRules();
 const BOARD_W = rules.boardW;
 const BOARD_H = rules.boardH;
-const DAMAGE = rules.damage;
 const MOVE_ANIM_MS = 240;
 const BLOCKED_MOVE_ANIM_MS = 180;
 const ATTACK_ANIM_MS = 520;
@@ -81,12 +99,14 @@ function moveAction(dir) {
 }
 
 function attackAction(skill, origin, rot, actorPos) {
+  const anchor =
+    SKILLS[skill][rot].find((cell) => samePos(addPos(origin, cell), actorPos)) ?? { x: 0, y: 0 };
   return {
     kind: "attack",
     skill,
-    offset: {
-      x: origin.x - actorPos.x,
-      y: origin.y - actorPos.y,
+    anchor: {
+      x: anchor.x,
+      y: anchor.y,
     },
     rot,
   };
@@ -97,19 +117,7 @@ function clonePos(pos) {
 }
 
 function makeInitialState() {
-  return {
-    round: 1,
-    level: 1,
-    playerHp: rules.maxHp,
-    enemyHp: rules.maxHp,
-    player: clonePos(rules.playerStart),
-    enemy: clonePos(rules.enemyStart),
-    queue: [waitAction(), waitAction(), waitAction()],
-    queueLen: 0,
-    queueLocked: false,
-    mode: { kind: "plan" },
-    winner: 0,
-  };
+  return createInitialState();
 }
 
 let game = makeInitialState();
@@ -140,13 +148,6 @@ function addPos(pos, cell) {
   };
 }
 
-function offsetPos(pos, delta) {
-  return {
-    x: pos.x + delta.x,
-    y: pos.y + delta.y,
-  };
-}
-
 function samePos(a, b) {
   return a.x === b.x && a.y === b.y;
 }
@@ -158,39 +159,6 @@ function stepFree(pos, dir) {
     x: clamp(pos.x + delta.x, 0, BOARD_W - 1),
     y: clamp(pos.y + delta.y, 0, BOARD_H - 1),
   };
-}
-
-function stepBlocked(pos, dir, other) {
-  const next = stepFree(pos, dir);
-  return samePos(next, other) ? clonePos(pos) : next;
-}
-
-function plannedPlayerPos(state) {
-  let pos = clonePos(state.player);
-  for (const action of state.queue) {
-    if (action.kind === "move") {
-      pos = stepFree(pos, action.dir);
-    }
-  }
-  return pos;
-}
-
-function plannedPlayerTrail(state) {
-  let pos = clonePos(state.player);
-  const trail = [];
-
-  for (const action of state.queue) {
-    if (action.kind === "move") {
-      pos = stepFree(pos, action.dir);
-      trail.push({
-        x: pos.x,
-        y: pos.y,
-        step: trail.length + 1,
-      });
-    }
-  }
-
-  return trail;
 }
 
 function previewCellsFor(skill, rot, origin) {
@@ -218,117 +186,42 @@ function attackHits(skill, rot, origin, actorPos, targetPos) {
 }
 
 function resolveAttackOrigin(action, actorPos) {
-  return offsetPos(actorPos, action.offset);
-}
-
-function defaultTargetOrigin(skill, actorPos) {
-  const anchor = SKILLS[skill][0][0];
   return {
-    x: Math.max(0, actorPos.x - anchor.x),
-    y: Math.max(0, actorPos.y - anchor.y),
+    x: Math.max(0, actorPos.x - action.anchor.x),
+    y: Math.max(0, actorPos.y - action.anchor.y),
   };
 }
 
 function queueMoveState(state, dir) {
-  if (state.winner || state.mode.kind !== "plan" || state.queueLocked || state.queueLen >= 2) {
-    return state;
-  }
-  const next = stepFree(plannedPlayerPos(state), dir);
-  if (samePos(next, plannedPlayerPos(state))) {
-    return state;
-  }
-  const newState = structuredClone(state);
-  newState.queue[newState.queueLen] = moveAction(dir);
-  newState.queueLen += 1;
-  return newState;
+  return bendQueueMoveState(state, dir);
 }
 
 function startTargetState(state, skill) {
-  if (state.winner || state.queueLocked || state.queueLen >= 3) {
-    return state;
-  }
-  const newState = structuredClone(state);
-  newState.mode = {
-    kind: "target",
-    skill,
-    rot: 0,
-    origin: defaultTargetOrigin(skill, plannedPlayerPos(state)),
-  };
-  return newState;
+  return bendStartTargetState(state, skill);
 }
 
 function moveTargetState(state, dir) {
-  if (state.mode.kind !== "target") {
-    return state;
-  }
-  const newState = structuredClone(state);
-  newState.mode.origin = stepFree(newState.mode.origin, dir);
-  return newState;
+  return bendMoveTargetState(state, dir);
 }
 
 function rotateTargetState(state, clockwise) {
-  if (state.mode.kind !== "target") {
-    return state;
-  }
-  const newState = structuredClone(state);
-  newState.mode.rot = (newState.mode.rot + (clockwise ? 1 : 3)) % 4;
-  return newState;
+  return bendRotateTargetState(state, clockwise);
 }
 
 function cancelTargetState(state) {
-  if (state.mode.kind !== "target") {
-    return state;
-  }
-  const newState = structuredClone(state);
-  newState.mode = { kind: "plan" };
-  return newState;
+  return bendCancelTargetState(state);
 }
 
 function confirmTargetState(state) {
-  if (state.mode.kind !== "target") {
-    return state;
-  }
-  const actorPos = plannedPlayerPos(state);
-  if (!placementValid(state.mode.skill, state.mode.rot, state.mode.origin, actorPos)) {
-    return state;
-  }
-  const newState = structuredClone(state);
-  newState.queue[newState.queueLen] = attackAction(
-    state.mode.skill,
-    state.mode.origin,
-    state.mode.rot,
-    actorPos
-  );
-  newState.queueLen += 1;
-  newState.queueLocked = true;
-  newState.mode = { kind: "plan" };
-  return newState;
+  return bendConfirmTargetState(state);
 }
 
 function clearRoundPlanState(state) {
-  if (state.winner) {
-    return state;
-  }
-
-  const newState = structuredClone(state);
-  newState.queue = [waitAction(), waitAction(), waitAction()];
-  newState.queueLen = 0;
-  newState.queueLocked = false;
-  newState.mode = { kind: "plan" };
-  return newState;
+  return bendClearRoundPlanState(state);
 }
 
 function popLastPlannedActionState(state) {
-  if (state.winner || state.mode.kind !== "plan" || state.queueLen === 0) {
-    return state;
-  }
-
-  const newState = structuredClone(state);
-  const lastIndex = newState.queueLen - 1;
-  newState.queue[lastIndex] = waitAction();
-  newState.queueLen = lastIndex;
-  newState.queueLocked = newState.queue.some((action) => action.kind === "attack");
-  return newState;
+  return bendPopLastPlannedActionState(state);
 }
 
 function firstValidAttack(skill, actorPos) {
@@ -418,67 +311,6 @@ function buildBotPlan(state) {
   return fallbackPlan(state);
 }
 
-function computeWinner(playerHp, enemyHp) {
-  if (playerHp <= 0 && enemyHp <= 0) return 3;
-  if (enemyHp <= 0) return 1;
-  if (playerHp <= 0) return 2;
-  return 0;
-}
-
-function resolveActorAction(state, actor, action) {
-  if (state.winner) return;
-  if (actor === "player" && state.playerHp <= 0) return;
-  if (actor === "enemy" && state.enemyHp <= 0) return;
-
-  const selfKey = actor === "player" ? "player" : "enemy";
-  const otherKey = actor === "player" ? "enemy" : "player";
-  const hpKey = actor === "player" ? "enemyHp" : "playerHp";
-
-  if (action.kind === "wait") {
-    return;
-  }
-
-  if (action.kind === "move") {
-    state[selfKey] = stepBlocked(state[selfKey], action.dir, state[otherKey]);
-    return;
-  }
-
-  const origin = resolveAttackOrigin(action, state[selfKey]);
-  if (attackHits(action.skill, action.rot, origin, state[selfKey], state[otherKey])) {
-    state[hpKey] = Math.max(0, state[hpKey] - DAMAGE);
-    state.winner = computeWinner(state.playerHp, state.enemyHp);
-  }
-}
-
-function readyRoundState(state) {
-  if (state.winner || state.mode.kind === "target") {
-    return state;
-  }
-
-  const next = structuredClone(state);
-  const botQueue = buildBotPlan(state);
-
-  for (let slot = 0; slot < 3; slot += 1) {
-    resolveActorAction(next, "player", next.queue[slot]);
-    if (next.winner) break;
-    resolveActorAction(next, "enemy", botQueue[slot]);
-    if (next.winner) break;
-  }
-
-  resetRoundPlanning(next);
-  return next;
-}
-
-function resetRoundPlanning(state) {
-  state.queue = [waitAction(), waitAction(), waitAction()];
-  state.queueLen = 0;
-  state.queueLocked = false;
-  state.mode = { kind: "plan" };
-  if (!state.winner) {
-    state.round += 1;
-  }
-}
-
 function actorLabel(actor) {
   return actor === "player" ? "Player" : "IA";
 }
@@ -513,25 +345,19 @@ function winnerTitle(winner) {
 
 function getViewState(state) {
   const resolving = isResolving();
-  const actorPos = resolving ? clonePos(state.player) : plannedPlayerPos(state);
-  const movementTrail = resolving ? [] : plannedPlayerTrail(state);
+  const actorPos = resolving ? clonePos(state.player) : getPlannedPlayerPos(state);
+  const movementTrail = resolving ? [] : getMovementTrail(state);
   const targetValid =
-    !resolving && state.mode.kind === "target"
-      ? placementValid(state.mode.skill, state.mode.rot, state.mode.origin, actorPos)
-      : false;
+    !resolving && state.mode.kind === "target" ? Boolean(isTargetValid(state)) : false;
 
   return {
     ...state,
     plannedPlayer: actorPos,
     movementTrail,
     previewTiles:
-      !resolving && state.mode.kind === "target"
-        ? previewCellsFor(state.mode.skill, state.mode.rot, state.mode.origin)
-        : [],
+      !resolving && state.mode.kind === "target" ? getPreviewTiles(state) : [],
     previewHits:
-      !resolving && state.mode.kind === "target"
-        ? previewHitsFor(state.mode.skill, state.mode.rot, state.mode.origin, actorPos)
-        : [],
+      !resolving && state.mode.kind === "target" ? getPreviewHits(state) : [],
     targetValid,
     resolving,
     playback,
@@ -730,8 +556,6 @@ async function animateActorAction(slot, actor, action) {
 
   const selfKey = actor === "player" ? "player" : "enemy";
   const otherKey = actor === "player" ? "enemy" : "player";
-  const hpKey = actor === "player" ? "enemyHp" : "playerHp";
-
   if (action.kind === "wait") {
     playback = { slot, actor, action, move: null, attackTiles: [], death: null };
     render();
@@ -741,8 +565,9 @@ async function animateActorAction(slot, actor, action) {
 
   if (action.kind === "move") {
     const from = clonePos(game[selfKey]);
-    const to = stepBlocked(game[selfKey], action.dir, game[otherKey]);
-    game[selfKey] = clonePos(to);
+    const next = bendResolveActorActionState(game, actor, action);
+    const to = clonePos(next[selfKey]);
+    game = next;
     playback = {
       slot,
       actor,
@@ -770,24 +595,24 @@ async function animateActorAction(slot, actor, action) {
   playback = { slot, actor, action, move: null, attackTiles, death: null };
   render();
   await sleep(ATTACK_ANIM_MS);
-  if (attackHits(action.skill, action.rot, origin, actorPos, game[otherKey])) {
-    game[hpKey] = Math.max(0, game[hpKey] - DAMAGE);
-    game.winner = computeWinner(game.playerHp, game.enemyHp);
-    if (otherKey === "enemy" && game.enemyHp <= 0) {
-      playback = {
-        slot,
-        actor,
-        action,
-        move: null,
-        attackTiles: [],
-        death: {
-          actor: "enemy",
-          pos: clonePos(game.enemy),
-        },
-      };
-      render();
-      await sleep(DEATH_ANIM_MS);
-    }
+  const before = game;
+  const next = bendResolveActorActionState(before, actor, action);
+  const enemyDied = otherKey === "enemy" && before.enemyHp > 0 && next.enemyHp <= 0;
+  game = next;
+  if (enemyDied) {
+    playback = {
+      slot,
+      actor,
+      action,
+      move: null,
+      attackTiles: [],
+      death: {
+        actor: "enemy",
+        pos: clonePos(before.enemy),
+      },
+    };
+    render();
+    await sleep(DEATH_ANIM_MS);
   }
   playback = { slot, actor, action, move: null, attackTiles: [], death: null };
   render();
@@ -815,7 +640,7 @@ async function resolveRoundAnimated() {
       }
     }
   } finally {
-    resetRoundPlanning(game);
+    game = bendResetRoundPlanningState(game);
     playback = null;
     render();
   }
@@ -1010,7 +835,7 @@ window.addEventListener("keydown", (event) => {
       game = rotateTargetState(game, true);
     } else if (key === " ") {
       const next = confirmTargetState(game);
-      const confirmed = next !== game;
+      const confirmed = game.mode.kind === "target" && next.mode.kind !== "target";
       game = next;
       if (confirmed) {
         void resolveRoundAnimated();
