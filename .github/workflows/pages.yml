@@ -23,16 +23,11 @@ jobs:
       - name: Checkout app
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Fetch Bend2
-        run: git clone --depth 1 https://github.com/HigherOrderCO/bend2.git vendor/bend2
-
-      - name: Build site
+      - name: Prepare site artifact
         run: |
+          test -f index.html
           mkdir -p dist
-          bun vendor/bend2/bend-ts/src/CLI.ts src/main.bend --to-web --no-strict > dist/index.html
+          cp index.html dist/index.html
           touch dist/.nojekyll
 
       - name: Setup Pages
