@@ -53,7 +53,7 @@ body {
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--sidebar-width);
+  grid-template-columns: minmax(0, 1fr) minmax(0, calc(var(--board-shell-width) + 40px)) var(--sidebar-width);
   overflow: hidden;
 }
 
@@ -78,6 +78,7 @@ body {
 
 .board-stack {
   width: var(--board-shell-width);
+  max-width: 100%;
   display: grid;
   gap: 14px;
 }
@@ -119,6 +120,7 @@ body {
 
 .board-wrap-large {
   width: var(--board-shell-width);
+  max-width: 100%;
 }
 
 .board-underbar {
@@ -150,6 +152,7 @@ body {
   display: flex;
   gap: 10px;
   align-items: stretch;
+  min-width: 0;
 }
 
 .board {
@@ -533,6 +536,170 @@ button:disabled {
 .result-text {
   margin: 0;
   color: var(--muted);
+}
+
+@media (max-width: 1180px) {
+  :root {
+    --cell-size: clamp(22px, calc((100vw - 72px) / 18), 42px);
+    --board-shell-padding: clamp(8px, 1vw, 12px);
+  }
+
+  html,
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow: auto;
+  }
+
+  #app {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .shell {
+    min-height: 100dvh;
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .left-rail {
+    display: none;
+  }
+
+  .board-stage {
+    place-items: start center;
+    padding: 18px 14px 0;
+    overflow: visible;
+    border-left: none;
+  }
+
+  .board-stack,
+  .board-wrap-large {
+    width: min(100%, var(--board-shell-width));
+  }
+
+  .board-underbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .player-hp-card {
+    width: 100%;
+  }
+
+  .skill-strip {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    overscroll-behavior-x: contain;
+  }
+
+  .skill-preview {
+    flex: 0 0 auto;
+  }
+
+  .sidebar {
+    padding: 18px 14px 24px;
+    overflow: visible;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --cell-size: clamp(14px, calc((100vw - 56px) / 18), 24px);
+    --board-shell-padding: 6px;
+  }
+
+  .board-stage {
+    padding: 12px 10px 0;
+  }
+
+  .board-stack {
+    gap: 10px;
+  }
+
+  .board-underbar {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .queue-inline {
+    gap: 8px;
+  }
+
+  .queue-slot {
+    padding: 10px 8px;
+  }
+
+  .slot-index {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .slot-value {
+    margin-top: 4px;
+    font-size: 13px;
+  }
+
+  .skill-strip {
+    gap: 8px;
+  }
+
+  .skill-preview {
+    min-width: 78px;
+    padding: 8px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+
+  .skill-key {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  .actor,
+  .actor-float {
+    font-size: clamp(8px, 2.3vw, 11px);
+  }
+
+  .actor.enemy-hp {
+    padding: 0 2px;
+    font-size: clamp(6px, 1.55vw, 9px);
+  }
+
+  .actor.ghost {
+    border-width: 2px;
+  }
+
+  .trail-badge {
+    top: 2px;
+    left: 2px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    font-size: 8px;
+  }
+
+  .sidebar {
+    padding: 14px 10px 20px;
+    gap: 10px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .sidebar-phase {
+    font-size: 19px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
 }
 
 @keyframes slot-move {
