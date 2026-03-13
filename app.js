@@ -15,6 +15,10 @@ const ATTACK_ANIM_MS = 520;
 const WAIT_ANIM_MS = 120;
 const SLOT_GAP_MS = 90;
 const DEATH_ANIM_MS = 560;
+const SKILL_PREVIEW_GAP = 1;
+const SKILL_PREVIEW_PADDING = 1;
+const SKILL_PREVIEW_BOX = 53;
+const SKILL_PREVIEW_MIN_CELL = 4;
 
 const DIRECTIONS = [
   { x: 0, y: -1, label: "Up" },
@@ -42,9 +46,19 @@ function buildSkillPreview(cells) {
     maxY = Math.max(maxY, cell.y);
   }
 
+  const width = maxX - minX + 1;
+  const height = maxY - minY + 1;
+  const usableBox = SKILL_PREVIEW_BOX - (SKILL_PREVIEW_PADDING * 2);
+  const cellByWidth = Math.floor((usableBox - ((width - 1) * SKILL_PREVIEW_GAP)) / width);
+  const cellByHeight = Math.floor((usableBox - ((height - 1) * SKILL_PREVIEW_GAP)) / height);
+  const cellSize = Math.max(SKILL_PREVIEW_MIN_CELL, Math.min(cellByWidth, cellByHeight));
+
   return {
-    width: maxX - minX + 1,
-    height: maxY - minY + 1,
+    width,
+    height,
+    cellSize,
+    pixelWidth: (width * cellSize) + ((width - 1) * SKILL_PREVIEW_GAP) + (SKILL_PREVIEW_PADDING * 2),
+    pixelHeight: (height * cellSize) + ((height - 1) * SKILL_PREVIEW_GAP) + (SKILL_PREVIEW_PADDING * 2),
     cells: cells.map((cell) => ({
       x: cell.x - minX,
       y: cell.y - minY,
@@ -621,7 +635,10 @@ function skillPreviewMarkup(snap) {
       return `
         <button class="skill-preview ${active ? "active" : ""}" data-skill="${skill}" ${disabled} aria-label="Skill ${skill}">
           <span class="skill-key">${skill}</span>
-          <span class="skill-grid" style="--mini-cols:${preview.width}; --mini-rows:${preview.height}">
+          <span
+            class="skill-grid"
+            style="--mini-cols:${preview.width}; --mini-rows:${preview.height}; --mini-cell-size:${preview.cellSize}px; width:${preview.pixelWidth}px; height:${preview.pixelHeight}px"
+          >
             ${cells.join("")}
           </span>
         </button>

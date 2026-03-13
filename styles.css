@@ -425,6 +425,8 @@ body {
   padding: 10px;
   display: grid;
   justify-items: start;
+  align-items: start;
+  align-content: start;
   gap: 8px;
   border: 1px solid #bda173;
   border-radius: 14px;
@@ -446,16 +448,18 @@ body {
 
 .skill-grid {
   display: grid;
-  grid-template-columns: repeat(var(--mini-cols), 12px);
-  grid-template-rows: repeat(var(--mini-rows), 12px);
+  align-self: start;
+  justify-self: start;
+  grid-template-columns: repeat(var(--mini-cols), var(--mini-cell-size));
+  grid-template-rows: repeat(var(--mini-rows), var(--mini-cell-size));
   gap: 1px;
   padding: 1px;
   background: var(--grid-line);
 }
 
 .skill-mini-cell {
-  width: 12px;
-  height: 12px;
+  width: var(--mini-cell-size);
+  height: var(--mini-cell-size);
   background: var(--empty);
 }
 
