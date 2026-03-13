@@ -1581,95 +1581,167 @@ def render(state: GameState) -> HTML(FightEvent):
     <style>{text{css()}}</style>
     <div {..._tick_attrs(state)}></div>
     <main class="shell" tabindex="0" style="outline:none" on_key_down={key_event}>
-      <section class="topbar">
-        <div class="topbar__left">
-          <div class="chip">{text{"Round " ++ U32.show(_state_round(state))}}</div>
-          <div class={_phase_chip_class(state)}>{text{_phase_label(state)}}</div>
-        </div>
-        <button {..._button_attrs("button button--ghost", evt_reset{})}>
-          {text{"Reset"}}
-        </button>
-      </section>
+      <div class="left-rail" aria-hidden="true"></div>
 
-      <section class="content-grid">
-        <section class="stage-column">
-          <section class="board-wrap">
+      <section class="board-stage">
+        <div class="board-stack">
+          <section class="board-wrap board-wrap-large">
             <div class="board">{...board}</div>
             {_winner_modal(state)}
           </section>
 
-          <section class="underbar">
-            <div class="panel panel--hp">
-              <div class="panel__label">Player HP</div>
-              <div class="panel__value">{text{_hp_text(_state_player_hp(state))}}</div>
+          <section class="board-underbar">
+            <div class="player-hp-card card">
+              <div class="stat-label">Player HP</div>
+              <div class="stat-value">{text{_hp_text(_state_player_hp(state))}}</div>
             </div>
 
-            <div class="panel panel--queue">
-              <div class="panel__label">Slots</div>
-              <div class="queue-inline">
-                {_queue_slot(state, 0)}
-                {_queue_slot(state, 1)}
-                {_queue_slot(state, 2)}
-              </div>
+            <div class="queue-inline">
+              {_queue_slot(state, 0)}
+              {_queue_slot(state, 1)}
+              {_queue_slot(state, 2)}
             </div>
 
-            <div class="panel panel--skills">
-              <div class="panel__label">Skills</div>
-              <div class="skill-strip">
-                {_skill_preview_card(state, 1)}
-                {_skill_preview_card(state, 2)}
-                {_skill_preview_card(state, 3)}
-              </div>
+            <div class="skill-strip">
+              {_skill_preview_card(state, 1)}
+              {_skill_preview_card(state, 2)}
+              {_skill_preview_card(state, 3)}
             </div>
           </section>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="card sidebar-status">
+          <div class="stat-label">Round</div>
+          <div class="stat-value sidebar-round">{text{U32.show(_state_round(state))}}</div>
+          <div class="stat-label stat-label--spaced">Estado</div>
+          <p class="sidebar-phase">{text{_mode_text(state)}}</p>
+          {_winner_sidebar_text(state)}
+          {_preview_sidebar_text(state, planned)}
+          {_playback_sidebar_text(state)}
         </section>
 
-        <aside class="sidebar">
-          <section class="panel">
-            <div class="panel__label">State</div>
-            <p class="help">{text{_mode_text(state)}}</p>
-            <p class="help">{text{_playback_info_text(state)}}</p>
-            <p class="help">{text{"Player preview: " ++ _pos_text(planned)}}</p>
-          </section>
+        <section class="card">
+          <div class="stat-label">Acoes</div>
+          <div class="controls controls--actions">
+            <button {..._button_attrs("button alt", evt_ready{})}>{text{"Ready"}}</button>
+            <button {..._button_attrs("button", evt_clear{})}>{text{"Limpar jogada"}}</button>
+            <button {..._button_attrs("button ghost", evt_reset{})}>{text{"Reset partida"}}</button>
+          </div>
+        </section>
 
-          <section class="panel">
-            <div class="panel__label">Moves</div>
-            <div class="dpad">
-              <div></div>
-              <button {..._button_attrs("button", evt_move_up{})}>{text{"Up"}}</button>
-              <div></div>
-              <button {..._button_attrs("button", evt_move_left{})}>{text{"Left"}}</button>
-              <button {..._button_attrs("button", evt_move_down{})}>{text{"Down"}}</button>
-              <button {..._button_attrs("button", evt_move_right{})}>{text{"Right"}}</button>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel__label">Target</div>
-            <div class="button-row">
-              <button {..._button_attrs("button button--secondary", evt_rotate_left{})}>{text{"Q"}}</button>
-              <button {..._confirm_button_attrs(state)}>{text{"Space"}}</button>
-              <button {..._button_attrs("button button--secondary", evt_rotate_right{})}>{text{"E"}}</button>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel__label">Actions</div>
-            <div class="button-row">
-              <button {..._button_attrs("button", evt_ready{})}>{text{"Ready"}}</button>
-              <button {..._button_attrs("button button--secondary", evt_clear{})}>{text{"Clear"}}</button>
-              <button {..._button_attrs("button button--secondary", evt_escape{})}>{text{"Esc"}}</button>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel__label">Controls</div>
-            <p class="help">{text{"WASD/setas movem ou mexem a mira. 1/2/3 entram na mira. Q/E giram. Space confirma e resolve em etapas. Enter inicia a resolucao. Esc cancela ou desfaz."}}</p>
-          </section>
-        </aside>
-      </section>
+        <section class="card">
+          <div class="stat-label">Controles</div>
+          <p class="help">{text{_controls_text(state)}}</p>
+          {_target_sidebar_text(state)}
+          {_playback_help_text(state)}
+        </section>
+      </aside>
     </main>
   </div>
+
+def _winner_sidebar_text(state: GameState) -> HTML(FightEvent):
+  _winner_sidebar_text_w(_state_winner(state))
+
+def _winner_sidebar_text_w(winner: U32) -> HTML(FightEvent):
+  match winner:
+    case 0:
+      <div class="winner winner--hidden"></div>
+    case result:
+      <p class="winner">{text{_winner_title(result)}}</p>
+
+def _preview_sidebar_text(state: GameState, planned: Pos) -> HTML(FightEvent):
+  match _state_playback_active(state):
+    case 0:
+      _preview_sidebar_text_w(_state_queue_len_or_target(state), planned)
+    case _:
+      <div class="help help--hidden"></div>
+
+def _preview_sidebar_text_w(show: U32, planned: Pos) -> HTML(FightEvent):
+  match show:
+    case 0:
+      <div class="help help--hidden"></div>
+    case _:
+      <p class="help help--spaced">{text{"Preview do player: " ++ _pos_text(planned)}}</p>
+
+def _playback_sidebar_text(state: GameState) -> HTML(FightEvent):
+  _playback_sidebar_text_active(_state_playback_active(state), state)
+
+def _playback_sidebar_text_active(active: U32, state: GameState) -> HTML(FightEvent):
+  match active:
+    case 0:
+      <div class="help help--hidden"></div>
+    case _:
+      <p class="help help--spaced">{text{"Ator atual: " ++ _playback_actor_label(_state_playback_idx(state)) ++ ". Acao atual: " ++ _action_label(_playback_action(_state_queue(state), _state_playback_bot(state), _state_playback_idx(state))) ++ "."}}</p>
+
+def _controls_text(state: GameState) -> String:
+  _controls_text_active(_state_target_active(state))
+
+def _controls_text_active(active: U32) -> String:
+  match active:
+    case 0:
+      "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Space em uma mira valida confirma o ataque e ja da Ready. Esc desfaz a ultima decisao. Enter resolve o round. Limpar jogada apaga a fila atual."
+    case _:
+      "WASD/setas movem a preview. Q/E giram. Space confirma o ataque e ja resolve o round. Esc cancela a mira. Limpar jogada apaga a fila atual."
+
+def _target_sidebar_text(state: GameState) -> HTML(FightEvent):
+  _target_sidebar_text_active(_state_target_active(state), state)
+
+def _target_sidebar_text_active(active: U32, state: GameState) -> HTML(FightEvent):
+  match active:
+    case 0:
+      <div class="help help--hidden"></div>
+    case _:
+      <p class="help help--spaced">{text{"Skill " ++ U32.show(_state_target_skill(state)) ++ ", rotacao " ++ U32.show(_state_target_rot(state)) ++ ", origem " ++ _pos_text(_state_target_origin(state)) ++ ", preview " ++ _target_valid_text(target_valid(state)) ++ "."}}</p>
+
+def _playback_help_text(state: GameState) -> HTML(FightEvent):
+  _playback_help_text_active(_state_playback_active(state), state)
+
+def _playback_help_text_active(active: U32, state: GameState) -> HTML(FightEvent):
+  match active:
+    case 0:
+      <div class="help help--hidden"></div>
+    case _:
+      <p class="help help--spaced">{text{_playback_info_text(state)}}</p>
+
+def _state_queue_len_or_target(state: GameState) -> U32:
+  match _state_target_active(state):
+    case 0:
+      _state_queue_len_nonzero(_state_queue(state))
+    case _:
+      1
+
+def _state_queue_len_nonzero(queue: List(Action)) -> U32:
+  _state_queue_len_nonzero_first(_action_kind(_action_at(queue, 0)), _action_kind(_action_at(queue, 1)), _action_kind(_action_at(queue, 2)))
+
+def _state_queue_len_nonzero_first(k0: U32, k1: U32, k2: U32) -> U32:
+  match k0:
+    case 0:
+      _state_queue_len_nonzero_second(k1, k2)
+    case _:
+      1
+
+def _state_queue_len_nonzero_second(k1: U32, k2: U32) -> U32:
+  match k1:
+    case 0:
+      _state_queue_len_nonzero_third(k2)
+    case _:
+      1
+
+def _state_queue_len_nonzero_third(k2: U32) -> U32:
+  match k2:
+    case 0:
+      0
+    case _:
+      1
+
+def _target_valid_text(valid: U32) -> String:
+  match valid:
+    case 0:
+      "invalida"
+    case _:
+      "valida"
 
 def _render_planned_pos(state: GameState) -> Pos:
   match _state_playback_active(state):
@@ -1819,14 +1891,21 @@ def _queue_slot(state: GameState, idx: U32) -> HTML(FightEvent):
   </div>
 
 def _queue_slot_class(state: GameState, idx: U32) -> String:
-  _queue_slot_class_active(_queue_slot_is_active(state, idx))
+  _queue_slot_class_state(_queue_slot_is_active(state, idx), _queue_slot_is_enemy_turn(state, idx))
 
-def _queue_slot_class_active(active: U32) -> String:
+def _queue_slot_class_state(active: U32, enemy_turn: U32) -> String:
   match active:
     case 0:
       "queue-slot"
     case _:
+      _queue_slot_class_enemy(enemy_turn)
+
+def _queue_slot_class_enemy(enemy_turn: U32) -> String:
+  match enemy_turn:
+    case 0:
       "queue-slot queue-slot--active"
+    case _:
+      "queue-slot queue-slot--active queue-slot--enemy-turn"
 
 def _queue_slot_is_active(state: GameState, idx: U32) -> U32:
   match _state_playback_active(state):
@@ -1834,6 +1913,24 @@ def _queue_slot_is_active(state: GameState, idx: U32) -> U32:
       0
     case _:
       _playback_slot_of_idx(_state_playback_idx(state)) === idx
+
+def _queue_slot_is_enemy_turn(state: GameState, idx: U32) -> U32:
+  match _queue_slot_is_active(state, idx):
+    case 0:
+      0
+    case _:
+      _queue_slot_enemy_idx(_state_playback_idx(state))
+
+def _queue_slot_enemy_idx(playback_idx: U32) -> U32:
+  match playback_idx:
+    case 1:
+      1
+    case 3:
+      1
+    case 5:
+      1
+    case _:
+      0
 
 def _board_cell(
   state: GameState,
@@ -2247,26 +2344,24 @@ def _state_playback_bot(state: GameState) -> List(Action):
 
 def base_css() -> String:
   ""
-  ++ ":root{--bg:#f3f1ea;--panel:#fbfaf6;--border:#c7c0af;--text:#1f1c17;--muted:#6b6252;--grid:#b5ad98;--cell:#efe8d7;--preview:#d9ecff;--invalid:#f8d2d2;--hit:#ef4d4d;--route:#e6d9a8;--player:#2f63d8;--enemy:#218354;--ghost:#8db1ff;--button:#201d18;--button-alt:#e6dfcf;}"
-  ++ "*{box-sizing:border-box;}html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:'Trebuchet MS',sans-serif;}body{overflow:hidden;}button{font:inherit;cursor:pointer;}#app,.page{min-height:100svh;}"
+  ++ ":root{--bg:#d3bb94;--panel:#efe2c6;--card:#f7ecd3;--text:#2a2115;--muted:#6b593c;--border:#7a613c;--board-frame:#6f5634;--grid:#7f6541;--cell:#f8efd7;--preview:#ddb151;--invalid:#cf6c5b;--hit:#d94933;--route:#c9dff5;--player:#1f78db;--enemy:#32933a;--ghost:#5b9fe7;--button:#966320;--button-alt:#66794a;--danger:#b74431;--sidebar-width:278px;--cell-size:clamp(42px,3.3vw,52px);--board-shell-padding:12px;--board-width:calc((var(--cell-size) * 18) + 19px);--board-shell-width:calc(var(--board-width) + (var(--board-shell-padding) * 2) + 2px);}"
+  ++ "*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{overflow:hidden;}button{font:inherit;cursor:pointer;}#app,.page{width:100%;min-height:100svh;overflow:hidden;}"
 
 def layout_css() -> String:
   ""
-  ++ ".shell{width:min(100%,1240px);min-height:100svh;height:100svh;margin:0 auto;padding:12px;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px;overflow:hidden;}"
-  ++ ".topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;}.topbar__left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}.chip{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}.chip--plan{background:#f2ead7;}.chip--target{background:#d9ecff;}.chip--over{background:#f8d2d2;}"
-  ++ ".content-grid{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px;align-items:start;}.stage-column{min-width:0;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px;}.sidebar{min-width:0;min-height:0;display:grid;gap:12px;align-content:start;overflow:auto;}"
-  ++ ".board-wrap{position:relative;min-height:0;overflow:hidden;border:1px solid var(--border);background:var(--panel);border-radius:18px;padding:12px;display:grid;place-items:center;}.board{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));width:min(100%,calc((100svh - 308px) * 2));max-width:100%;border:1px solid var(--grid);background:var(--grid);gap:1px;}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit{box-shadow:inset 0 0 0 2px var(--hit);}.cell--route{outline:2px solid var(--route);outline-offset:-2px;}"
-  ++ ".underbar{display:grid;grid-template-columns:160px minmax(0,1fr) auto;gap:12px;align-items:stretch;}.panel{padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--panel);min-width:0;}.panel--hp{display:grid;align-content:start;}.panel--queue{display:grid;align-content:start;}.panel--skills{display:grid;align-content:start;justify-items:start;}.panel__label{margin:0 0 10px;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}.panel__value{font-size:1.4rem;font-weight:700;}.button-row{display:flex;gap:8px;flex-wrap:wrap;}.queue-inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.queue-slot{min-width:0;padding:10px;border:1px solid var(--border);border-radius:14px;background:#fff;}.queue-slot--active{border-color:var(--player);box-shadow:inset 0 0 0 2px var(--player);}.queue-slot__index{font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.queue-slot__value{margin-top:6px;font-weight:700;}"
-  ++ ".dpad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}.help{margin:0;color:var(--muted);line-height:1.45;}"
-  ++ "@media (max-width:980px){.shell{width:100%;padding:10px;}.content-grid{grid-template-columns:1fr;}.sidebar{overflow:visible;}.board{width:min(100%,calc((100svh - 420px) * 2));}.underbar{grid-template-columns:1fr;}.skill-strip{overflow:auto;max-width:100%;}}"
+  ++ ".shell{width:100%;height:100svh;display:grid;grid-template-columns:minmax(48px,1fr) minmax(0,var(--board-shell-width)) var(--sidebar-width);overflow:hidden;}.left-rail{min-width:0;min-height:0;}.board-stage{min-width:0;min-height:0;display:grid;place-items:center;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);}.board-stack{width:var(--board-shell-width);display:grid;gap:14px;}.board-wrap{position:relative;padding:var(--board-shell-padding);background:var(--board-frame);border:1px solid var(--border);overflow:hidden;}.board-wrap-large{width:var(--board-shell-width);}"
+  ++ ".board{width:var(--board-width);display:grid;grid-template-columns:repeat(18,var(--cell-size));gap:1px;padding:1px;background:var(--grid);}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit{box-shadow:inset 0 0 0 2px var(--hit);}.cell--route{background:var(--route);}"
+  ++ ".board-underbar{width:100%;padding:12px;display:flex;gap:12px;align-items:stretch;background:var(--panel);border:1px solid var(--border);}.player-hp-card{width:116px;padding:12px 14px;background:var(--card);border:1px solid #bda173;}.queue-inline{min-width:0;flex:1 1 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.queue-slot{padding:12px 14px;background:var(--panel);border:1px solid #c8ae83;}.queue-slot--active{background:#f1dfb8;border-color:var(--button);}.queue-slot--enemy-turn{border-color:var(--enemy);}.queue-slot__index{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}.queue-slot__value{margin-top:6px;font-weight:700;}"
+  ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.sidebar{min-width:0;min-height:0;padding:18px;display:grid;gap:14px;align-content:start;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);background:var(--panel);}.card{padding:14px 16px;background:var(--card);border:1px solid #bda173;}.stat-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.stat-label--spaced{margin-top:12px;display:block;}.stat-value{margin-top:6px;font-size:28px;font-weight:800;}.sidebar-round{margin-top:2px;}.sidebar-phase{margin:0;font-size:22px;font-weight:800;line-height:1.2;}.controls{display:flex;gap:10px;flex-wrap:wrap;}.controls--actions{margin-top:12px;}.help{margin:0;color:var(--muted);line-height:1.5;}.help--hidden,.winner--hidden{display:none;}.help--spaced{margin-top:10px;}.help--playback{margin-top:8px;}.winner{margin:10px 0 0;color:#8f2416;font-weight:800;}"
+  ++ "@media (max-width:1180px){.shell{grid-template-columns:minmax(24px,.5fr) minmax(0,var(--board-shell-width)) var(--sidebar-width);}}"
+  ++ "@media (max-width:980px){.shell{grid-template-columns:1fr;}.left-rail{display:none;}.board-stage{border-left:none;padding:10px;}.board-stack{width:min(100%,var(--board-shell-width));}.board-wrap-large{width:100%;}.board{width:min(100%,var(--board-width));grid-template-columns:repeat(18,minmax(0,1fr));}.board-underbar{flex-direction:column;}.player-hp-card{width:auto;}.sidebar{border-left:none;border-top:1px solid var(--border);padding:14px;}.skill-strip{overflow:auto;max-width:100%;}}"
 
 def component_css() -> String:
   ""
-  ++ ".button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border:1px solid var(--button);border-radius:12px;background:var(--button);color:#fff;font-weight:700;}.button--secondary{background:var(--button-alt);color:var(--text);border-color:var(--border);}.button--ghost{background:transparent;color:var(--text);border-color:var(--border);}.button--active{outline:2px solid var(--player);outline-offset:1px;}.button:disabled{opacity:.45;cursor:not-allowed;}"
-  ++ ".actor{position:relative;z-index:2;display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:4px 6px;border-radius:10px;font-weight:700;font-size:.74rem;border:1px solid rgba(0,0,0,.08);}.actor--player{background:var(--player);color:#fff;border-radius:999px;}.actor--enemy{background:var(--enemy);color:#fff;border-radius:4px;}"
-  ++ ".ghost{position:absolute;inset:auto auto 6px 6px;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:var(--ghost);color:#fff;font-size:.68rem;font-weight:700;opacity:.85;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;z-index:1;display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 4px;border-radius:999px;background:#fff;color:var(--text);font-size:.66rem;font-weight:700;border:1px solid var(--border);}.trail--hidden{display:none;}"
-  ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.skill-preview{display:grid;gap:8px;align-content:start;justify-items:start;padding:12px;border:1px solid var(--border);border-radius:14px;background:#fff;color:var(--text);min-width:88px;}.skill-preview--active{border-color:var(--player);box-shadow:inset 0 0 0 2px var(--player);}.skill-key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 8px;border-radius:999px;background:var(--button);color:#fff;font-weight:700;}.skill-grid{display:grid;grid-template-columns:repeat(var(--mini-cols),14px);grid-template-rows:repeat(var(--mini-rows),14px);gap:4px;}.skill-mini-cell{width:14px;height:14px;border-radius:3px;border:1px solid var(--border);background:var(--cell);}.skill-mini-cell--filled{background:var(--button);border-color:var(--button);}"
-  ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(20,17,12,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(20,17,12,.38);}.modal__card{display:grid;gap:12px;justify-items:center;padding:20px;border-radius:18px;background:#fff;border:1px solid var(--border);min-width:min(100%,280px);}.modal__eyebrow{font-size:.76rem;color:var(--muted);text-transform:uppercase;font-weight:700;}.modal__title{margin:0;font-size:1.5rem;}.timer-hook{display:none;}"
+  ++ ".button{border:none;border-radius:999px;padding:11px 15px;cursor:pointer;font:inherit;font-weight:800;color:#fff8eb;background:var(--button);}.button.alt{background:var(--button-alt);}.button.ghost{background:var(--danger);}.button:disabled{opacity:.56;cursor:default;}"
+  ++ ".actor{position:absolute;inset:14%;display:grid;place-items:center;font-size:clamp(12px,1.25vw,18px);font-weight:900;color:#fff8eb;z-index:2;}.actor--player{background:var(--player);font-size:clamp(14px,1.15vw,18px);}.actor--enemy{background:var(--enemy);inset:10%;padding:0 4px;font-size:clamp(8px,.85vw,12px);line-height:1;letter-spacing:-.02em;text-align:center;}.ghost{position:absolute;inset:18%;display:grid;place-items:center;background:transparent;color:var(--ghost);border:3px solid var(--ghost);font-size:clamp(12px,1.05vw,16px);font-weight:900;z-index:1;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;min-width:18px;height:18px;padding:0 5px;display:grid;place-items:center;font-size:11px;font-weight:900;line-height:1;color:#fff8eb;background:var(--player);z-index:4;}.trail--hidden{display:none;}"
+  ++ ".skill-preview{min-width:72px;padding:10px;display:grid;justify-items:start;align-items:start;align-content:start;gap:8px;border:1px solid #bda173;border-radius:14px;background:var(--card);color:var(--text);}.skill-preview--active{border-color:var(--button);background:#f1dfb8;}.skill-key{font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--muted);}.skill-grid{display:grid;align-self:start;justify-self:start;grid-template-columns:repeat(var(--mini-cols),12px);grid-template-rows:repeat(var(--mini-rows),12px);gap:1px;padding:1px;background:var(--grid);}.skill-mini-cell{width:12px;height:12px;background:var(--cell);}.skill-mini-cell--filled{background:var(--preview);}.skill-preview--active .skill-mini-cell--filled{background:var(--button);}"
+  ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(42,33,21,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(42,33,21,.46);}.modal__card{width:min(100%,340px);display:grid;gap:12px;justify-items:center;padding:24px 22px;background:var(--card);border:1px solid #bda173;}.modal__eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;}.modal__title{margin:0;font-size:34px;line-height:1;}.timer-hook{display:none;}"
 
 def css() -> String:
   base_css()
