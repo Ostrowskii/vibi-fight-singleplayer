@@ -178,6 +178,7 @@ const cancelTargetStateRaw = resolve("Runtime/cancel_target_state");
 const confirmTargetStateRaw = resolve("Runtime/confirm_target_state");
 const clearRoundPlanStateRaw = resolve("Runtime/clear_round_plan_state");
 const popLastPlannedActionStateRaw = resolve("Runtime/pop_last_planned_action_state");
+const buildBotPlanRaw = resolve("Runtime/build_bot_plan");
 const resolveActorActionStateRaw = resolve("Runtime/resolve_actor_action_state");
 const resetRoundPlanningStateRaw = resolve("Runtime/reset_round_planning_state");
 
@@ -256,6 +257,10 @@ export function clearRoundPlanState(state) {
 
 export function popLastPlannedActionState(state) {
   return stateToJs(popLastPlannedActionStateRaw(stateToBend(state)));
+}
+
+export function getBotPlan(state) {
+  return listToJs(buildBotPlanRaw(stateToBend(state)), actionToJs);
 }
 
 export function resolveActorActionState(state, actor, action) {

@@ -15,6 +15,7 @@ import {
   confirmTargetState as bendConfirmTargetState,
   clearRoundPlanState as bendClearRoundPlanState,
   popLastPlannedActionState as bendPopLastPlannedActionState,
+  getBotPlan as bendGetBotPlan,
   resolveActorActionState as bendResolveActorActionState,
   resetRoundPlanningState as bendResetRoundPlanningState,
 } from "./generated/bend-api.js";
@@ -89,28 +90,6 @@ const SKILL_PREVIEWS = {
   2: buildSkillPreview(SKILLS[2][0]),
   3: buildSkillPreview(SKILLS[3][0]),
 };
-
-function waitAction() {
-  return { kind: "wait" };
-}
-
-function moveAction(dir) {
-  return { kind: "move", dir };
-}
-
-function attackAction(skill, origin, rot, actorPos) {
-  const anchor =
-    SKILLS[skill][rot].find((cell) => samePos(addPos(origin, cell), actorPos)) ?? { x: 0, y: 0 };
-  return {
-    kind: "attack",
-    skill,
-    anchor: {
-      x: anchor.x,
-      y: anchor.y,
-    },
-    rot,
-  };
-}
 
 function clonePos(pos) {
   return { x: pos.x, y: pos.y };
@@ -222,93 +201,6 @@ function clearRoundPlanState(state) {
 
 function popLastPlannedActionState(state) {
   return bendPopLastPlannedActionState(state);
-}
-
-function firstValidAttack(skill, actorPos) {
-  for (let rot = 0; rot < 4; rot += 1) {
-    for (let y = 0; y < BOARD_H; y += 1) {
-      for (let x = 0; x < BOARD_W; x += 1) {
-        const origin = { x, y };
-        if (placementValid(skill, rot, origin, actorPos)) {
-          return attackAction(skill, origin, rot, actorPos);
-        }
-      }
-    }
-  }
-  return waitAction();
-}
-
-function findAttack(actorPos, targetPos) {
-  for (let skill = 1; skill <= 3; skill += 1) {
-    for (let rot = 0; rot < 4; rot += 1) {
-      for (let y = 0; y < BOARD_H; y += 1) {
-        for (let x = 0; x < BOARD_W; x += 1) {
-          const origin = { x, y };
-          if (attackHits(skill, rot, origin, actorPos, targetPos)) {
-            return attackAction(skill, origin, rot, actorPos);
-          }
-        }
-      }
-    }
-  }
-  return null;
-}
-
-function chaseDir(enemyPos, playerPos) {
-  const dx = playerPos.x - enemyPos.x;
-  const dy = playerPos.y - enemyPos.y;
-  const horizontal = dx > 0 ? 3 : dx < 0 ? 2 : null;
-  const vertical = dy > 0 ? 1 : dy < 0 ? 0 : null;
-
-  if (horizontal === null && vertical === null) return null;
-  if (horizontal === null) return vertical;
-  if (vertical === null) return horizontal;
-  if (Math.abs(dx) >= Math.abs(dy)) return horizontal;
-  return vertical;
-}
-
-function fallbackPlan(state) {
-  const chosenSkill = ((state.round - 1) % 3) + 1;
-  const dir1 = chaseDir(state.enemy, state.player);
-  const pos1 = dir1 === null ? clonePos(state.enemy) : stepFree(state.enemy, dir1);
-  const dir2 = chaseDir(pos1, state.player);
-  const pos2 = dir2 === null ? clonePos(pos1) : stepFree(pos1, dir2);
-  return [
-    dir1 === null ? waitAction() : moveAction(dir1),
-    dir2 === null ? waitAction() : moveAction(dir2),
-    firstValidAttack(chosenSkill, pos2),
-  ];
-}
-
-function buildBotPlan(state) {
-  const immediate = findAttack(state.enemy, state.player);
-  if (immediate) {
-    return [immediate, waitAction(), waitAction()];
-  }
-
-  for (let dir = 0; dir < 4; dir += 1) {
-    const pos1 = stepFree(state.enemy, dir);
-    if (samePos(pos1, state.enemy)) continue;
-    const attack = findAttack(pos1, state.player);
-    if (attack) {
-      return [moveAction(dir), attack, waitAction()];
-    }
-  }
-
-  for (let dir1 = 0; dir1 < 4; dir1 += 1) {
-    const pos1 = stepFree(state.enemy, dir1);
-    if (samePos(pos1, state.enemy)) continue;
-    for (let dir2 = 0; dir2 < 4; dir2 += 1) {
-      const pos2 = stepFree(pos1, dir2);
-      if (samePos(pos2, pos1)) continue;
-      const attack = findAttack(pos2, state.player);
-      if (attack) {
-        return [moveAction(dir1), moveAction(dir2), attack];
-      }
-    }
-  }
-
-  return fallbackPlan(state);
 }
 
 function actorLabel(actor) {
@@ -624,7 +516,7 @@ async function resolveRoundAnimated() {
     return;
   }
 
-  const botQueue = buildBotPlan(game);
+  const botQueue = bendGetBotPlan(game);
   playback = { slot: 1, actor: "player", action: game.queue[0], move: null, attackTiles: [], death: null };
   render();
 
