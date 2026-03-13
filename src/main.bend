@@ -1609,8 +1609,9 @@ def render(state: GameState) -> HTML(FightEvent):
   trail = _render_trail(state);
   preview = _render_preview_tiles(state);
   hits = _render_preview_hits(state);
+  flash_hits = _render_attack_flash_active(state);
   valid = _render_target_valid(state);
-  board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, planned, trail, preview, hits, valid));
+  board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, planned, trail, preview, hits, flash_hits, valid));
   <div class="page">
     <style>{text{css()}}</style>
     <div {..._tick_attrs(state)}></div>
@@ -1845,6 +1846,27 @@ def _render_playback_attack_hits_action(state: GameState, action: Action) -> Lis
     case _:
       _pos_nil()
 
+def _render_attack_flash_active(state: GameState) -> U32:
+  match _state_playback_active(state):
+    case 0:
+      0
+    case _:
+      _render_attack_flash_phase(_state_playback_action(state), _state_playback_phase(state))
+
+def _render_attack_flash_phase(action: Action, phase: U32) -> U32:
+  match phase:
+    case 0:
+      _render_attack_flash_action(action)
+    case _:
+      0
+
+def _render_attack_flash_action(action: Action) -> U32:
+  match action:
+    case attack{_, _, _}:
+      1
+    case _:
+      0
+
 def _render_target_valid(state: GameState) -> U32:
   match _state_playback_active(state):
     case 0:
@@ -2012,11 +2034,12 @@ def _board_cell(
   trail: List(TrailStep),
   preview: List(Pos),
   hits: List(Pos),
+  flash_hits: U32,
   valid: U32,
   x: U32,
   y: U32,
 ) -> HTML(FightEvent):
-  _board_cell_at(state, planned, trail, preview, hits, valid, pos{x, y})
+  _board_cell_at(state, planned, trail, preview, hits, flash_hits, valid, pos{x, y})
 
 def _board_cell_at(
   state: GameState,
@@ -2024,10 +2047,11 @@ def _board_cell_at(
   trail: List(TrailStep),
   preview: List(Pos),
   hits: List(Pos),
+  flash_hits: U32,
   valid: U32,
   cell_pos: Pos,
 ) -> HTML(FightEvent):
-  <div class={_board_cell_class(state, planned, trail, preview, hits, valid, cell_pos)}>
+  <div class={_board_cell_class(state, planned, trail, preview, hits, flash_hits, valid, cell_pos)}>
     {_board_cell_actor(state, cell_pos)}
     {_board_cell_ghost(state, planned, cell_pos)}
     {_board_cell_route(trail, cell_pos)}
@@ -2039,13 +2063,14 @@ def _board_cell_class(
   trail: List(TrailStep),
   preview: List(Pos),
   hits: List(Pos),
+  flash_hits: U32,
   valid: U32,
   pos: Pos,
 ) -> String:
   ""
   ++ "cell"
   ++ _board_cell_preview_class(preview, valid, pos)
-  ++ _board_cell_hit_class(hits, pos)
+  ++ _board_cell_hit_class(hits, flash_hits, pos)
   ++ _board_cell_route_class(trail, pos)
 
 def _board_cell_preview_class(preview: List(Pos), valid: U32, cell_pos: Pos) -> String:
@@ -2062,13 +2087,20 @@ def _board_cell_preview_class_hit(hit: U32, valid: U32) -> String:
         case _:
           " cell--preview"
 
-def _board_cell_hit_class(hits: List(Pos), cell_pos: Pos) -> String:
-  _board_cell_hit_class_hit(_pos_list_has(hits, cell_pos))
+def _board_cell_hit_class(hits: List(Pos), flash_hits: U32, cell_pos: Pos) -> String:
+  _board_cell_hit_class_hit(_pos_list_has(hits, cell_pos), flash_hits)
 
-def _board_cell_hit_class_hit(hit: U32) -> String:
+def _board_cell_hit_class_hit(hit: U32, flash_hits: U32) -> String:
   match hit:
     case 0:
       ""
+    case _:
+      _board_cell_hit_flash_class(flash_hits)
+
+def _board_cell_hit_flash_class(flash_hits: U32) -> String:
+  match flash_hits:
+    case 0:
+      " cell--hit"
     case _:
       " cell--hit cell--attack-flash"
 
