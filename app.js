@@ -9,6 +9,11 @@ const rules = getRules();
 const BOARD_W = rules.boardW;
 const BOARD_H = rules.boardH;
 const DAMAGE = rules.damage;
+const MOVE_ANIM_MS = 240;
+const BLOCKED_MOVE_ANIM_MS = 180;
+const ATTACK_ANIM_MS = 520;
+const WAIT_ANIM_MS = 120;
+const SLOT_GAP_MS = 90;
 
 const DIRECTIONS = [
   { x: 0, y: -1, label: "Up" },
@@ -61,6 +66,17 @@ function makeInitialState() {
 }
 
 let game = makeInitialState();
+let playback = null;
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    globalThis.setTimeout(resolve, ms);
+  });
+}
+
+function isResolving() {
+  return playback !== null;
+}
 
 function inBounds(x, y) {
   return x >= 0 && x < BOARD_W && y >= 0 && y < BOARD_H;
@@ -239,6 +255,19 @@ function clearRoundPlanState(state) {
   return newState;
 }
 
+function popLastPlannedActionState(state) {
+  if (state.winner || state.mode.kind !== "plan" || state.queueLen === 0) {
+    return state;
+  }
+
+  const newState = structuredClone(state);
+  const lastIndex = newState.queueLen - 1;
+  newState.queue[lastIndex] = waitAction();
+  newState.queueLen = lastIndex;
+  newState.queueLocked = newState.queue.some((action) => action.kind === "attack");
+  return newState;
+}
+
 function firstValidAttack(skill, actorPos) {
   for (let rot = 0; rot < 4; rot += 1) {
     for (let y = 0; y < BOARD_H; y += 1) {
@@ -372,21 +401,51 @@ function readyRoundState(state) {
     if (next.winner) break;
   }
 
-  next.queue = [waitAction(), waitAction(), waitAction()];
-  next.queueLen = 0;
-  next.queueLocked = false;
-  next.mode = { kind: "plan" };
-  if (!next.winner) {
-    next.round += 1;
-  }
+  resetRoundPlanning(next);
   return next;
 }
 
+function resetRoundPlanning(state) {
+  state.queue = [waitAction(), waitAction(), waitAction()];
+  state.queueLen = 0;
+  state.queueLocked = false;
+  state.mode = { kind: "plan" };
+  if (!state.winner) {
+    state.round += 1;
+  }
+}
+
+function actorLabel(actor) {
+  return actor === "player" ? "Player" : "IA";
+}
+
+function actorToken(actor) {
+  return actor === "player" ? "P" : "AI";
+}
+
+function actorClass(actor) {
+  return actor === "player" ? "player" : "enemy";
+}
+
+function playbackLabel(action) {
+  if (!action) {
+    return "";
+  }
+  if (action.kind === "wait") {
+    return "parado";
+  }
+  if (action.kind === "move") {
+    return "movimento";
+  }
+  return `ataque ${action.skill}`;
+}
+
 function getViewState(state) {
-  const actorPos = plannedPlayerPos(state);
-  const movementTrail = plannedPlayerTrail(state);
+  const resolving = isResolving();
+  const actorPos = resolving ? clonePos(state.player) : plannedPlayerPos(state);
+  const movementTrail = resolving ? [] : plannedPlayerTrail(state);
   const targetValid =
-    state.mode.kind === "target"
+    !resolving && state.mode.kind === "target"
       ? placementValid(state.mode.skill, state.mode.rot, state.mode.origin, actorPos)
       : false;
 
@@ -395,14 +454,18 @@ function getViewState(state) {
     plannedPlayer: actorPos,
     movementTrail,
     previewTiles:
-      state.mode.kind === "target"
+      !resolving && state.mode.kind === "target"
         ? previewCellsFor(state.mode.skill, state.mode.rot, state.mode.origin)
         : [],
     previewHits:
-      state.mode.kind === "target"
+      !resolving && state.mode.kind === "target"
         ? previewHitsFor(state.mode.skill, state.mode.rot, state.mode.origin, actorPos)
         : [],
     targetValid,
+    resolving,
+    playback,
+    flashTiles: playback?.attackTiles ?? [],
+    moveOverlay: playback?.move ?? null,
   };
 }
 
@@ -421,6 +484,9 @@ function actionLabel(action) {
 }
 
 function phaseLabel(snap) {
+  if (snap.playback) {
+    return `Resolvendo slot ${snap.playback.slot}: ${actorLabel(snap.playback.actor)} ${playbackLabel(snap.playback.action)}`;
+  }
   if (snap.winner !== 0) {
     return "Combate encerrado";
   }
@@ -441,9 +507,34 @@ function keyForPos(pos) {
   return `${pos.x}:${pos.y}`;
 }
 
+function boardOverlayMarkup(snap) {
+  if (!snap.moveOverlay) {
+    return "";
+  }
+
+  const { actor, from, to, dir } = snap.moveOverlay;
+  const deltaX = to.x - from.x;
+  const deltaY = to.y - from.y;
+  const bump = DIRECTIONS[dir] ?? { x: 0, y: 0 };
+  const classes = ["actor-float", actorClass(actor)];
+  if (deltaX === 0 && deltaY === 0) {
+    classes.push("blocked");
+  }
+
+  return `
+    <div class="board-anim-layer" aria-hidden="true">
+      <div
+        class="${classes.join(" ")}"
+        style="--grid-x:${from.x}; --grid-y:${from.y}; --delta-x:${deltaX}; --delta-y:${deltaY}; --bump-x:${bump.x}; --bump-y:${bump.y}"
+      >${actorToken(actor)}</div>
+    </div>
+  `;
+}
+
 function boardCellMarkup(snap) {
   const previewSet = new Set(snap.previewTiles.map(keyForPos));
   const hitSet = new Set(snap.previewHits.map(keyForPos));
+  const flashSet = new Set(snap.flashTiles.map(keyForPos));
   const trailMap = new Map(snap.movementTrail.map((step) => [keyForPos(step), step.step]));
   const previewInvalid = snap.mode.kind === "target" && !snap.targetValid;
   const showPlannedPlayer = !samePos(snap.player, snap.plannedPlayer);
@@ -466,12 +557,19 @@ function boardCellMarkup(snap) {
       if (hitSet.has(key)) {
         classes.push("hit");
       }
+      if (flashSet.has(key)) {
+        classes.push("attack-flash");
+      }
 
       let actor = "";
       let overlay = "";
-      if (snap.player.x === x && snap.player.y === y) {
+      const hidingMovingPlayer =
+        snap.moveOverlay?.actor === "player" && snap.player.x === x && snap.player.y === y;
+      const hidingMovingEnemy =
+        snap.moveOverlay?.actor === "enemy" && snap.enemy.x === x && snap.enemy.y === y;
+      if (snap.player.x === x && snap.player.y === y && !hidingMovingPlayer) {
         actor = '<div class="actor player">P</div>';
-      } else if (snap.enemy.x === x && snap.enemy.y === y) {
+      } else if (snap.enemy.x === x && snap.enemy.y === y && !hidingMovingEnemy) {
         actor = '<div class="actor enemy">AI</div>';
       }
       if (trailStep !== null) {
@@ -489,17 +587,108 @@ function boardCellMarkup(snap) {
 }
 
 function controlsMarkup(snap) {
+  if (snap.resolving) {
+    return "Round em resolucao. Aguarde a animacao de cada slot terminar.";
+  }
   if (snap.winner !== 0) {
     return "Reset partida para recomecar.";
   }
   if (snap.mode.kind === "target") {
-    return "WASD/setas movem a preview. Q/E giram. Space confirma. Esc cancela. Limpar jogada apaga a fila atual.";
+    return "WASD/setas movem a preview. Q/E giram. Space confirma. Esc cancela a mira. Limpar jogada apaga a fila atual.";
   }
-  return "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Enter resolve o round. Limpar jogada apaga a fila atual.";
+  return "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Esc desfaz a ultima decisao. Enter resolve o round. Limpar jogada apaga a fila atual.";
+}
+
+async function animateActorAction(slot, actor, action) {
+  if (game.winner) {
+    return;
+  }
+  if (actor === "player" && game.playerHp <= 0) {
+    return;
+  }
+  if (actor === "enemy" && game.enemyHp <= 0) {
+    return;
+  }
+
+  const selfKey = actor === "player" ? "player" : "enemy";
+  const otherKey = actor === "player" ? "enemy" : "player";
+  const hpKey = actor === "player" ? "enemyHp" : "playerHp";
+
+  if (action.kind === "wait") {
+    playback = { slot, actor, action, move: null, attackTiles: [] };
+    render();
+    await sleep(WAIT_ANIM_MS);
+    return;
+  }
+
+  if (action.kind === "move") {
+    const from = clonePos(game[selfKey]);
+    const to = stepBlocked(game[selfKey], action.dir, game[otherKey]);
+    game[selfKey] = clonePos(to);
+    playback = {
+      slot,
+      actor,
+      action,
+      move: {
+        actor,
+        dir: action.dir,
+        from,
+        to,
+      },
+      attackTiles: [],
+    };
+    render();
+    await sleep(samePos(from, to) ? BLOCKED_MOVE_ANIM_MS : MOVE_ANIM_MS);
+    playback = { slot, actor, action, move: null, attackTiles: [] };
+    render();
+    await sleep(SLOT_GAP_MS);
+    return;
+  }
+
+  const actorPos = clonePos(game[selfKey]);
+  const attackTiles = previewHitsFor(action.skill, action.rot, action.origin, actorPos);
+  playback = { slot, actor, action, move: null, attackTiles };
+  render();
+  await sleep(ATTACK_ANIM_MS);
+  if (attackHits(action.skill, action.rot, action.origin, actorPos, game[otherKey])) {
+    game[hpKey] = Math.max(0, game[hpKey] - DAMAGE);
+    game.winner = computeWinner(game.playerHp, game.enemyHp);
+  }
+  playback = { slot, actor, action, move: null, attackTiles: [] };
+  render();
+  await sleep(SLOT_GAP_MS);
+}
+
+async function resolveRoundAnimated() {
+  if (isResolving() || game.winner || game.mode.kind === "target") {
+    return;
+  }
+
+  const botQueue = buildBotPlan(game);
+  playback = { slot: 1, actor: "player", action: game.queue[0], move: null, attackTiles: [] };
+  render();
+
+  try {
+    for (let slot = 0; slot < 3; slot += 1) {
+      await animateActorAction(slot + 1, "player", game.queue[slot]);
+      if (game.winner) {
+        break;
+      }
+      await animateActorAction(slot + 1, "enemy", botQueue[slot]);
+      if (game.winner) {
+        break;
+      }
+    }
+  } finally {
+    resetRoundPlanning(game);
+    playback = null;
+    render();
+  }
 }
 
 function render() {
   const snap = getViewState(game);
+  const controlsDisabled = snap.resolving ? "disabled" : "";
 
   root.innerHTML = `
     <div class="shell">
@@ -507,7 +696,7 @@ function render() {
 
       <section class="board-stage">
         <div class="board-wrap board-wrap-large">
-          <div class="board">${boardCellMarkup(snap)}</div>
+          <div class="board">${boardCellMarkup(snap)}${boardOverlayMarkup(snap)}</div>
         </div>
       </section>
 
@@ -539,8 +728,15 @@ function render() {
               : ""
           }
           ${
-            snap.queueLen > 0 || snap.mode.kind === "target"
+            !snap.resolving && (snap.queueLen > 0 || snap.mode.kind === "target")
               ? `<p class="help" style="margin-top:10px">Preview do player: (${snap.plannedPlayer.x}, ${snap.plannedPlayer.y})</p>`
+              : ""
+          }
+          ${
+            snap.playback
+              ? `<p class="help" style="margin-top:10px">Ator atual: ${actorLabel(snap.playback.actor)}. Acao atual: ${actionLabel(
+                  snap.playback.action
+                )}.</p>`
               : ""
           }
         </section>
@@ -551,7 +747,9 @@ function render() {
             ${snap.queue
               .map(
                 (action, index) => `
-                  <div class="queue-slot">
+                  <div class="queue-slot ${snap.playback?.slot === index + 1 ? "active" : ""} ${
+                    snap.playback?.slot === index + 1 && snap.playback.actor === "enemy" ? "enemy-turn" : ""
+                  }">
                     <div class="slot-index">Slot ${index + 1}</div>
                     <div class="slot-value">${actionLabel(action)}</div>
                   </div>
@@ -564,18 +762,18 @@ function render() {
         <section class="card">
           <div class="stat-label">Habilidades</div>
           <div class="skills" style="margin-top:12px">
-            <button data-skill="1">Skill 1</button>
-            <button data-skill="2">Skill 2</button>
-            <button data-skill="3">Skill 3</button>
+            <button data-skill="1" ${controlsDisabled}>Skill 1</button>
+            <button data-skill="2" ${controlsDisabled}>Skill 2</button>
+            <button data-skill="3" ${controlsDisabled}>Skill 3</button>
           </div>
         </section>
 
         <section class="card">
           <div class="stat-label">Acoes</div>
           <div class="controls" style="margin-top:12px">
-            <button class="alt" data-ready>Ready</button>
-            <button data-clear>Limpar jogada</button>
-            <button class="ghost" data-reset>Reset partida</button>
+            <button class="alt" data-ready ${controlsDisabled}>Ready</button>
+            <button data-clear ${controlsDisabled}>Limpar jogada</button>
+            <button class="ghost" data-reset ${controlsDisabled}>Reset partida</button>
           </div>
         </section>
 
@@ -603,8 +801,7 @@ function render() {
   });
 
   root.querySelector("[data-ready]")?.addEventListener("click", () => {
-    game = readyRoundState(game);
-    render();
+    void resolveRoundAnimated();
   });
 
   root.querySelector("[data-clear]")?.addEventListener("click", () => {
@@ -614,6 +811,7 @@ function render() {
 
   root.querySelector("[data-reset]")?.addEventListener("click", () => {
     game = makeInitialState();
+    playback = null;
     render();
   });
 }
@@ -647,9 +845,12 @@ window.addEventListener("keydown", (event) => {
 
   event.preventDefault();
 
+  if (isResolving()) {
+    return;
+  }
+
   if (key === "Enter" && snap.mode.kind !== "target") {
-    game = readyRoundState(game);
-    render();
+    void resolveRoundAnimated();
     return;
   }
 
@@ -671,6 +872,12 @@ window.addEventListener("keydown", (event) => {
     } else if (key === "Escape") {
       game = cancelTargetState(game);
     }
+    render();
+    return;
+  }
+
+  if (key === "Escape") {
+    game = popLastPlannedActionState(game);
     render();
     return;
   }

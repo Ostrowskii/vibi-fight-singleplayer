@@ -117,6 +117,7 @@ body {
 
 .board {
   width: var(--board-width);
+  position: relative;
   display: grid;
   grid-template-columns: repeat(18, var(--cell-size));
   gap: 1px;
@@ -151,6 +152,16 @@ body {
   background: var(--hit);
 }
 
+.cell.attack-flash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--hit);
+  opacity: 0;
+  z-index: 3;
+  animation: attack-flash 520ms steps(1, end);
+}
+
 .actor {
   position: absolute;
   inset: 14%;
@@ -159,6 +170,7 @@ body {
   font-size: clamp(12px, 1.25vw, 18px);
   font-weight: 900;
   color: #fff8eb;
+  z-index: 1;
 }
 
 .actor.player {
@@ -190,7 +202,41 @@ body {
   line-height: 1;
   color: #fff8eb;
   background: var(--player);
-  z-index: 2;
+  z-index: 4;
+}
+
+.board-anim-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.actor-float {
+  position: absolute;
+  left: calc(1px + (var(--grid-x) * (var(--cell-size) + 1px)) + (var(--cell-size) * 0.14));
+  top: calc(1px + (var(--grid-y) * (var(--cell-size) + 1px)) + (var(--cell-size) * 0.14));
+  width: calc(var(--cell-size) * 0.72);
+  height: calc(var(--cell-size) * 0.72);
+  display: grid;
+  place-items: center;
+  font-size: clamp(12px, 1.25vw, 18px);
+  font-weight: 900;
+  color: #fff8eb;
+  will-change: transform;
+  animation: slot-move 240ms ease-in-out forwards;
+}
+
+.actor-float.player {
+  background: var(--player);
+}
+
+.actor-float.enemy {
+  background: var(--enemy);
+}
+
+.actor-float.blocked {
+  animation: slot-bump 180ms ease-in-out forwards;
 }
 
 .sidebar {
@@ -269,6 +315,15 @@ body {
   border: 1px solid #c8ae83;
 }
 
+.queue-slot.active {
+  background: #f1dfb8;
+  border-color: var(--accent);
+}
+
+.queue-slot.enemy-turn {
+  border-color: var(--enemy);
+}
+
 .slot-index {
   font-size: 11px;
   letter-spacing: 0.14em;
@@ -307,6 +362,11 @@ button.ghost {
   background: var(--danger);
 }
 
+button:disabled {
+  opacity: 0.56;
+  cursor: default;
+}
+
 .help {
   color: var(--muted);
   line-height: 1.5;
@@ -315,4 +375,57 @@ button.ghost {
 .winner {
   color: #8f2416;
   font-weight: 800;
+}
+
+@keyframes slot-move {
+  from {
+    transform: translate(0, 0);
+  }
+
+  to {
+    transform: translate(
+      calc(var(--delta-x) * (var(--cell-size) + 1px)),
+      calc(var(--delta-y) * (var(--cell-size) + 1px))
+    );
+  }
+}
+
+@keyframes slot-bump {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  35% {
+    transform: translate(
+      calc(var(--bump-x) * (var(--cell-size) * 0.2)),
+      calc(var(--bump-y) * (var(--cell-size) * 0.2))
+    );
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes attack-flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  12%,
+  26%,
+  40%,
+  54%,
+  68% {
+    opacity: 0.82;
+  }
+
+  19%,
+  33%,
+  47%,
+  61%,
+  75% {
+    opacity: 0;
+  }
 }
