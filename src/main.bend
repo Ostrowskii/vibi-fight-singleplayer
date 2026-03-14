@@ -11,6 +11,10 @@ type Pos {
   pos{x: U32, y: U32}
 }
 
+type Bot {
+  bot{pos: Pos, hp: U32}
+}
+
 type Rules {
   rules{
     board_w: U32,
@@ -31,17 +35,17 @@ type Action {
 type Mode {
   plan{}
   target{skill: U32, rot: U32, origin: Pos}
-  playback{idx: U32, phase: U32, actor: U32, action: Action, sim: ActionSim, bot_queue: List(Action)}
+  playback{idx: U32, phase: U32, actor: U32, actor_idx: U32, action: Action, sim: ActionSim, bot_plans: List(List(Action))}
 }
 
 type GameState {
   game_state{
     round: U32,
     level: U32,
+    bot_total: U32,
     player_hp: U32,
-    enemy_hp: U32,
     player: Pos,
-    enemy: Pos,
+    bots: List(Bot),
     queue: List(Action),
     queue_len: U32,
     queue_locked: U32,
@@ -82,6 +86,8 @@ type FightEvent {
   evt_escape{}
   evt_clear{}
   evt_reset{}
+  evt_bot_count_dec{}
+  evt_bot_count_inc{}
   evt_tick{}
   evt_ignore{}
 }
@@ -97,19 +103,63 @@ def rules_get() -> Rules:
   }
 
 def state_init() -> GameState:
+  state_init_count(1)
+
+def state_init_count(bot_total: U32) -> GameState:
+  total = _clamp_bot_total(bot_total);
   game_state{
     1,
     1,
-    50,
+    total,
     50,
     pos{6, 4},
-    pos{11, 4},
+    _init_bots(total, 0),
     _queue_waits(),
     0,
     0,
     _plan_mode(),
     0,
   }
+
+def _clamp_bot_total(bot_total: U32) -> U32:
+  capped = _min_u32(bot_total, 25);
+  match capped:
+    case 0:
+      1
+    case _:
+      capped
+
+def _init_bots(remaining: U32, idx: U32) -> List(Bot):
+  match remaining:
+    case 0:
+      []
+    case count:
+      bot{_spawn_bot_pos(idx), 50}<>_init_bots(count - 1, idx + 1)
+
+def _spawn_bot_pos(idx: U32) -> Pos:
+  match idx:
+    case 0:
+      pos{11, 4}
+    case extra_idx:
+      _spawn_extra_bot_pos(extra_idx - 1)
+
+def _spawn_extra_bot_pos(extra_idx: U32) -> Pos:
+  col_idx = extra_idx / 5;
+  row_idx = extra_idx % 5;
+  pos{_spawn_extra_bot_col(col_idx), row_idx * 2}
+
+def _spawn_extra_bot_col(col_idx: U32) -> U32:
+  match col_idx:
+    case 0:
+      17
+    case 1:
+      15
+    case 2:
+      13
+    case 3:
+      9
+    case _:
+      7
 
 def skill_len(skill: U32) -> U32:
   match skill:
@@ -253,56 +303,56 @@ def target_valid(state: GameState) -> U32:
 
 def queue_move_state(state: GameState, dir: U32) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
-      _queue_move_w(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner, dir)
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+      _queue_move_w(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner, dir)
 
 def start_target_state(state: GameState, skill: U32) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
-      _start_target_w(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner, skill)
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+      _start_target_w(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner, skill)
 
 def move_target_state(state: GameState, dir: U32) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
       active = _mode_is_target(mode);
       match active:
         case 0:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
         case _:
           origin = _mode_origin(mode);
           skill = _mode_skill(mode);
           rot = _mode_rot(mode);
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, _target_mode(skill, rot, _step_free(origin, dir)), winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _target_mode(skill, rot, _step_free(origin, dir)), winner)
 
 def rotate_target_state(state: GameState, clockwise: U32) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
       active = _mode_is_target(mode);
       match active:
         case 0:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
         case _:
           add = _rotate_step(clockwise);
           rot = (_mode_rot(mode) + add) % 4;
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, _target_mode(_mode_skill(mode), rot, _mode_origin(mode)), winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _target_mode(_mode_skill(mode), rot, _mode_origin(mode)), winner)
 
 def cancel_target_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
       active = _mode_is_target(mode);
       match active:
         case 0:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
         case _:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, _plan_mode(), winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _plan_mode(), winner)
 
 def confirm_target_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
       active = _mode_is_target(mode);
       match active:
         case 0:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
         case _:
           skill = _mode_skill(mode);
           rot = _mode_rot(mode);
@@ -311,61 +361,61 @@ def confirm_target_state(state: GameState) -> GameState:
           valid = _placement_valid(skill, rot, origin, actor);
           match valid:
             case 0:
-              _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+              _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
             case _:
               anchor = _anchor_for_origin(skill, rot, origin, actor, 0);
               queue = _action_set(queue, queue_len, _attack_action(skill, anchor, rot));
-              _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len + 1, 1, _plan_mode(), winner)
+              _state(round, level, bot_total, player_hp, player, bots, queue, queue_len + 1, 1, _plan_mode(), winner)
 
 def clear_round_plan_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
       match winner | _mode_is_playback(mode):
         case 0:
-          _state(round, level, player_hp, enemy_hp, player, enemy, _queue_waits(), 0, 0, _plan_mode(), 0)
+          _state(round, level, bot_total, player_hp, player, bots, _queue_waits(), 0, 0, _plan_mode(), 0)
         case k:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, k)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, k)
 
 def pop_last_planned_action_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
-      _pop_last_w(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+      _pop_last_w(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
 
-def build_bot_plan(state: GameState) -> List(Action):
+def build_bot_plan(state: GameState) -> List(List(Action)):
   match state:
-    case game_state{round, _, player_hp, enemy_hp, player, enemy, _, _, _, _, winner}:
-      _build_bot_plan_w(round, player_hp, enemy_hp, player, enemy, winner)
+    case game_state{round, _, _, player_hp, player, bots, _, _, _, _, winner}:
+      _build_all_bot_plans(round, player_hp, player, bots, winner, 0)
 
-def resolve_actor_action_state(state: GameState, actor: U32, action: Action) -> GameState:
+def resolve_actor_action_state(state: GameState, actor: U32, actor_idx: U32, action: Action) -> GameState:
   match actor:
     case 0:
       _resolve_player_action_state(state, action)
     case _:
-      _resolve_enemy_action_state(state, action)
+      _resolve_bot_action_state(state, actor_idx, action)
 
 def reset_round_planning_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, _, _, _, _, winner}:
-      _reset_round_planning_w(round, level, player_hp, enemy_hp, player, enemy, winner)
+    case game_state{round, level, bot_total, player_hp, player, bots, _, _, _, _, winner}:
+      _reset_round_planning_w(round, level, bot_total, player_hp, player, bots, winner)
 
-def simulate_actor_action(state: GameState, actor: U32, action: Action) -> ActionSim:
+def simulate_actor_action(state: GameState, actor: U32, actor_idx: U32, action: Action) -> ActionSim:
   match actor:
     case 0:
       _simulate_player_action(state, action)
     case _:
-      _simulate_enemy_action(state, action)
+      _simulate_bot_action(state, actor_idx, action)
 
 def _state(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, winner: U32,
 ) -> GameState:
-  game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}
+  game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}
 
 def _set_mode_state(state: GameState, mode: Mode) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, _, winner}:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _, winner}:
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
 
 def _wait_action() -> Action:
   wait{}
@@ -397,8 +447,8 @@ def _plan_mode() -> Mode:
 def _target_mode(skill: U32, rot: U32, origin: Pos) -> Mode:
   target{skill, rot, origin}
 
-def _playback_mode(idx: U32, phase: U32, actor: U32, action: Action, sim: ActionSim, bot_queue: List(Action)) -> Mode:
-  playback{idx, phase, actor, action, sim, bot_queue}
+def _playback_mode(idx: U32, phase: U32, actor: U32, actor_idx: U32, action: Action, sim: ActionSim, bot_plans: List(List(Action))) -> Mode:
+  playback{idx, phase, actor, actor_idx, action, sim, bot_plans}
 
 def _queue_waits() -> List(Action):
   _queue3(_wait_action(), _wait_action(), _wait_action())
@@ -411,132 +461,132 @@ def _rotate_step(clockwise: U32) -> U32:
       1
 
 def _queue_move_w(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, winner: U32, dir: U32,
 ) -> GameState:
   match winner:
     case 0:
-      _queue_move_plan(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, _mode_is_plan(mode), dir)
+      _queue_move_plan(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, _mode_is_plan(mode), dir)
     case k:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, k)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, k)
 
 def _queue_move_plan(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, plan_mode: U32, dir: U32,
 ) -> GameState:
   match plan_mode:
     case 0:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, 0)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, 0)
     case _:
-      _queue_move_lock(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, dir)
+      _queue_move_lock(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, dir)
 
 def _queue_move_lock(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, dir: U32,
 ) -> GameState:
   match queue_locked:
     case 0:
-      _queue_move_len(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, 0, mode, dir)
+      _queue_move_len(round, level, bot_total, player_hp, player, bots, queue, queue_len, 0, mode, dir)
     case lock:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, lock, mode, 0)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, lock, mode, 0)
 
 def _queue_move_len(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, dir: U32,
 ) -> GameState:
   match queue_len:
     case 0:
-      _queue_move_ok(round, level, player_hp, enemy_hp, player, enemy, queue, 0, queue_locked, 0, dir)
+      _queue_move_ok(round, level, bot_total, player_hp, player, bots, queue, 0, queue_locked, 0, dir)
     case 1:
-      _queue_move_ok(round, level, player_hp, enemy_hp, player, enemy, queue, 1, queue_locked, 0, dir)
+      _queue_move_ok(round, level, bot_total, player_hp, player, bots, queue, 1, queue_locked, 0, dir)
     case q:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, q, queue_locked, mode, 0)
+      _state(round, level, bot_total, player_hp, player, bots, queue, q, queue_locked, mode, 0)
 
 def _start_target_w(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, winner: U32, skill: U32,
 ) -> GameState:
   match winner:
     case 0:
-      _start_target_lock(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, skill)
+      _start_target_lock(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, skill)
     case k:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, k)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, k)
 
 def _start_target_lock(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, skill: U32,
 ) -> GameState:
   match queue_locked:
     case 0:
-      _start_target_len(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, 0, mode, skill)
+      _start_target_len(round, level, bot_total, player_hp, player, bots, queue, queue_len, 0, mode, skill)
     case lock:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, lock, mode, 0)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, lock, mode, 0)
 
 def _start_target_len(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, skill: U32,
 ) -> GameState:
   match queue_len:
     case 3:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, 3, queue_locked, mode, 0)
+      _state(round, level, bot_total, player_hp, player, bots, queue, 3, queue_locked, mode, 0)
     case q:
-      _start_target_apply(round, level, player_hp, enemy_hp, player, enemy, queue, q, queue_locked, skill)
+      _start_target_apply(round, level, bot_total, player_hp, player, bots, queue, q, queue_locked, skill)
 
 def _pop_last_w(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, winner: U32,
 ) -> GameState:
   match winner:
     case 0:
-      _pop_last_plan(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, _mode_is_plan(mode))
+      _pop_last_plan(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, _mode_is_plan(mode))
     case k:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, k)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, k)
 
 def _pop_last_plan(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, plan_mode: U32,
 ) -> GameState:
   match plan_mode:
     case 0:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, 0)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, 0)
     case _:
-      _pop_last_len(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode)
+      _pop_last_len(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode)
 
 def _pop_last_len(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode,
 ) -> GameState:
   match queue_len:
     case 0:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, 0, queue_locked, mode, 0)
+      _state(round, level, bot_total, player_hp, player, bots, queue, 0, queue_locked, mode, 0)
     case q:
       last = q - 1;
       queue = _action_set(queue, last, _wait_action());
       lock = _queue_has_attack(queue);
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, last, lock, _plan_mode(), 0)
+      _state(round, level, bot_total, player_hp, player, bots, queue, last, lock, _plan_mode(), 0)
 
 def _start_target_apply(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, skill: U32,
 ) -> GameState:
   _state(
     round,
     level,
+    bot_total,
     player_hp,
-    enemy_hp,
     player,
-    enemy,
+    bots,
     queue,
     queue_len,
     queue_locked,
@@ -545,19 +595,19 @@ def _start_target_apply(
   )
 
 def _queue_move_ok(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, winner: U32, dir: U32,
 ) -> GameState:
   planned = _planned_pos_from_queue(player, queue);
-  next = _step_free(planned, dir);
+  next = _step_blocked_player(planned, dir, bots);
   same = _pos_eq(planned, next);
   match same:
     case 0:
       queue = _action_set(queue, queue_len, _move_action(dir));
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len + 1, queue_locked, _plan_mode(), winner)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len + 1, queue_locked, _plan_mode(), winner)
     case _:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, _plan_mode(), winner)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _plan_mode(), winner)
 
 def _planned_pos_from_queue(pos: Pos, queue: List(Action)) -> Pos:
   match queue:
@@ -704,28 +754,210 @@ def _anchor_for_origin(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) 
     case _:
       pos{0, 0}
 
-def _build_bot_plan_w(round: U32, player_hp: U32, enemy_hp: U32, player: Pos, enemy: Pos, winner: U32) -> List(Action):
-  stopped = winner | _hp_empty(player_hp) | _hp_empty(enemy_hp);
+def _bot_pos(item: Bot) -> Pos:
+  match item:
+    case bot{pos_value, _}:
+      pos_value
+
+def _bot_hp(item: Bot) -> U32:
+  match item:
+    case bot{_, hp}:
+      hp
+
+def _bot_alive(item: Bot) -> U32:
+  1 ^ _hp_empty(_bot_hp(item))
+
+def _bot_with_pos(item: Bot, next_pos: Pos) -> Bot:
+  match item:
+    case bot{_, hp}:
+      bot{next_pos, hp}
+
+def _bot_with_hp(item: Bot, next_hp: U32) -> Bot:
+  match item:
+    case bot{pos_value, _}:
+      bot{pos_value, next_hp}
+
+def _bot_at(items: List(Bot), idx: U32) -> Bot:
+  match items:
+    case []:
+      bot{pos{0, 0}, 0}
+    case head<>tail:
+      match idx:
+        case 0:
+          head
+        case step:
+          _bot_at(tail, step - 1)
+
+def _bot_set(items: List(Bot), idx: U32, next_bot: Bot) -> List(Bot):
+  match items:
+    case []:
+      []
+    case head<>tail:
+      match idx:
+        case 0:
+          next_bot<>tail
+        case step:
+          head<>_bot_set(tail, step - 1, next_bot)
+
+def _bot_pos_at(items: List(Bot), idx: U32) -> Pos:
+  _bot_pos(_bot_at(items, idx))
+
+def _bot_hp_at(items: List(Bot), idx: U32) -> U32:
+  _bot_hp(_bot_at(items, idx))
+
+def _bot_dead_at(items: List(Bot), idx: U32) -> U32:
+  _hp_empty(_bot_hp_at(items, idx))
+
+def _bots_any_alive(items: List(Bot)) -> U32:
+  match items:
+    case []:
+      0
+    case head<>tail:
+      match _bot_alive(head):
+        case 0:
+          _bots_any_alive(tail)
+        case _:
+          1
+
+def _bots_live_has_pos(items: List(Bot), target: Pos) -> U32:
+  match items:
+    case []:
+      0
+    case head<>tail:
+      same = _pos_eq(_bot_pos(head), target);
+      live = _bot_alive(head);
+      match same & live:
+        case 0:
+          _bots_live_has_pos(tail, target)
+        case _:
+          1
+
+def _bots_other_live_has_pos(items: List(Bot), ignore_idx: U32, target: Pos) -> U32:
+  match items:
+    case []:
+      0
+    case head<>tail:
+      match ignore_idx:
+        case 0:
+          _bots_live_has_pos(tail, target)
+        case step:
+          same = _pos_eq(_bot_pos(head), target);
+          live = _bot_alive(head);
+          match same & live:
+            case 0:
+              _bots_other_live_has_pos(tail, step - 1, target)
+            case _:
+              1
+
+def _bots_hit_any_tiles(items: List(Bot), tiles: List(Pos)) -> U32:
+  match items:
+    case []:
+      0
+    case head<>tail:
+      live = _bot_alive(head);
+      same = _pos_list_has(tiles, _bot_pos(head));
+      match live & same:
+        case 0:
+          _bots_hit_any_tiles(tail, tiles)
+        case _:
+          1
+
+def _damage_bots_on_tiles(items: List(Bot), tiles: List(Pos)) -> List(Bot):
+  match items:
+    case []:
+      []
+    case head<>tail:
+      live = _bot_alive(head);
+      hit = _pos_list_has(tiles, _bot_pos(head));
+      next_bot = _damage_bot_hit(head, live & hit);
+      next_bot<>_damage_bots_on_tiles(tail, tiles)
+
+def _damage_bot_hit(item: Bot, hit: U32) -> Bot:
+  match hit:
+    case 0:
+      item
+    case _:
+      _bot_with_hp(item, _damage_hp(_bot_hp(item)))
+
+def _bots_any_died_between(before: List(Bot), after: List(Bot)) -> U32:
+  match before:
+    case []:
+      0
+    case bh<>bt:
+      match after:
+        case []:
+          0
+        case ah<>at:
+          died = _died_between(_bot_hp(bh), _bot_hp(ah));
+          match died:
+            case 0:
+              _bots_any_died_between(bt, at)
+            case _:
+              1
+
+def _first_live_bot_pos(items: List(Bot)) -> Pos:
+  match items:
+    case []:
+      pos{0, 0}
+    case head<>tail:
+      match _bot_alive(head):
+        case 0:
+          _first_live_bot_pos(tail)
+        case _:
+          _bot_pos(head)
+
+def _bot_hp_at_pos(items: List(Bot), target: Pos) -> U32:
+  match items:
+    case []:
+      0
+    case head<>tail:
+      same = _pos_eq(_bot_pos(head), target);
+      live = _bot_alive(head);
+      match same & live:
+        case 0:
+          _bot_hp_at_pos(tail, target)
+        case _:
+          _bot_hp(head)
+
+def _live_bot_count(items: List(Bot)) -> U32:
+  match items:
+    case []:
+      0
+    case head<>tail:
+      _bot_alive(head) + _live_bot_count(tail)
+
+def _build_all_bot_plans(round: U32, player_hp: U32, player: Pos, bots: List(Bot), winner: U32, idx: U32) -> List(List(Action)):
+  _build_all_bot_plans_items(round, player_hp, player, bots, bots, winner, idx)
+
+def _build_all_bot_plans_items(round: U32, player_hp: U32, player: Pos, all_bots: List(Bot), items: List(Bot), winner: U32, idx: U32) -> List(List(Action)):
+  match items:
+    case []:
+      []
+    case _<>tail:
+      _build_bot_plan_w(round, player_hp, player, all_bots, idx, winner)<>_build_all_bot_plans_items(round, player_hp, player, all_bots, tail, winner, idx + 1)
+
+def _build_bot_plan_w(round: U32, player_hp: U32, player: Pos, bots: List(Bot), bot_idx: U32, winner: U32) -> List(Action):
+  stopped = winner | _hp_empty(player_hp) | _bot_dead_at(bots, bot_idx);
   match stopped:
     case 0:
-      _build_bot_plan(player, enemy, round)
+      _build_bot_plan(player, _bot_pos_at(bots, bot_idx), bots, bot_idx, round)
     case _:
       _queue_waits()
 
-def _build_bot_plan(player: Pos, enemy: Pos, round: U32) -> List(Action):
+def _build_bot_plan(player: Pos, enemy: Pos, bots: List(Bot), bot_idx: U32, round: U32) -> List(Action):
   immediate = _find_attack(enemy, player);
   hit = _action_is_attack(immediate);
   match hit:
     case 0:
-      one_move = _find_one_move_plan(enemy, player, 0);
+      one_move = _find_one_move_plan(enemy, player, bots, bot_idx, 0);
       one_hit = _queue_has_attack(one_move);
       match one_hit:
         case 0:
-          two_move = _find_two_move_plan(enemy, player, 0);
+          two_move = _find_two_move_plan(enemy, player, bots, bot_idx, 0);
           two_hit = _queue_has_attack(two_move);
           match two_hit:
             case 0:
-              _fallback_plan(round, enemy, player)
+              _fallback_plan(round, enemy, player, bots, bot_idx)
             case _:
               two_move
         case _:
@@ -733,12 +965,12 @@ def _build_bot_plan(player: Pos, enemy: Pos, round: U32) -> List(Action):
     case _:
       _queue3(immediate, _wait_action(), _wait_action())
 
-def _find_one_move_plan(enemy: Pos, player: Pos, dir: U32) -> List(Action):
+def _find_one_move_plan(enemy: Pos, player: Pos, bots: List(Bot), bot_idx: U32, dir: U32) -> List(Action):
   match dir:
     case 4:
       _queue_waits()
     case d:
-      pos1 = _step_free(enemy, d);
+      pos1 = _step_blocked_bot(enemy, d, player, bots, bot_idx);
       same = _pos_eq(pos1, enemy);
       match same:
         case 0:
@@ -746,37 +978,37 @@ def _find_one_move_plan(enemy: Pos, player: Pos, dir: U32) -> List(Action):
           hit = _action_is_attack(attack);
           match hit:
             case 0:
-              _find_one_move_plan(enemy, player, d + 1)
+              _find_one_move_plan(enemy, player, bots, bot_idx, d + 1)
             case _:
               _queue3(_move_action(d), attack, _wait_action())
         case _:
-          _find_one_move_plan(enemy, player, d + 1)
+          _find_one_move_plan(enemy, player, bots, bot_idx, d + 1)
 
-def _find_two_move_plan(enemy: Pos, player: Pos, dir1: U32) -> List(Action):
+def _find_two_move_plan(enemy: Pos, player: Pos, bots: List(Bot), bot_idx: U32, dir1: U32) -> List(Action):
   match dir1:
     case 4:
       _queue_waits()
     case d1:
-      pos1 = _step_free(enemy, d1);
+      pos1 = _step_blocked_bot(enemy, d1, player, bots, bot_idx);
       same = _pos_eq(pos1, enemy);
       match same:
         case 0:
-          plan = _find_two_move_from(enemy, player, d1, pos1, 0);
+          plan = _find_two_move_from(enemy, player, bots, bot_idx, d1, pos1, 0);
           hit = _queue_has_attack(plan);
           match hit:
             case 0:
-              _find_two_move_plan(enemy, player, d1 + 1)
+              _find_two_move_plan(enemy, player, bots, bot_idx, d1 + 1)
             case _:
               plan
         case _:
-          _find_two_move_plan(enemy, player, d1 + 1)
+          _find_two_move_plan(enemy, player, bots, bot_idx, d1 + 1)
 
-def _find_two_move_from(enemy: Pos, player: Pos, dir1: U32, pos1: Pos, dir2: U32) -> List(Action):
+def _find_two_move_from(enemy: Pos, player: Pos, bots: List(Bot), bot_idx: U32, dir1: U32, pos1: Pos, dir2: U32) -> List(Action):
   match dir2:
     case 4:
       _queue_waits()
     case d2:
-      pos2 = _step_free(pos1, d2);
+      pos2 = _step_blocked_bot(pos1, d2, player, bots, bot_idx);
       same = _pos_eq(pos2, pos1);
       match same:
         case 0:
@@ -784,18 +1016,18 @@ def _find_two_move_from(enemy: Pos, player: Pos, dir1: U32, pos1: Pos, dir2: U32
           hit = _action_is_attack(attack);
           match hit:
             case 0:
-              _find_two_move_from(enemy, player, dir1, pos1, d2 + 1)
+              _find_two_move_from(enemy, player, bots, bot_idx, dir1, pos1, d2 + 1)
             case _:
               _queue3(_move_action(dir1), _move_action(d2), attack)
         case _:
-          _find_two_move_from(enemy, player, dir1, pos1, d2 + 1)
+          _find_two_move_from(enemy, player, bots, bot_idx, dir1, pos1, d2 + 1)
 
-def _fallback_plan(round: U32, enemy: Pos, player: Pos) -> List(Action):
+def _fallback_plan(round: U32, enemy: Pos, player: Pos, bots: List(Bot), bot_idx: U32) -> List(Action):
   skill = _round_skill(round);
   dir1 = _chase_dir(enemy, player);
-  pos1 = _step_or_stay(enemy, dir1);
+  pos1 = _step_or_stay_bot(enemy, dir1, player, bots, bot_idx);
   dir2 = _chase_dir(pos1, player);
-  pos2 = _step_or_stay(pos1, dir2);
+  pos2 = _step_or_stay_bot(pos1, dir2, player, bots, bot_idx);
   _queue3(_move_or_wait(dir1), _move_or_wait(dir2), _first_valid_attack(skill, pos2))
 
 def _first_valid_attack(skill: U32, actor: Pos) -> Action:
@@ -876,101 +1108,157 @@ def _find_attack_anchor(actor: Pos, target: Pos, skill: U32, rot: U32, idx: U32)
 
 def _resolve_player_action_state(state: GameState, action: Action) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
       stopped = winner | _hp_empty(player_hp);
       match stopped:
         case 0:
-          _resolve_player_action(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner, action)
+          _resolve_player_action(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner, action)
         case _:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
 
-def _resolve_enemy_action_state(state: GameState, action: Action) -> GameState:
+def _resolve_bot_action_state(state: GameState, bot_idx: U32, action: Action) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
-      stopped = winner | _hp_empty(enemy_hp);
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+      stopped = winner | _bot_dead_at(bots, bot_idx);
       match stopped:
         case 0:
-          _resolve_enemy_action(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner, action)
+          _resolve_bot_action(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner, bot_idx, action)
         case _:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
 
 def _resolve_player_action(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, winner: U32, action: Action,
 ) -> GameState:
   match action:
     case wait{}:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
     case move{dir}:
-      _state(round, level, player_hp, enemy_hp, _step_blocked(player, dir, enemy), enemy, queue, queue_len, queue_locked, mode, winner)
+      _state(round, level, bot_total, player_hp, _step_blocked_player(player, dir, bots), bots, queue, queue_len, queue_locked, mode, winner)
     case attack{skill, anchor, rot}:
       origin = _origin_from_anchor(player, anchor);
-      hit = _attack_hits(skill, rot, origin, player, enemy);
+      tiles = _preview_hits_for(skill, rot, origin, player, 0);
+      hit = _bots_hit_any_tiles(bots, tiles);
       match hit:
         case 0:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
         case _:
-          next_enemy_hp = _damage_hp(enemy_hp);
-          next_winner = _compute_winner(player_hp, next_enemy_hp);
-          _state(round, level, player_hp, next_enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, next_winner)
+          next_bots = _damage_bots_on_tiles(bots, tiles);
+          next_winner = _compute_winner(player_hp, next_bots);
+          _state(round, level, bot_total, player_hp, player, next_bots, queue, queue_len, queue_locked, mode, next_winner)
 
-def _resolve_enemy_action(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
-  queue_len: U32, queue_locked: U32, mode: Mode, winner: U32, action: Action,
+def _resolve_bot_action(
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
+  queue_len: U32, queue_locked: U32, mode: Mode, winner: U32, bot_idx: U32, action: Action,
 ) -> GameState:
-  match action:
-    case wait{}:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
-    case move{dir}:
-      _state(round, level, player_hp, enemy_hp, player, _step_blocked(enemy, dir, player), queue, queue_len, queue_locked, mode, winner)
-    case attack{skill, anchor, rot}:
-      origin = _origin_from_anchor(enemy, anchor);
-      hit = _attack_hits(skill, rot, origin, enemy, player);
-      match hit:
-        case 0:
-          _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
-        case _:
-          next_player_hp = _damage_hp(player_hp);
-          next_winner = _compute_winner(next_player_hp, enemy_hp);
-          _state(round, level, next_player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, next_winner)
+  enemy = _bot_pos_at(bots, bot_idx);
+  kind = _action_kind(action);
+  _resolve_bot_action_kind(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner, bot_idx, action, enemy, kind)
+
+def _resolve_bot_action_kind(
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
+  queue_len: U32, queue_locked: U32, mode: Mode, winner: U32,
+  bot_idx: U32, action: Action, enemy: Pos, kind: U32,
+) -> GameState:
+  match kind:
+    case 0:
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
+    case 1:
+      dir = _action_dir(action);
+      next_bots = _move_bot_in_list(bots, bot_idx, _step_blocked_bot(enemy, dir, player, bots, bot_idx));
+      _state(round, level, bot_total, player_hp, player, next_bots, queue, queue_len, queue_locked, mode, winner)
+    case _:
+      _resolve_bot_attack(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner, enemy, action)
+
+def _resolve_bot_attack(
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
+  queue_len: U32, queue_locked: U32, mode: Mode, winner: U32,
+  enemy: Pos, action: Action,
+) -> GameState:
+  skill = _action_skill(action);
+  anchor = _action_anchor(action);
+  rot = _action_rot(action);
+  origin = _origin_from_anchor(enemy, anchor);
+  hit = _attack_hits(skill, rot, origin, enemy, player);
+  match hit:
+    case 0:
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
+    case _:
+      next_player_hp = _damage_hp(player_hp);
+      next_winner = _compute_winner(next_player_hp, bots);
+      _state(round, level, bot_total, next_player_hp, player, bots, queue, queue_len, queue_locked, mode, next_winner)
 
 def _simulate_player_action(state: GameState, action: Action) -> ActionSim:
-  match state action:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} wait{}:
-      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
-      _action_sim(player, player, enemy, _pos_nil(), current_state, 0, 0, 0)
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} move{dir}:
-      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
-      next_state = _resolve_player_action_state(current_state, move{dir});
-      _action_sim(player, _state_player(next_state), enemy, _pos_nil(), next_state, 0, 0, 0)
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} attack{skill, anchor, rot}:
-      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
-      origin = _origin_from_anchor(player, anchor);
-      attack_tiles = _preview_hits_for(skill, rot, origin, player, 0);
-      hit = _attack_hits(skill, rot, origin, player, enemy);
-      next_state = _resolve_player_action_state(current_state, attack{skill, anchor, rot});
-      enemy_died = _died_between(enemy_hp, _state_enemy_hp(next_state));
-      _action_sim(player, player, enemy, attack_tiles, next_state, hit, 0, enemy_died)
+  match state:
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+      current_state = _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner);
+      kind = _action_kind(action);
+      _simulate_player_action_kind(current_state, player_hp, player, bots, action, kind)
 
-def _simulate_enemy_action(state: GameState, action: Action) -> ActionSim:
-  match state action:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} wait{}:
-      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
+def _simulate_player_action_kind(
+  current_state: GameState, player_hp: U32, player: Pos, bots: List(Bot), action: Action, kind: U32,
+) -> ActionSim:
+  match kind:
+    case 0:
+      _action_sim(player, player, _first_live_bot_pos(bots), _pos_nil(), current_state, 0, 0, 0)
+    case 1:
+      dir = _action_dir(action);
+      next_state = _resolve_player_action_state(current_state, move{dir});
+      _action_sim(player, _state_player(next_state), _first_live_bot_pos(bots), _pos_nil(), next_state, 0, 0, 0)
+    case _:
+      _simulate_player_attack(current_state, player_hp, player, bots, action)
+
+def _simulate_player_attack(
+  current_state: GameState, player_hp: U32, player: Pos, bots: List(Bot), action: Action,
+) -> ActionSim:
+  skill = _action_skill(action);
+  anchor = _action_anchor(action);
+  rot = _action_rot(action);
+  origin = _origin_from_anchor(player, anchor);
+  attack_tiles = _preview_hits_for(skill, rot, origin, player, 0);
+  hit = _bots_hit_any_tiles(bots, attack_tiles);
+  next_state = _resolve_player_action_state(current_state, attack{skill, anchor, rot});
+  bot_died = _bots_any_died_between(bots, _state_bots(next_state));
+  _action_sim(player, player, _first_live_bot_pos(bots), attack_tiles, next_state, hit, 0, bot_died)
+
+def _simulate_bot_action(state: GameState, bot_idx: U32, action: Action) -> ActionSim:
+  match state:
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+      enemy = _bot_pos_at(bots, bot_idx);
+      current_state = _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner);
+      kind = _action_kind(action);
+      _simulate_bot_action_kind(current_state, player_hp, player, bots, bot_idx, action, enemy, kind)
+
+def _simulate_bot_action_kind(
+  current_state: GameState, player_hp: U32, player: Pos, bots: List(Bot),
+  bot_idx: U32, action: Action, enemy: Pos, kind: U32,
+) -> ActionSim:
+  match kind:
+    case 0:
       _action_sim(enemy, enemy, player, _pos_nil(), current_state, 0, 0, 0)
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} move{dir}:
-      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
-      next_state = _resolve_enemy_action_state(current_state, move{dir});
-      _action_sim(enemy, _state_enemy(next_state), player, _pos_nil(), next_state, 0, 0, 0)
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner} attack{skill, anchor, rot}:
-      current_state = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
-      origin = _origin_from_anchor(enemy, anchor);
-      attack_tiles = _preview_hits_for(skill, rot, origin, enemy, 0);
-      hit = _attack_hits(skill, rot, origin, enemy, player);
-      next_state = _resolve_enemy_action_state(current_state, attack{skill, anchor, rot});
-      player_died = _died_between(player_hp, _state_player_hp(next_state));
-      _action_sim(enemy, enemy, player, attack_tiles, next_state, hit, player_died, 0)
+    case 1:
+      dir = _action_dir(action);
+      next_state = _resolve_bot_action_state(current_state, bot_idx, move{dir});
+      _action_sim(enemy, _bot_pos_at(_state_bots(next_state), bot_idx), player, _pos_nil(), next_state, 0, 0, 0)
+    case _:
+      _simulate_bot_attack(current_state, player_hp, player, bot_idx, action, enemy)
+
+def _simulate_bot_attack(
+  current_state: GameState, player_hp: U32, player: Pos, bot_idx: U32, action: Action, enemy: Pos,
+) -> ActionSim:
+  skill = _action_skill(action);
+  anchor = _action_anchor(action);
+  rot = _action_rot(action);
+  origin = _origin_from_anchor(enemy, anchor);
+  attack_tiles = _preview_hits_for(skill, rot, origin, enemy, 0);
+  hit = _attack_hits(skill, rot, origin, enemy, player);
+  next_state = _resolve_bot_action_state(current_state, bot_idx, attack{skill, anchor, rot});
+  player_died = _died_between(_state_player_hp(current_state), _state_player_hp(next_state));
+  _action_sim(enemy, enemy, player, attack_tiles, next_state, hit, player_died, 0)
 
 def _action_sim(
   from: Pos, to: Pos, target_pos: Pos, attack_tiles: List(Pos),
@@ -990,15 +1278,15 @@ def _action_sim_attack_tiles(sim: ActionSim) -> List(Pos):
 
 def _reset_round_planning_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, _, _, _, _, winner}:
-      _reset_round_planning_w(round, level, player_hp, enemy_hp, player, enemy, winner)
+    case game_state{round, level, bot_total, player_hp, player, bots, _, _, _, _, winner}:
+      _reset_round_planning_w(round, level, bot_total, player_hp, player, bots, winner)
 
 def _reset_round_planning_w(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, winner: U32,
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), winner: U32,
 ) -> GameState:
   next_round = _round_after_reset(round, winner);
-  _state(next_round, level, player_hp, enemy_hp, player, enemy, _queue_waits(), 0, 0, _plan_mode(), winner)
+  _state(next_round, level, bot_total, player_hp, player, bots, _queue_waits(), 0, 0, _plan_mode(), winner)
 
 def _round_after_reset(round: U32, winner: U32) -> U32:
   match winner:
@@ -1020,23 +1308,29 @@ def _hp_empty(hp: U32) -> U32:
 def _died_between(before: U32, after: U32) -> U32:
   (1 ^ _hp_empty(before)) & _hp_empty(after)
 
-def _compute_winner(player_hp: U32, enemy_hp: U32) -> U32:
-  both = _hp_empty(player_hp) & _hp_empty(enemy_hp);
-  match both:
+def _compute_winner(player_hp: U32, bots: List(Bot)) -> U32:
+  _compute_winner_state(_hp_empty(player_hp), _bots_any_alive(bots))
+
+def _compute_winner_state(player_dead: U32, any_alive: U32) -> U32:
+  match player_dead:
     case 0:
-      player_dead = _hp_empty(player_hp);
-      match player_dead:
-        case 0:
-          enemy_dead = _hp_empty(enemy_hp);
-          match enemy_dead:
-            case 0:
-              0
-            case _:
-              1
-        case _:
-          2
+      _compute_winner_alive(any_alive)
     case _:
+      _compute_winner_dead(any_alive)
+
+def _compute_winner_alive(any_alive: U32) -> U32:
+  match any_alive:
+    case 0:
+      1
+    case _:
+      0
+
+def _compute_winner_dead(any_alive: U32) -> U32:
+  match any_alive:
+    case 0:
       3
+    case _:
+      2
 
 def _round_skill(round: U32) -> U32:
   match round % 3:
@@ -1158,20 +1452,20 @@ def _state_player(state: GameState) -> Pos:
     case game_state{_, _, _, _, player, _, _, _, _, _, _}:
       player
 
-def _state_enemy(state: GameState) -> Pos:
+def _state_bots(state: GameState) -> List(Bot):
   match state:
-    case game_state{_, _, _, _, _, enemy, _, _, _, _, _}:
-      enemy
+    case game_state{_, _, _, _, _, bots, _, _, _, _, _}:
+      bots
+
+def _state_bot_total(state: GameState) -> U32:
+  match state:
+    case game_state{_, _, bot_total, _, _, _, _, _, _, _, _}:
+      bot_total
 
 def _state_player_hp(state: GameState) -> U32:
   match state:
-    case game_state{_, _, player_hp, _, _, _, _, _, _, _, _}:
+    case game_state{_, _, _, player_hp, _, _, _, _, _, _, _}:
       player_hp
-
-def _state_enemy_hp(state: GameState) -> U32:
-  match state:
-    case game_state{_, _, _, enemy_hp, _, _, _, _, _, _, _}:
-      enemy_hp
 
 def _trail_step_of_pos(p: Pos, step: U32) -> TrailStep:
   match p:
@@ -1191,6 +1485,27 @@ def _action_dir(action: Action) -> U32:
   match action:
     case move{dir}:
       dir
+    case _:
+      0
+
+def _action_skill(action: Action) -> U32:
+  match action:
+    case attack{skill, _, _}:
+      skill
+    case _:
+      0
+
+def _action_anchor(action: Action) -> Pos:
+  match action:
+    case attack{_, anchor, _}:
+      anchor
+    case _:
+      pos{0, 0}
+
+def _action_rot(action: Action) -> U32:
+  match action:
+    case attack{_, _, rot}:
+      rot
     case _:
       0
 
@@ -1218,7 +1533,7 @@ def _mode_is_target(mode: Mode) -> U32:
 
 def _mode_is_playback(mode: Mode) -> U32:
   match mode:
-    case playback{_, _, _, _, _, _}:
+    case playback{_, _, _, _, _, _, _}:
       1
     case _:
       0
@@ -1246,45 +1561,52 @@ def _mode_origin(mode: Mode) -> Pos:
 
 def _mode_playback_idx(mode: Mode) -> U32:
   match mode:
-    case playback{idx, _, _, _, _, _}:
+    case playback{idx, _, _, _, _, _, _}:
       idx
     case _:
       0
 
 def _mode_playback_phase(mode: Mode) -> U32:
   match mode:
-    case playback{_, phase, _, _, _, _}:
+    case playback{_, phase, _, _, _, _, _}:
       phase
     case _:
       0
 
 def _mode_playback_actor(mode: Mode) -> U32:
   match mode:
-    case playback{_, _, actor, _, _, _}:
+    case playback{_, _, actor, _, _, _, _}:
       actor
+    case _:
+      0
+
+def _mode_playback_actor_idx(mode: Mode) -> U32:
+  match mode:
+    case playback{_, _, _, actor_idx, _, _, _}:
+      actor_idx
     case _:
       0
 
 def _mode_playback_action(mode: Mode) -> Action:
   match mode:
-    case playback{_, _, _, action, _, _}:
+    case playback{_, _, _, _, action, _, _}:
       action
     case _:
       _wait_action()
 
 def _mode_playback_sim(mode: Mode) -> ActionSim:
   match mode:
-    case playback{_, _, _, _, sim, _}:
+    case playback{_, _, _, _, _, sim, _}:
       sim
     case _:
       _action_sim(pos{0, 0}, pos{0, 0}, pos{0, 0}, _pos_nil(), state_init(), 0, 0, 0)
 
-def _mode_playback_bot(mode: Mode) -> List(Action):
+def _mode_playback_plans(mode: Mode) -> List(List(Action)):
   match mode:
-    case playback{_, _, _, _, _, bot_queue}:
-      bot_queue
+    case playback{_, _, _, _, _, _, bot_plans}:
+      bot_plans
     case _:
-      _queue_waits()
+      []
 
 def _pos_eq(a: Pos, b: Pos) -> U32:
   match a:
@@ -1349,14 +1671,34 @@ def _step_free(pos: Pos, dir: U32) -> Pos:
     case _:
       pos
 
-def _step_blocked(pos: Pos, dir: U32, other: Pos) -> Pos:
+def _step_blocked_player(pos: Pos, dir: U32, bots: List(Bot)) -> Pos:
   next = _step_free(pos, dir);
-  same = _pos_eq(next, other);
-  match same:
+  blocked = _bots_live_has_pos(bots, next);
+  match blocked:
     case 0:
       next
     case _:
       pos
+
+def _step_blocked_bot(pos: Pos, dir: U32, player: Pos, bots: List(Bot), bot_idx: U32) -> Pos:
+  next = _step_free(pos, dir);
+  blocked = _pos_eq(next, player) | _bots_other_live_has_pos(bots, bot_idx, next);
+  match blocked:
+    case 0:
+      next
+    case _:
+      pos
+
+def _step_or_stay_bot(pos: Pos, dir: U32, player: Pos, bots: List(Bot), bot_idx: U32) -> Pos:
+  match dir:
+    case 4:
+      pos
+    case d:
+      _step_blocked_bot(pos, d, player, bots, bot_idx)
+
+def _move_bot_in_list(bots: List(Bot), bot_idx: U32, next_pos: Pos) -> List(Bot):
+  current = _bot_at(bots, bot_idx);
+  _bot_set(bots, bot_idx, _bot_with_pos(current, next_pos))
 
 def _sub_floor(a: U32, b: U32) -> U32:
   match a b:
@@ -1381,6 +1723,13 @@ def _u32_lt(a: U32, b: U32) -> U32:
 def _u32_gte(a: U32, b: U32) -> U32:
   1 ^ _u32_lt(a, b)
 
+def _min_u32(a: U32, b: U32) -> U32:
+  match _u32_lt(a, b):
+    case 0:
+      b
+    case _:
+      a
+
 def _abs_diff(a: U32, b: U32) -> U32:
   _sub_floor(a, b) + _sub_floor(b, a)
 
@@ -1388,29 +1737,20 @@ def _abs_diff(a: U32, b: U32) -> U32:
 
 def ready_round_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner}:
-      _ready_round_state_w(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
+    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+      _ready_round_state_w(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
 
 def _ready_round_state_w(
-  round: U32, level: U32, player_hp: U32, enemy_hp: U32,
-  player: Pos, enemy: Pos, queue: List(Action),
+  round: U32, level: U32, bot_total: U32, player_hp: U32,
+  player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, winner: U32,
 ) -> GameState:
   match winner | _mode_is_target(mode) | _mode_is_playback(mode):
     case 0:
-      current = _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner);
-      _playback_start_state(current, 0, _build_bot_plan_w(round, player_hp, enemy_hp, player, enemy, winner))
+      current = _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner);
+      _playback_start_state(current, 0, _build_all_bot_plans(round, player_hp, player, bots, winner, 0))
     case _:
-      _state(round, level, player_hp, enemy_hp, player, enemy, queue, queue_len, queue_locked, mode, winner)
-
-def _ready_round_state_run(current: GameState, player_queue: List(Action), bot_queue: List(Action)) -> GameState:
-  s1 = _resolve_player_action_state(current, _action_at(player_queue, 0));
-  s2 = _resolve_enemy_action_state(s1, _action_at(bot_queue, 0));
-  s3 = _resolve_player_action_state(s2, _action_at(player_queue, 1));
-  s4 = _resolve_enemy_action_state(s3, _action_at(bot_queue, 1));
-  s5 = _resolve_player_action_state(s4, _action_at(player_queue, 2));
-  s6 = _resolve_enemy_action_state(s5, _action_at(bot_queue, 2));
-  _reset_round_planning_state(s6)
+      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
 
 def _confirm_and_ready_state(state: GameState) -> GameState:
   match _state_playback_active(state):
@@ -1438,41 +1778,44 @@ def playback_tick_state(state: GameState) -> GameState:
 
 def _playback_tick_mode(state: GameState, mode: Mode) -> GameState:
   match mode:
-    case playback{idx, phase, actor, action, sim, bot_queue}:
-      _playback_tick_idx(state, idx, phase, actor, action, sim, bot_queue)
+    case playback{idx, phase, actor, actor_idx, action, sim, bot_plans}:
+      _playback_tick_idx(state, idx, phase, actor, actor_idx, action, sim, bot_plans)
     case _:
       state
 
-def _playback_tick_idx(state: GameState, idx: U32, phase: U32, actor: U32, action: Action, sim: ActionSim, bot_queue: List(Action)) -> GameState:
+def _playback_tick_idx(state: GameState, idx: U32, phase: U32, actor: U32, actor_idx: U32, action: Action, sim: ActionSim, bot_plans: List(List(Action))) -> GameState:
   match phase:
     case 0:
-      _playback_apply_state(sim, idx, actor, action, bot_queue)
+      _playback_apply_state(sim, idx, actor, actor_idx, action, bot_plans)
     case _:
-      _playback_advance_state(_action_sim_next_state(sim), idx, bot_queue)
+      _playback_advance_state(_action_sim_next_state(sim), idx, bot_plans)
 
-def _playback_start_state(state: GameState, idx: U32, bot_queue: List(Action)) -> GameState:
-  actor = _playback_actor_of_idx(idx);
-  action = _playback_action(_state_queue(state), bot_queue, idx);
-  sim = simulate_actor_action(state, actor, action);
-  _set_mode_state(state, _playback_mode(idx, 0, actor, action, sim, bot_queue))
+def _playback_start_state(state: GameState, idx: U32, bot_plans: List(List(Action))) -> GameState:
+  bot_total = _state_bot_total(state);
+  actor = _playback_actor_of_idx(idx, bot_total);
+  actor_idx = _playback_actor_idx_of_idx(idx, bot_total);
+  action = _playback_action(_state_queue(state), bot_plans, idx, bot_total);
+  sim = simulate_actor_action(state, actor, actor_idx, action);
+  _set_mode_state(state, _playback_mode(idx, 0, actor, actor_idx, action, sim, bot_plans))
 
-def _playback_apply_state(sim: ActionSim, idx: U32, actor: U32, action: Action, bot_queue: List(Action)) -> GameState:
+def _playback_apply_state(sim: ActionSim, idx: U32, actor: U32, actor_idx: U32, action: Action, bot_plans: List(List(Action))) -> GameState:
   next_state = _action_sim_next_state(sim);
-  _set_mode_state(next_state, _playback_mode(idx, 1, actor, action, sim, bot_queue))
+  _set_mode_state(next_state, _playback_mode(idx, 1, actor, actor_idx, action, sim, bot_plans))
 
-def _playback_advance_state(state: GameState, idx: U32, bot_queue: List(Action)) -> GameState:
+def _playback_advance_state(state: GameState, idx: U32, bot_plans: List(List(Action))) -> GameState:
   match _state_winner(state):
     case 0:
-      _playback_advance_live(state, idx, bot_queue)
+      _playback_advance_live(state, idx, bot_plans)
     case _:
       _reset_round_planning_state(state)
 
-def _playback_advance_live(state: GameState, idx: U32, bot_queue: List(Action)) -> GameState:
-  match idx:
-    case 5:
+def _playback_advance_live(state: GameState, idx: U32, bot_plans: List(List(Action))) -> GameState:
+  last_idx = _playback_total_steps(_state_bot_total(state)) - 1;
+  match idx === last_idx:
+    case 0:
+      _playback_start_state(state, idx + 1, bot_plans)
+    case _:
       _reset_round_planning_state(state)
-    case step:
-      _playback_start_state(state, step + 1, bot_queue)
 
 def _move_input_state(state: GameState, dir: U32) -> GameState:
   match _state_playback_active(state):
@@ -1593,11 +1936,31 @@ def on_event(evt: FightEvent, state: GameState) -> GameState:
     case evt_clear{}:
       clear_round_plan_state(state)
     case evt_reset{}:
-      state_init()
+      _reset_combat_state(state)
+    case evt_bot_count_dec{}:
+      _bot_total_delta_state(state, 0)
+    case evt_bot_count_inc{}:
+      _bot_total_delta_state(state, 1)
     case evt_tick{}:
       playback_tick_state(state)
     case evt_ignore{}:
       state
+
+def _reset_combat_state(state: GameState) -> GameState:
+  state_init_count(_state_bot_total(state))
+
+def _bot_total_delta_state(state: GameState, add: U32) -> GameState:
+  _bot_total_delta_state_w(_state_bot_total(state), add)
+
+def _bot_total_delta_state_w(current: U32, add: U32) -> GameState:
+  match add:
+    case 0:
+      _set_bot_total_state(_sub_floor(current, 1))
+    case _:
+      _set_bot_total_state(current + 1)
+
+def _set_bot_total_state(bot_total: U32) -> GameState:
+  state_init_count(bot_total)
 
 # Rendering helpers
 
@@ -1650,9 +2013,20 @@ def render(state: GameState) -> HTML(FightEvent):
           <div class="stat-value sidebar-round">{text{U32.show(_state_round(state))}}</div>
           <div class="stat-label stat-label--spaced">Estado</div>
           <p class="sidebar-phase">{text{_mode_text(state)}}</p>
+          <p class="help help--spaced">{text{"Bots vivos: " ++ U32.show(_live_bot_count(_state_bots(state))) ++ "/" ++ U32.show(_state_bot_total(state))}}</p>
           {_winner_sidebar_text(state)}
           {_preview_sidebar_text(state, planned)}
           {_playback_sidebar_text(state)}
+        </section>
+
+        <section class="card">
+          <div class="stat-label">Bots</div>
+          <div class="bot-count-row">
+            <button {..._bot_count_dec_attrs(state)}>{text{"-"}}</button>
+            <div class="bot-count-value">{text{U32.show(_state_bot_total(state))}}</div>
+            <button {..._bot_count_inc_attrs(state)}>{text{"+"}}</button>
+          </div>
+          <p class="help help--spaced">{text{"Inteiros apenas, de 1 a 25. Alterar reinicia a luta."}}</p>
         </section>
 
         <section class="card">
@@ -1721,7 +2095,7 @@ def _playback_sidebar_text_value(active: U32, state: GameState) -> String:
     case 0:
       ""
     case _:
-      "Ator atual: " ++ _actor_label(_state_playback_actor(state)) ++ ". Acao atual: " ++ _action_label(_state_playback_action(state)) ++ "."
+      "Ator atual: " ++ _actor_label(_state_playback_actor(state), _state_playback_actor_idx(state)) ++ ". Acao atual: " ++ _action_label(_state_playback_action(state)) ++ "."
 
 def _controls_text(state: GameState) -> String:
   _controls_text_active(_state_target_active(state))
@@ -2008,25 +2382,14 @@ def _queue_slot_is_active(state: GameState, idx: U32) -> U32:
     case 0:
       0
     case _:
-      _playback_slot_of_idx(_state_playback_idx(state)) === idx
+      _playback_slot_of_idx(_state_playback_idx(state), _state_bot_total(state)) === idx
 
 def _queue_slot_is_enemy_turn(state: GameState, idx: U32) -> U32:
   match _queue_slot_is_active(state, idx):
     case 0:
       0
     case _:
-      _queue_slot_enemy_idx(_state_playback_idx(state))
-
-def _queue_slot_enemy_idx(playback_idx: U32) -> U32:
-  match playback_idx:
-    case 1:
-      1
-    case 3:
-      1
-    case 5:
-      1
-    case _:
-      0
+      _state_playback_actor(state)
 
 def _board_cell(
   state: GameState,
@@ -2120,38 +2483,36 @@ def _board_cell_actor(state: GameState, cell_pos: Pos) -> HTML(FightEvent):
 def _board_cell_actor_class(state: GameState, cell_pos: Pos) -> String:
   match _pos_eq(_state_player(state), cell_pos):
     case 0:
-      _board_cell_enemy_actor_class(_pos_eq(_state_enemy(state), cell_pos), _hp_empty(_state_enemy_hp(state)))
+      _board_cell_bot_actor_class(_state_bots(state), cell_pos)
     case _:
       "actor actor--player"
 
-def _board_cell_enemy_actor_class(enemy_here: U32, enemy_dead: U32) -> String:
-  match enemy_here:
+def _board_cell_bot_actor_class(bots: List(Bot), cell_pos: Pos) -> String:
+  bot_hp = _bot_hp_at_pos(bots, cell_pos);
+  dead = _hp_empty(bot_hp);
+  _board_cell_bot_actor_class_dead(dead)
+
+def _board_cell_bot_actor_class_dead(dead: U32) -> String:
+  match dead:
     case 0:
-      "actor actor--hidden"
+      "actor actor--enemy"
     case _:
-      match enemy_dead:
-        case 0:
-          "actor actor--enemy"
-        case _:
-          "actor actor--hidden"
+      "actor actor--hidden"
 
 def _board_cell_actor_text(state: GameState, cell_pos: Pos) -> String:
   match _pos_eq(_state_player(state), cell_pos):
     case 0:
-      _board_cell_enemy_actor_text(_pos_eq(_state_enemy(state), cell_pos), _hp_empty(_state_enemy_hp(state)), _state_enemy_hp(state))
+      _board_cell_bot_actor_text(_state_bots(state), cell_pos)
     case _:
       "P"
 
-def _board_cell_enemy_actor_text(enemy_here: U32, enemy_dead: U32, enemy_hp: U32) -> String:
-  match enemy_here:
+def _board_cell_bot_actor_text(bots: List(Bot), cell_pos: Pos) -> String:
+  bot_hp = _bot_hp_at_pos(bots, cell_pos);
+  match _hp_empty(bot_hp):
     case 0:
-      ""
+      _hp_text(bot_hp)
     case _:
-      match enemy_dead:
-        case 0:
-          _hp_text(enemy_hp)
-        case _:
-          ""
+      ""
 
 def _board_cell_ghost(state: GameState, planned: Pos, cell_pos: Pos) -> HTML(FightEvent):
   <div class={_board_cell_ghost_class(_pos_eq(_state_player(state), planned), _pos_eq(planned, cell_pos))}>{text{_board_cell_ghost_text(_pos_eq(_state_player(state), planned), _pos_eq(planned, cell_pos))}}</div>
@@ -2227,6 +2588,12 @@ def _winner_modal_title(winner: U32) -> String:
     case result:
       _winner_title(result)
 
+def _bot_count_dec_attrs(state: GameState) -> List(Attr(FightEvent)):
+  _button_attrs_enabled("button", evt_bot_count_dec{}, _u32_lt(1, _state_bot_total(state)))
+
+def _bot_count_inc_attrs(state: GameState) -> List(Attr(FightEvent)):
+  _button_attrs_enabled("button", evt_bot_count_inc{}, _u32_lt(_state_bot_total(state), 25))
+
 def _button_attrs(class_name: String, evt: FightEvent) -> List(Attr(FightEvent)):
   [attr{"type", "button"}, attr{"class", class_name}, on_click{evt}]
 
@@ -2285,66 +2652,63 @@ def _dir_label(dir: U32) -> String:
     case _:
       "Wait"
 
-def _playback_slot_of_idx(idx: U32) -> U32:
-  match idx:
-    case 0:
-      0
-    case 1:
-      0
-    case 2:
-      1
-    case 3:
-      1
-    case _:
-      2
+def _playback_total_steps(bot_total: U32) -> U32:
+  3 * (bot_total + 1)
 
-def _playback_action(queue: List(Action), bot_queue: List(Action), idx: U32) -> Action:
-  match idx:
-    case 0:
-      _action_at(queue, 0)
-    case 1:
-      _action_at(bot_queue, 0)
-    case 2:
-      _action_at(queue, 1)
-    case 3:
-      _action_at(bot_queue, 1)
-    case 4:
-      _action_at(queue, 2)
-    case _:
-      _action_at(bot_queue, 2)
+def _playback_slot_of_idx(idx: U32, bot_total: U32) -> U32:
+  idx / (bot_total + 1)
 
-def _playback_actor_of_idx(idx: U32) -> U32:
-  match idx:
+def _playback_turn_of_idx(idx: U32, bot_total: U32) -> U32:
+  idx % (bot_total + 1)
+
+def _playback_actor_of_idx(idx: U32, bot_total: U32) -> U32:
+  match _playback_turn_of_idx(idx, bot_total):
     case 0:
-      0
-    case 2:
-      0
-    case 4:
       0
     case _:
       1
 
-def _playback_actor_label(idx: U32) -> String:
-  match idx:
+def _playback_actor_idx_of_idx(idx: U32, bot_total: U32) -> U32:
+  match _playback_turn_of_idx(idx, bot_total):
     case 0:
-      "Player"
-    case 1:
-      "Enemy"
-    case 2:
-      "Player"
-    case 3:
-      "Enemy"
-    case 4:
-      "Player"
-    case _:
-      "Enemy"
+      0
+    case step:
+      step - 1
 
-def _actor_label(actor: U32) -> String:
+def _bot_plan_at(items: List(List(Action)), idx: U32) -> List(Action):
+  match items:
+    case []:
+      _queue_waits()
+    case head<>tail:
+      match idx:
+        case 0:
+          head
+        case step:
+          _bot_plan_at(tail, step - 1)
+
+def _playback_action(queue: List(Action), bot_plans: List(List(Action)), idx: U32, bot_total: U32) -> Action:
+  slot = _playback_slot_of_idx(idx, bot_total);
+  actor = _playback_actor_of_idx(idx, bot_total);
+  actor_idx = _playback_actor_idx_of_idx(idx, bot_total);
+  _playback_action_actor(actor, queue, bot_plans, actor_idx, slot)
+
+def _playback_action_actor(actor: U32, queue: List(Action), bot_plans: List(List(Action)), actor_idx: U32, slot: U32) -> Action:
+  match actor:
+    case 0:
+      _action_at(queue, slot)
+    case _:
+      plan = _bot_plan_at(bot_plans, actor_idx);
+      _action_at(plan, slot)
+
+def _playback_actor_label(actor: U32, actor_idx: U32) -> String:
   match actor:
     case 0:
       "Player"
     case _:
-      "Enemy"
+      "Bot " ++ U32.show(actor_idx + 1)
+
+def _actor_label(actor: U32, actor_idx: U32) -> String:
+  _playback_actor_label(actor, actor_idx)
 
 def _playback_info_text(state: GameState) -> String:
   _playback_info_text_active(state, _state_playback_active(state))
@@ -2354,15 +2718,15 @@ def _playback_info_text_active(state: GameState, active: U32) -> String:
     case 0:
       ""
     case _:
-      _playback_info_text_now(state, _state_playback_idx(state), _state_playback_bot(state))
+      _playback_info_text_now(state, _state_playback_idx(state), _state_playback_plans(state))
 
-def _playback_info_text_now(state: GameState, idx: U32, bot_queue: List(Action)) -> String:
+def _playback_info_text_now(state: GameState, idx: U32, bot_plans: List(List(Action))) -> String:
   "Executando slot "
-  ++ U32.show(_playback_slot_of_idx(idx) + 1)
+  ++ U32.show(_playback_slot_of_idx(idx, _state_bot_total(state)) + 1)
   ++ ": "
-  ++ _playback_actor_label(idx)
+  ++ _playback_actor_label(_state_playback_actor(state), _state_playback_actor_idx(state))
   ++ " - "
-  ++ _action_label(_playback_action(_state_queue(state), bot_queue, idx))
+  ++ _action_label(_playback_action(_state_queue(state), bot_plans, idx, _state_bot_total(state)))
 
 def _mode_text(state: GameState) -> String:
   _mode_text_w(_state_winner(state), _state_mode_value(state))
@@ -2380,7 +2744,7 @@ def _mode_text_mode(mode: Mode) -> String:
       "Planejando round"
     case target{skill, rot, origin}:
       "Mira da skill " ++ U32.show(skill) ++ " rot " ++ U32.show(rot) ++ " origem " ++ _pos_text(origin)
-    case playback{_, _, _, _, _, _}:
+    case playback{_, _, _, _, _, _, _}:
       "Resolvendo round"
 
 def _phase_label(state: GameState) -> String:
@@ -2399,7 +2763,7 @@ def _phase_label_mode(mode: Mode, valid: U32) -> String:
       "Planning"
     case target{_, _, _}:
       _phase_label_target(valid)
-    case playback{_, _, _, _, _, _}:
+    case playback{_, _, _, _, _, _, _}:
       "Playback"
 
 def _phase_label_target(valid: U32) -> String:
@@ -2425,7 +2789,7 @@ def _phase_chip_class_mode(mode: Mode) -> String:
       "chip chip--plan"
     case target{_, _, _}:
       "chip chip--target"
-    case playback{_, _, _, _, _, _}:
+    case playback{_, _, _, _, _, _, _}:
       "chip chip--target"
 
 def _winner_title(winner: U32) -> String:
@@ -2516,14 +2880,17 @@ def _state_playback_phase(state: GameState) -> U32:
 def _state_playback_actor(state: GameState) -> U32:
   _mode_playback_actor(_state_mode_value(state))
 
+def _state_playback_actor_idx(state: GameState) -> U32:
+  _mode_playback_actor_idx(_state_mode_value(state))
+
 def _state_playback_action(state: GameState) -> Action:
   _mode_playback_action(_state_mode_value(state))
 
 def _state_playback_sim(state: GameState) -> ActionSim:
   _mode_playback_sim(_state_mode_value(state))
 
-def _state_playback_bot(state: GameState) -> List(Action):
-  _mode_playback_bot(_state_mode_value(state))
+def _state_playback_plans(state: GameState) -> List(List(Action)):
+  _mode_playback_plans(_state_mode_value(state))
 
 def base_css() -> String:
   ""
@@ -2535,7 +2902,7 @@ def layout_css() -> String:
   ++ ".shell{width:100%;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) var(--sidebar-width);overflow:hidden;}.board-stage{min-width:0;min-height:0;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,var(--board-shell-width)) minmax(0,1fr);align-items:center;overflow:auto;overscroll-behavior:contain;}.board-stack{width:var(--board-shell-width);display:grid;gap:14px;grid-column:2;}.board-wrap{position:relative;padding:var(--board-shell-padding);background:var(--board-frame);border:1px solid var(--border);overflow:hidden;}.board-wrap-large{width:var(--board-shell-width);}"
   ++ ".board{width:var(--board-width);display:grid;grid-template-columns:repeat(18,var(--cell-size));gap:1px;padding:1px;background:var(--grid);}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit{box-shadow:inset 0 0 0 2px var(--hit);}.cell--route{background:var(--route);}"
   ++ ".board-underbar{width:100%;padding:12px;display:flex;gap:12px;align-items:stretch;background:var(--panel);border:1px solid var(--border);}.player-hp-card{width:116px;padding:12px 14px;background:var(--card);border:1px solid #bda173;}.queue-inline{min-width:0;flex:1 1 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.queue-slot{padding:12px 14px;background:var(--panel);border:1px solid #c8ae83;}.queue-slot--active{background:#f1dfb8;border-color:var(--button);}.queue-slot--enemy-turn{border-color:var(--enemy);}.queue-slot__index{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}.queue-slot__value{margin-top:6px;font-weight:700;}"
-  ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.sidebar{min-width:0;min-height:0;padding:18px;display:grid;gap:14px;align-content:start;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);background:var(--panel);}.card{padding:14px 16px;background:var(--card);border:1px solid #bda173;}.stat-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.stat-label--spaced{margin-top:12px;display:block;}.stat-value{margin-top:6px;font-size:28px;font-weight:800;}.sidebar-round{margin-top:2px;}.sidebar-phase{margin:0;font-size:22px;font-weight:800;line-height:1.2;}.controls{display:flex;gap:10px;flex-wrap:wrap;}.controls--actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;}.help{margin:0;color:var(--muted);line-height:1.5;}.help--hidden,.winner--hidden,.modal__card--hidden,.actor--hidden{display:none;}.help--spaced{margin-top:10px;}.help--playback{margin-top:8px;}.winner{margin:10px 0 0;color:#8f2416;font-weight:800;}"
+  ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.sidebar{min-width:0;min-height:0;padding:18px;display:grid;gap:14px;align-content:start;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);background:var(--panel);}.card{padding:14px 16px;background:var(--card);border:1px solid #bda173;}.stat-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.stat-label--spaced{margin-top:12px;display:block;}.stat-value{margin-top:6px;font-size:28px;font-weight:800;}.sidebar-round{margin-top:2px;}.sidebar-phase{margin:0;font-size:22px;font-weight:800;line-height:1.2;}.bot-count-row{margin-top:12px;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:10px;align-items:center;}.bot-count-value{min-width:0;padding:10px 12px;border:1px solid #c8ae83;background:var(--panel);font-size:24px;font-weight:800;line-height:1;text-align:center;}.controls{display:flex;gap:10px;flex-wrap:wrap;}.controls--actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;}.help{margin:0;color:var(--muted);line-height:1.5;}.help--hidden,.winner--hidden,.modal__card--hidden,.actor--hidden{display:none;}.help--spaced{margin-top:10px;}.help--playback{margin-top:8px;}.winner{margin:10px 0 0;color:#8f2416;font-weight:800;}"
   ++ "@media (max-width:1180px){.shell{grid-template-columns:minmax(0,1fr) var(--sidebar-width);}}"
   ++ "@media (max-width:980px){.shell{grid-template-columns:1fr;}.board-stage{grid-template-columns:1fr;padding:10px;}.board-stack{width:min(100%,var(--board-shell-width));grid-column:auto;}.board-wrap-large{width:100%;}.board{width:min(100%,var(--board-width));grid-template-columns:repeat(18,minmax(0,1fr));}.board-underbar{flex-direction:column;}.player-hp-card{width:auto;}.sidebar{border-left:none;border-top:1px solid var(--border);padding:14px;}.skill-strip{overflow:auto;max-width:100%;}}"
 
