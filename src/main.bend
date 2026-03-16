@@ -2427,18 +2427,28 @@ init : AppState =
 
 def render(app: AppState) -> HTML(FightEvent):
   screen = _app_screen(app);
-  _render_screen(screen, app)
+  <div class="page">
+    <style>{text{css()}}</style>
+    <div {..._app_tick_attrs(app)}></div>
+    <div class={_screen_panel_class(_screen_is_home(screen))}>{_render_home(app)}</div>
+    <div class={_screen_panel_class(_screen_is_play_lobby(screen))}>{_render_lobby(app)}</div>
+    <div class={_screen_panel_class(_screen_is_story(screen))}>{_render_story(app)}</div>
+    <div class={_screen_panel_class(_screen_is_match(screen))}>{_render_match(app)}</div>
+  </div>
 
-def _render_screen(screen: Screen, app: AppState) -> HTML(FightEvent):
-  match screen:
-    case home{}:
-      _render_home(app)
-    case play_lobby{}:
-      _render_lobby(app)
-    case story{}:
-      _render_story(app)
-    case battle{}:
-      _render_match(app)
+def _app_tick_attrs(app: AppState) -> List(Attr(FightEvent)):
+  match _screen_is_match(_app_screen(app)):
+    case 0:
+      _tick_attrs_idle()
+    case _:
+      _tick_attrs(_app_game(app))
+
+def _screen_panel_class(active: U32) -> String:
+  match active:
+    case 0:
+      "screen-panel screen-panel--hidden"
+    case _:
+      "screen-panel"
 
 def _render_match(app: AppState) -> HTML(FightEvent):
   state = _app_game(app);
@@ -2451,127 +2461,114 @@ def _render_match(app: AppState) -> HTML(FightEvent):
   hit_owner = _render_hit_owner(state);
   valid = _render_target_valid(state);
   board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, _loadout_hp_bot(lobby), planned, trail, preview, hits, flash_hits, hit_owner, valid));
-  <div class="page">
-    <style>{text{css()}}</style>
-    <div {..._tick_attrs(state)}></div>
-    <main class="shell" tabindex="0" style="outline:none" on_key_down={key_event}>
-      <section class="board-stage">
-        <div class="board-stack">
-          <section class="board-wrap board-wrap-large">
-            <div class="board">{...board}</div>
-            {_winner_modal(state)}
-          </section>
-
-          <section class="board-underbar">
-            <div class="player-hp-card card">
-              <div class="stat-label">Player HP</div>
-              <div class="stat-value">{text{_hp_text(_state_player_hp(state), _loadout_hp_player(lobby))}}</div>
-            </div>
-
-            <div class="queue-inline">
-              {_queue_slot(state, 0)}
-              {_queue_slot(state, 1)}
-              {_queue_slot(state, 2)}
-            </div>
-
-            <div class="skill-strip">
-              {_equipped_skill_preview_card(state, _lobby_player_loadout(lobby), 0)}
-              {_equipped_skill_preview_card(state, _lobby_player_loadout(lobby), 1)}
-              {_equipped_skill_preview_card(state, _lobby_player_loadout(lobby), 2)}
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <aside class="sidebar">
-        <section class="card sidebar-status">
-          <div class="stat-label">Round</div>
-          <div class="stat-value sidebar-round">{text{U32.show(_state_round(state))}}</div>
-          <div class="stat-label stat-label--spaced">Estado</div>
-          <p class="sidebar-phase">{text{_mode_text(state)}}</p>
-          <p class="help help--spaced">{text{"Bots vivos: " ++ U32.show(_live_bot_count(_state_bots(state))) ++ "/" ++ U32.show(_state_bot_total(state))}}</p>
-          {_winner_sidebar_text(state)}
-          {_preview_sidebar_text(state, planned)}
-          {_playback_sidebar_text(state)}
+  <main class="shell" tabindex="0" style="outline:none" on_key_down={key_event}>
+    <section class="board-stage">
+      <div class="board-stack">
+        <section class="board-wrap board-wrap-large">
+          <div class="board">{...board}</div>
+          {_winner_modal(state)}
         </section>
 
-        <section class="card">
-          <div class="stat-label">Acoes</div>
-          <div class="controls controls--actions">
-            <button {..._button_attrs("button alt", evt_ready{})}>{text{"Ready"}}</button>
-            <button {..._button_attrs("button", evt_reset{})}>{text{"Reset partida"}}</button>
+        <section class="board-underbar">
+          <div class="player-hp-card card">
+            <div class="stat-label">Player HP</div>
+            <div class="stat-value">{text{_hp_text(_state_player_hp(state), _loadout_hp_player(lobby))}}</div>
+          </div>
+
+          <div class="queue-inline">
+            {_queue_slot(state, 0)}
+            {_queue_slot(state, 1)}
+            {_queue_slot(state, 2)}
+          </div>
+
+          <div class="skill-strip">
+            {_equipped_skill_preview_card(state, _lobby_player_loadout(lobby), 0)}
+            {_equipped_skill_preview_card(state, _lobby_player_loadout(lobby), 1)}
+            {_equipped_skill_preview_card(state, _lobby_player_loadout(lobby), 2)}
           </div>
         </section>
+      </div>
+    </section>
 
-        <section class="card">
-          <div class="stat-label">Controles</div>
-          <p class="help">{text{_controls_text(state)}}</p>
-          {_target_sidebar_text(state)}
-          {_playback_help_text(state)}
-        </section>
-      </aside>
-    </main>
-  </div>
+    <aside class="sidebar">
+      <section class="card sidebar-status">
+        <div class="stat-label">Round</div>
+        <div class="stat-value sidebar-round">{text{U32.show(_state_round(state))}}</div>
+        <div class="stat-label stat-label--spaced">Estado</div>
+        <p class="sidebar-phase">{text{_mode_text(state)}}</p>
+        <p class="help help--spaced">{text{"Bots vivos: " ++ U32.show(_live_bot_count(_state_bots(state))) ++ "/" ++ U32.show(_state_bot_total(state))}}</p>
+        {_winner_sidebar_text(state)}
+        {_preview_sidebar_text(state, planned)}
+        {_playback_sidebar_text(state)}
+      </section>
+
+      <section class="card">
+        <div class="stat-label">Acoes</div>
+        <div class="controls controls--actions">
+          <button {..._button_attrs("button alt", evt_ready{})}>{text{"Ready"}}</button>
+          <button {..._button_attrs("button", evt_reset{})}>{text{"Reset partida"}}</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="stat-label">Controles</div>
+        <p class="help">{text{_controls_text(state)}}</p>
+        {_target_sidebar_text(state)}
+        {_playback_help_text(state)}
+      </section>
+    </aside>
+  </main>
 
 def _render_home(app: AppState) -> HTML(FightEvent):
-  <div class="page">
-    <style>{text{css()}}</style>
-    <main class="menu-page">
-      <section class="menu-card hero-card">
-        <div class="menu-eyebrow">{text{"Vibi Fight"}}</div>
-        <h1 class="menu-title">{text{"Escolha como entrar"}}</h1>
-        <p class="menu-copy">{text{"Play abre o lobby da luta casual. Play Story fica reservado para a campanha."}}</p>
-        <div class="menu-actions menu-actions--stacked">
-          <button {..._button_attrs("button button--menu", evt_open_play{})}>{text{"Play"}}</button>
-          <button {..._button_attrs("button button--menu button--menu-secondary", evt_open_story{})}>{text{"Play Story"}}</button>
-        </div>
-      </section>
-    </main>
-  </div>
+  <main class="menu-page">
+    <section class="menu-card hero-card">
+      <div class="menu-eyebrow">{text{"Vibi Fight"}}</div>
+      <h1 class="menu-title">{text{"Escolha como entrar"}}</h1>
+      <p class="menu-copy">{text{"Play abre o lobby da luta casual. Play Story fica reservado para a campanha."}}</p>
+      <div class="menu-actions menu-actions--stacked">
+        <button {..._button_attrs("button button--menu", evt_open_play{})}>{text{"Play"}}</button>
+        <button {..._button_attrs("button button--menu button--menu-secondary", evt_open_story{})}>{text{"Play Story"}}</button>
+      </div>
+    </section>
+  </main>
 
 def _render_story(app: AppState) -> HTML(FightEvent):
-  <div class="page">
-    <style>{text{css()}}</style>
-    <main class="menu-page">
-      <section class="menu-card story-card">
-        <div class="menu-eyebrow">{text{"Play Story"}}</div>
-        <h1 class="menu-title">{text{"Em construcao"}}</h1>
-        <p class="menu-copy">{text{"Essa rota fica reservada para o modo historia. O fluxo casual esta em Play."}}</p>
-        <div class="menu-actions">
-          <button {..._button_attrs("button button--menu", evt_go_home{})}>{text{"Voltar"}}</button>
-        </div>
-      </section>
-    </main>
-  </div>
+  <main class="menu-page">
+    <section class="menu-card story-card">
+      <div class="menu-eyebrow">{text{"Play Story"}}</div>
+      <h1 class="menu-title">{text{"Em construcao"}}</h1>
+      <p class="menu-copy">{text{"Essa rota fica reservada para o modo historia. O fluxo casual esta em Play."}}</p>
+      <div class="menu-actions">
+        <button {..._button_attrs("button button--menu", evt_go_home{})}>{text{"Voltar"}}</button>
+      </div>
+    </section>
+  </main>
 
 def _render_lobby(app: AppState) -> HTML(FightEvent):
   lobby = _app_lobby(app);
   player_loadout = _lobby_player_loadout(lobby);
   bot_loadout = _lobby_bot_loadout(lobby);
-  <div class="page">
-    <style>{text{css()}}</style>
-    <main class="menu-page menu-page--lobby">
-      <section class="menu-card lobby-shell">
-        <div class="lobby-header">
-          <div>
-            <div class="menu-eyebrow">{text{"Play"}}</div>
-            <h1 class="menu-title menu-title--lobby">{text{"Lobby da luta"}}</h1>
-          </div>
-          <button {..._button_attrs("button button--menu button--menu-secondary", evt_go_home{})}>{text{"Voltar"}}</button>
+  <main class="menu-page menu-page--lobby">
+    <section class="menu-card lobby-shell">
+      <div class="lobby-header">
+        <div>
+          <div class="menu-eyebrow">{text{"Play"}}</div>
+          <h1 class="menu-title menu-title--lobby">{text{"Lobby da luta"}}</h1>
         </div>
+        <button {..._button_attrs("button button--menu button--menu-secondary", evt_go_home{})}>{text{"Voltar"}}</button>
+      </div>
 
-        <div class="lobby-grid">
-          {_lobby_side_card(0, lobby)}
-          {_lobby_side_card(1, lobby)}
-        </div>
+      <div class="lobby-grid">
+        {_lobby_side_card(0, lobby)}
+        {_lobby_side_card(1, lobby)}
+      </div>
 
-        <div class="lobby-footer">
-          <p class="menu-copy menu-copy--compact">{text{"Selecione de 1 a 3 skills por lado. Os slots vazios continuam vazios na partida."}}</p>
-          <button {..._lobby_play_attrs(lobby)}>{text{"Play"}}</button>
-        </div>
-      </section>
-    </main>
-  </div>
+      <div class="lobby-footer">
+        <p class="menu-copy menu-copy--compact">{text{"Selecione de 1 a 3 skills por lado. Os slots vazios continuam vazios na partida."}}</p>
+        <button {..._lobby_play_attrs(lobby)}>{text{"Play"}}</button>
+      </div>
+    </section>
+  </main>
 
 def _lobby_side_card(side: U32, lobby: LobbyState) -> HTML(FightEvent):
   <section class="card lobby-card">
@@ -3760,7 +3757,7 @@ def _state_playback_plans(state: GameState) -> List(List(Action)):
 def base_css() -> String:
   ""
   ++ ":root{--bg:#d3bb94;--panel:#efe2c6;--card:#f7ecd3;--text:#2a2115;--muted:#6b593c;--border:#7a613c;--board-frame:#6f5634;--grid:#7f6541;--cell:#f8efd7;--preview:#ddb151;--invalid:#cf6c5b;--hit-player:#2a74d8;--hit-player-deep:#184889;--hit-enemy:#d94933;--hit-enemy-deep:#8f2416;--route:#c9dff5;--player:#1f78db;--enemy:#32933a;--ghost:#5b9fe7;--button:#966320;--button-alt:#66794a;--danger:#b74431;--sidebar-width:278px;--cell-size:clamp(42px,3.3vw,52px);--board-shell-padding:12px;--board-width:calc((var(--cell-size) * 18) + 19px);--board-shell-width:calc(var(--board-width) + (var(--board-shell-padding) * 2) + 2px);}"
-  ++ "*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{overflow:hidden;}button{font:inherit;cursor:pointer;}#app,.page{width:100%;min-height:100svh;overflow:hidden;}"
+  ++ "*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{overflow:hidden;}button{font:inherit;cursor:pointer;}#app,.page{width:100%;min-height:100svh;overflow:hidden;}.screen-panel--hidden{display:none;}"
 
 def layout_css() -> String:
   ""
