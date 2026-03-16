@@ -16,32 +16,47 @@ vão ter 3 habilidades.
 as habilidades vão a partir do player até o inimigo, e tem formato de um conjunto de tiles, por exemplo:
 
  [
-    [T,   , T],
-    [  , T,   ],
-    [T,   , T]
+    [A,   , A],
+    [  , A,   ],
+    [A,   , A]
   ]
-a pessoa para usar ahbilidade ela obrigatoriamente tem q encaixar o player em um dos T e os outros T serão aplicados o efeito da habilidade (por enquanto
-é só dano, mas poderemos ter veneno para ficar no tile entre outras coisas. o T q o player está, não é afetado.)
+a pessoa para usar habilidade ela obrigatoriamente tem q encaixar o player em um dos tiles da shape e os outros tiles serão aplicados conforme o tipo de efeito.
+o tile em que o player está encaixado não é afetado.
+
+novo modelo de tiles de habilidade:
+- A = ataque com dano
+- H = hook
+- I = ice
+- F = fire
+- uma mesma casa pode ter mais de uma letra e então aplica mais de um efeito
+- a ordem dos efeitos é definida pela skill; no exemplo abaixo, AH deve aplicar H e depois A
+
+exemplo de shape com tiles compostos:
+[
+  [A,  ,  ,  ,  ,  ,  ],
+  [AH, AH, H, H, H, H, H],
+  [A,  ,  ,  ,  ,  ,  ]
+]
 
 vou dar exemplo de habilidade q funciona e que vao ser usados nesse primeiro player.
 na versao atual nao precisa de mouse. a habilidade entra num modo de edicao por teclado.
 • [
-    [null, null, null, "T"],
-    [null, null, "T", null],
-    [null, "T", null, null],
-    ["T", null, null, null]
+    [null, null, null, "A"],
+    [null, null, "A", null],
+    [null, "A", null, null],
+    ["A", null, null, null]
   ]
  [
-    [T,   , T],
-    [  , T,   ],
-    [T,   , T]
+    [A,   , A],
+    [  , A,   ],
+    [A,   , A]
   ]
 
  [
-    ["T", null, null, null],
-    ["T", null, null, null],
-    ["T", null, null, null],
-    ["T", "T", null, null]
+    ["A", null, null, null],
+    ["A", null, null, null],
+    ["A", null, null, null],
+    ["A", "A", null, null]
   ]
 
 
@@ -99,5 +114,4 @@ hud atual:
 - na direita da vida do player ficam os 3 slots de moves lado a lado
 - na direita dos slots ficam as 3 habilidades como preview visual, cada uma mostrando a tecla 1 2 ou 3
 - a vida do bot fica no proprio tile dele, no lugar do texto AI, para facilitar no futuro ter mais de um bot
-
 
