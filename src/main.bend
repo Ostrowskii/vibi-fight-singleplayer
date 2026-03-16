@@ -1271,6 +1271,16 @@ def _action_sim_next_state(sim: ActionSim) -> GameState:
     case action_sim{_, _, _, _, next_state, _, _, _}:
       next_state
 
+def _action_sim_from(sim: ActionSim) -> Pos:
+  match sim:
+    case action_sim{from, _, _, _, _, _, _, _}:
+      from
+
+def _action_sim_to(sim: ActionSim) -> Pos:
+  match sim:
+    case action_sim{_, to, _, _, _, _, _, _}:
+      to
+
 def _action_sim_attack_tiles(sim: ActionSim) -> List(Pos):
   match sim:
     case action_sim{_, _, _, attack_tiles, _, _, _, _}:
@@ -1973,8 +1983,9 @@ def render(state: GameState) -> HTML(FightEvent):
   preview = _render_preview_tiles(state);
   hits = _render_preview_hits(state);
   flash_hits = _render_attack_flash_active(state);
+  hit_owner = _render_hit_owner(state);
   valid = _render_target_valid(state);
-  board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, planned, trail, preview, hits, flash_hits, valid));
+  board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, planned, trail, preview, hits, flash_hits, hit_owner, valid));
   <div class="page">
     <style>{text{css()}}</style>
     <div {..._tick_attrs(state)}></div>
@@ -2206,6 +2217,35 @@ def _render_preview_hits(state: GameState) -> List(Pos):
     case _:
       _render_playback_attack_hits(state, _state_playback_action(state), _state_playback_phase(state))
 
+def _render_hit_owner(state: GameState) -> U32:
+  match _state_playback_active(state):
+    case 0:
+      _render_preview_hit_owner(state)
+    case _:
+      _render_playback_hit_owner(state)
+
+def _render_preview_hit_owner(state: GameState) -> U32:
+  match _state_target_active(state):
+    case 0:
+      0
+    case _:
+      1
+
+def _render_playback_hit_owner(state: GameState) -> U32:
+  kind = _action_kind(_state_playback_action(state));
+  match kind:
+    case 2:
+      _render_playback_hit_owner_actor(_state_playback_actor(state))
+    case _:
+      0
+
+def _render_playback_hit_owner_actor(actor: U32) -> U32:
+  match actor:
+    case 0:
+      1
+    case _:
+      2
+
 def _render_playback_attack_hits(state: GameState, action: Action, phase: U32) -> List(Pos):
   match phase:
     case 0:
@@ -2238,6 +2278,28 @@ def _render_attack_flash_action(action: Action) -> U32:
   match action:
     case attack{_, _, _}:
       1
+    case _:
+      0
+
+def _render_bump_active(state: GameState) -> U32:
+  match _state_playback_active(state):
+    case 0:
+      0
+    case _:
+      _render_bump_playback(_state_playback_action(state), _state_playback_phase(state), _state_playback_sim(state))
+
+def _render_bump_playback(action: Action, phase: U32, sim: ActionSim) -> U32:
+  match phase:
+    case 0:
+      _render_bump_action(action, sim)
+    case _:
+      0
+
+def _render_bump_action(action: Action, sim: ActionSim) -> U32:
+  kind = _action_kind(action);
+  match kind:
+    case 1:
+      _pos_eq(_action_sim_from(sim), _action_sim_to(sim))
     case _:
       0
 
@@ -2398,11 +2460,12 @@ def _board_cell(
   preview: List(Pos),
   hits: List(Pos),
   flash_hits: U32,
+  hit_owner: U32,
   valid: U32,
   x: U32,
   y: U32,
 ) -> HTML(FightEvent):
-  _board_cell_at(state, planned, trail, preview, hits, flash_hits, valid, pos{x, y})
+  _board_cell_at(state, planned, trail, preview, hits, flash_hits, hit_owner, valid, pos{x, y})
 
 def _board_cell_at(
   state: GameState,
@@ -2411,10 +2474,11 @@ def _board_cell_at(
   preview: List(Pos),
   hits: List(Pos),
   flash_hits: U32,
+  hit_owner: U32,
   valid: U32,
   cell_pos: Pos,
 ) -> HTML(FightEvent):
-  <div class={_board_cell_class(state, planned, trail, preview, hits, flash_hits, valid, cell_pos)}>
+  <div class={_board_cell_class(state, planned, trail, preview, hits, flash_hits, hit_owner, valid, cell_pos)}>
     {_board_cell_actor(state, cell_pos)}
     {_board_cell_ghost(state, planned, cell_pos)}
     {_board_cell_route(trail, cell_pos)}
@@ -2427,13 +2491,14 @@ def _board_cell_class(
   preview: List(Pos),
   hits: List(Pos),
   flash_hits: U32,
+  hit_owner: U32,
   valid: U32,
   pos: Pos,
 ) -> String:
   ""
   ++ "cell"
   ++ _board_cell_preview_class(preview, valid, pos)
-  ++ _board_cell_hit_class(hits, flash_hits, pos)
+  ++ _board_cell_hit_class(hits, flash_hits, hit_owner, pos)
   ++ _board_cell_route_class(trail, pos)
 
 def _board_cell_preview_class(preview: List(Pos), valid: U32, cell_pos: Pos) -> String:
@@ -2450,22 +2515,40 @@ def _board_cell_preview_class_hit(hit: U32, valid: U32) -> String:
         case _:
           " cell--preview"
 
-def _board_cell_hit_class(hits: List(Pos), flash_hits: U32, cell_pos: Pos) -> String:
-  _board_cell_hit_class_hit(_pos_list_has(hits, cell_pos), flash_hits)
+def _board_cell_hit_class(hits: List(Pos), flash_hits: U32, hit_owner: U32, cell_pos: Pos) -> String:
+  _board_cell_hit_class_hit(_pos_list_has(hits, cell_pos), flash_hits, hit_owner)
 
-def _board_cell_hit_class_hit(hit: U32, flash_hits: U32) -> String:
+def _board_cell_hit_class_hit(hit: U32, flash_hits: U32, hit_owner: U32) -> String:
   match hit:
     case 0:
       ""
     case _:
-      _board_cell_hit_flash_class(flash_hits)
+      _board_cell_hit_flash_class(flash_hits, hit_owner)
 
-def _board_cell_hit_flash_class(flash_hits: U32) -> String:
+def _board_cell_hit_flash_class(flash_hits: U32, hit_owner: U32) -> String:
   match flash_hits:
     case 0:
-      " cell--hit"
+      " cell--hit" ++ _board_cell_hit_owner_class(hit_owner)
     case _:
-      " cell--hit cell--attack-flash"
+      " cell--hit cell--attack-flash" ++ _board_cell_hit_owner_class(hit_owner) ++ _board_cell_flash_owner_class(hit_owner)
+
+def _board_cell_hit_owner_class(hit_owner: U32) -> String:
+  match hit_owner:
+    case 1:
+      " cell--hit-player"
+    case 2:
+      " cell--hit-enemy"
+    case _:
+      ""
+
+def _board_cell_flash_owner_class(hit_owner: U32) -> String:
+  match hit_owner:
+    case 1:
+      " cell--attack-flash-player"
+    case 2:
+      " cell--attack-flash-enemy"
+    case _:
+      ""
 
 def _board_cell_route_class(trail: List(TrailStep), cell_pos: Pos) -> String:
   _board_cell_route_class_step(_trail_step_at(trail, cell_pos))
@@ -2483,9 +2566,34 @@ def _board_cell_actor(state: GameState, cell_pos: Pos) -> HTML(FightEvent):
 def _board_cell_actor_class(state: GameState, cell_pos: Pos) -> String:
   match _pos_eq(_state_player(state), cell_pos):
     case 0:
-      _board_cell_bot_actor_class(_state_bots(state), cell_pos)
+      _board_cell_bot_actor_class(_state_bots(state), cell_pos) ++ _board_cell_actor_bump_class(state, cell_pos)
     case _:
-      "actor actor--player"
+      "actor actor--player" ++ _board_cell_actor_bump_class(state, cell_pos)
+
+def _board_cell_actor_bump_class(state: GameState, cell_pos: Pos) -> String:
+  active = _render_bump_active(state);
+  same = _pos_eq(cell_pos, _action_sim_from(_state_playback_sim(state)));
+  _board_cell_actor_bump_state(active & same, _action_dir(_state_playback_action(state)))
+
+def _board_cell_actor_bump_state(show: U32, dir: U32) -> String:
+  match show:
+    case 0:
+      ""
+    case _:
+      _board_cell_actor_bump_dir(dir)
+
+def _board_cell_actor_bump_dir(dir: U32) -> String:
+  match dir:
+    case 0:
+      " actor--bump actor--bump-up"
+    case 1:
+      " actor--bump actor--bump-down"
+    case 2:
+      " actor--bump actor--bump-left"
+    case 3:
+      " actor--bump actor--bump-right"
+    case _:
+      " actor--bump"
 
 def _board_cell_bot_actor_class(bots: List(Bot), cell_pos: Pos) -> String:
   bot_hp = _bot_hp_at_pos(bots, cell_pos);
@@ -2894,13 +3002,13 @@ def _state_playback_plans(state: GameState) -> List(List(Action)):
 
 def base_css() -> String:
   ""
-  ++ ":root{--bg:#d3bb94;--panel:#efe2c6;--card:#f7ecd3;--text:#2a2115;--muted:#6b593c;--border:#7a613c;--board-frame:#6f5634;--grid:#7f6541;--cell:#f8efd7;--preview:#ddb151;--invalid:#cf6c5b;--hit:#d94933;--route:#c9dff5;--player:#1f78db;--enemy:#32933a;--ghost:#5b9fe7;--button:#966320;--button-alt:#66794a;--danger:#b74431;--sidebar-width:278px;--cell-size:clamp(42px,3.3vw,52px);--board-shell-padding:12px;--board-width:calc((var(--cell-size) * 18) + 19px);--board-shell-width:calc(var(--board-width) + (var(--board-shell-padding) * 2) + 2px);}"
+  ++ ":root{--bg:#d3bb94;--panel:#efe2c6;--card:#f7ecd3;--text:#2a2115;--muted:#6b593c;--border:#7a613c;--board-frame:#6f5634;--grid:#7f6541;--cell:#f8efd7;--preview:#ddb151;--invalid:#cf6c5b;--hit-player:#2a74d8;--hit-player-deep:#184889;--hit-enemy:#d94933;--hit-enemy-deep:#8f2416;--route:#c9dff5;--player:#1f78db;--enemy:#32933a;--ghost:#5b9fe7;--button:#966320;--button-alt:#66794a;--danger:#b74431;--sidebar-width:278px;--cell-size:clamp(42px,3.3vw,52px);--board-shell-padding:12px;--board-width:calc((var(--cell-size) * 18) + 19px);--board-shell-width:calc(var(--board-width) + (var(--board-shell-padding) * 2) + 2px);}"
   ++ "*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{overflow:hidden;}button{font:inherit;cursor:pointer;}#app,.page{width:100%;min-height:100svh;overflow:hidden;}"
 
 def layout_css() -> String:
   ""
   ++ ".shell{width:100%;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) var(--sidebar-width);overflow:hidden;}.board-stage{min-width:0;min-height:0;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,var(--board-shell-width)) minmax(0,1fr);align-items:center;overflow:auto;overscroll-behavior:contain;}.board-stack{width:var(--board-shell-width);display:grid;gap:14px;grid-column:2;}.board-wrap{position:relative;padding:var(--board-shell-padding);background:var(--board-frame);border:1px solid var(--border);overflow:hidden;}.board-wrap-large{width:var(--board-shell-width);}"
-  ++ ".board{width:var(--board-width);display:grid;grid-template-columns:repeat(18,var(--cell-size));gap:1px;padding:1px;background:var(--grid);}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit{box-shadow:inset 0 0 0 2px var(--hit);}.cell--route{background:var(--route);}"
+  ++ ".board{width:var(--board-width);display:grid;grid-template-columns:repeat(18,var(--cell-size));gap:1px;padding:1px;background:var(--grid);}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit-player{box-shadow:inset 0 0 0 2px var(--hit-player);}.cell--hit-enemy{box-shadow:inset 0 0 0 2px var(--hit-enemy);}.cell--route{background:var(--route);}"
   ++ ".board-underbar{width:100%;padding:12px;display:flex;gap:12px;align-items:stretch;background:var(--panel);border:1px solid var(--border);}.player-hp-card{width:116px;padding:12px 14px;background:var(--card);border:1px solid #bda173;}.queue-inline{min-width:0;flex:1 1 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.queue-slot{padding:12px 14px;background:var(--panel);border:1px solid #c8ae83;}.queue-slot--active{background:#f1dfb8;border-color:var(--button);}.queue-slot--enemy-turn{border-color:var(--enemy);}.queue-slot__index{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}.queue-slot__value{margin-top:6px;font-weight:700;}"
   ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.sidebar{min-width:0;min-height:0;padding:18px;display:grid;gap:14px;align-content:start;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);background:var(--panel);}.card{padding:14px 16px;background:var(--card);border:1px solid #bda173;}.stat-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.stat-label--spaced{margin-top:12px;display:block;}.stat-value{margin-top:6px;font-size:28px;font-weight:800;}.sidebar-round{margin-top:2px;}.sidebar-phase{margin:0;font-size:22px;font-weight:800;line-height:1.2;}.bot-count-row{margin-top:12px;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:10px;align-items:center;}.bot-count-value{min-width:0;padding:10px 12px;border:1px solid #c8ae83;background:var(--panel);font-size:24px;font-weight:800;line-height:1;text-align:center;}.controls{display:flex;gap:10px;flex-wrap:wrap;}.controls--actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;}.help{margin:0;color:var(--muted);line-height:1.5;}.help--hidden,.winner--hidden,.modal__card--hidden,.actor--hidden{display:none;}.help--spaced{margin-top:10px;}.help--playback{margin-top:8px;}.winner{margin:10px 0 0;color:#8f2416;font-weight:800;}"
   ++ "@media (max-width:1180px){.shell{grid-template-columns:minmax(0,1fr) var(--sidebar-width);}}"
@@ -2909,7 +3017,7 @@ def layout_css() -> String:
 def component_css() -> String:
   ""
   ++ ".button{border:none;border-radius:999px;padding:11px 15px;cursor:pointer;font:inherit;font-weight:800;color:#fff8eb;background:var(--button);}.button.alt{background:var(--button-alt);}.button.ghost{background:var(--danger);}.button:disabled{opacity:.56;cursor:default;}"
-  ++ ".actor{position:absolute;inset:14%;display:grid;place-items:center;font-size:clamp(12px,1.25vw,18px);font-weight:900;color:#fff8eb;z-index:2;}.actor--player{background:var(--player);font-size:clamp(14px,1.15vw,18px);}.actor--enemy{background:var(--enemy);inset:10%;padding:0 4px;font-size:clamp(8px,.85vw,12px);line-height:1;letter-spacing:-.02em;text-align:center;}.ghost{position:absolute;inset:18%;display:grid;place-items:center;background:transparent;color:var(--ghost);border:3px solid var(--ghost);font-size:clamp(12px,1.05vw,16px);font-weight:900;z-index:1;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;min-width:18px;height:18px;padding:0 5px;display:grid;place-items:center;font-size:11px;font-weight:900;line-height:1;color:#fff8eb;background:var(--player);z-index:4;}.trail--hidden{display:none;}.cell--attack-flash{animation:attack-flash .42s linear 1;}.cell--attack-flash .trail,.cell--attack-flash .ghost,.cell--attack-flash .actor{z-index:5;}@keyframes attack-flash{0%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}15%{background:var(--hit);box-shadow:inset 0 0 0 2px #8f2416;}30%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}45%{background:var(--hit);box-shadow:inset 0 0 0 2px #8f2416;}60%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}75%{background:var(--hit);box-shadow:inset 0 0 0 2px #8f2416;}100%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}}"
+  ++ ".actor{position:absolute;inset:14%;display:grid;place-items:center;font-size:clamp(12px,1.25vw,18px);font-weight:900;color:#fff8eb;z-index:2;}.actor--player{background:var(--player);font-size:clamp(14px,1.15vw,18px);}.actor--enemy{background:var(--enemy);inset:10%;padding:0 4px;font-size:clamp(8px,.85vw,12px);line-height:1;letter-spacing:-.02em;text-align:center;}.actor--bump{will-change:transform;}.actor--bump-up{animation:actor-bump-up .18s ease-out 1;}.actor--bump-down{animation:actor-bump-down .18s ease-out 1;}.actor--bump-left{animation:actor-bump-left .18s ease-out 1;}.actor--bump-right{animation:actor-bump-right .18s ease-out 1;}.ghost{position:absolute;inset:18%;display:grid;place-items:center;background:transparent;color:var(--ghost);border:3px solid var(--ghost);font-size:clamp(12px,1.05vw,16px);font-weight:900;z-index:1;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;min-width:18px;height:18px;padding:0 5px;display:grid;place-items:center;font-size:11px;font-weight:900;line-height:1;color:#fff8eb;background:var(--player);z-index:4;}.trail--hidden{display:none;}.cell--attack-flash{animation-duration:.42s;animation-timing-function:linear;animation-iteration-count:1;}.cell--attack-flash-player{animation-name:attack-flash-player;}.cell--attack-flash-enemy{animation-name:attack-flash-enemy;}.cell--attack-flash .trail,.cell--attack-flash .ghost,.cell--attack-flash .actor{z-index:5;}@keyframes actor-bump-up{0%{transform:translateY(0);}45%{transform:translateY(-12%);}100%{transform:translateY(0);}}@keyframes actor-bump-down{0%{transform:translateY(0);}45%{transform:translateY(12%);}100%{transform:translateY(0);}}@keyframes actor-bump-left{0%{transform:translateX(0);}45%{transform:translateX(-12%);}100%{transform:translateX(0);}}@keyframes actor-bump-right{0%{transform:translateX(0);}45%{transform:translateX(12%);}100%{transform:translateX(0);}}@keyframes attack-flash-player{0%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}15%{background:var(--hit-player);box-shadow:inset 0 0 0 2px var(--hit-player-deep);}30%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}45%{background:var(--hit-player);box-shadow:inset 0 0 0 2px var(--hit-player-deep);}60%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}75%{background:var(--hit-player);box-shadow:inset 0 0 0 2px var(--hit-player-deep);}100%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}}@keyframes attack-flash-enemy{0%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}15%{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--hit-enemy-deep);}30%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}45%{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--hit-enemy-deep);}60%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}75%{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--hit-enemy-deep);}100%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}}"
   ++ ".skill-preview{min-width:72px;padding:10px;display:grid;justify-items:start;align-items:start;align-content:start;gap:8px;border:1px solid #bda173;border-radius:14px;background:var(--card);color:var(--text);}.skill-preview--active{border-color:var(--button);background:#f1dfb8;}.skill-key{font-size:12px;font-weight:900;letter-spacing:.12em;color:var(--muted);}.skill-grid{display:grid;align-self:start;justify-self:start;grid-template-columns:repeat(var(--mini-cols),12px);grid-template-rows:repeat(var(--mini-rows),12px);gap:1px;padding:1px;background:var(--grid);}.skill-mini-cell{width:12px;height:12px;background:var(--cell);}.skill-mini-cell--filled{background:var(--preview);}.skill-preview--active .skill-mini-cell--filled{background:var(--button);}"
   ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(42,33,21,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(42,33,21,.46);}.modal__card{width:min(100%,340px);display:grid;gap:12px;justify-items:center;padding:24px 22px;background:var(--card);border:1px solid #bda173;}.modal__eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;}.modal__title{margin:0;font-size:34px;line-height:1;}.timer-hook{display:none;}"
 
