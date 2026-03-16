@@ -1772,7 +1772,7 @@ def _confirm_and_ready_state(state: GameState) -> GameState:
 def _confirm_and_ready_target(state: GameState, active: U32) -> GameState:
   match active:
     case 0:
-      state
+      ready_round_state(state)
     case _:
       _confirm_and_ready_valid(state, target_valid(state))
 
@@ -2114,7 +2114,7 @@ def _controls_text(state: GameState) -> String:
 def _controls_text_active(active: U32) -> String:
   match active:
     case 0:
-      "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Space em uma mira valida confirma o ataque e ja da Ready. Esc desfaz a ultima decisao. Enter resolve o round. Reset partida reinicia a luta."
+      "WASD/setas enfileiram ate 2 movimentos. 1/2/3 entram na mira. Space confirma o turno; se a mira estiver valida, ele confirma o ataque e ja da Ready. Esc desfaz a ultima decisao. Enter resolve o round. Reset partida reinicia a luta."
     case _:
       "WASD/setas movem a preview. Q/E giram. Space confirma o ataque e ja resolve o round. Esc cancela a mira. Reset partida reinicia a luta."
 
