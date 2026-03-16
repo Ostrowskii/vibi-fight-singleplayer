@@ -111,9 +111,11 @@ type FightEvent {
   evt_lobby_player_skill_1{}
   evt_lobby_player_skill_2{}
   evt_lobby_player_skill_3{}
+  evt_lobby_player_skill_4{}
   evt_lobby_bot_skill_1{}
   evt_lobby_bot_skill_2{}
   evt_lobby_bot_skill_3{}
+  evt_lobby_bot_skill_4{}
   evt_move_up{}
   evt_move_down{}
   evt_move_left{}
@@ -242,8 +244,10 @@ def skill_len(skill: U32) -> U32:
     case 1:
       4
     case 2:
-      5
+      4
     case 3:
+      5
+    case 4:
       5
     case _:
       0
@@ -251,86 +255,118 @@ def skill_len(skill: U32) -> U32:
 def skill_point(skill: U32, rot: U32, idx: U32) -> Pos:
   match skill rot idx:
     case 1 0 0:
-      pos{3, 0}
+      pos{0, 0}
     case 1 0 1:
-      pos{2, 1}
+      pos{1, 0}
     case 1 0 2:
-      pos{1, 2}
+      pos{2, 0}
     case 1 0 3:
-      pos{0, 3}
+      pos{3, 0}
     case 1 1 0:
       pos{0, 0}
     case 1 1 1:
-      pos{1, 1}
+      pos{0, 1}
     case 1 1 2:
-      pos{2, 2}
+      pos{0, 2}
     case 1 1 3:
-      pos{3, 3}
-    case 1 2 0:
-      pos{3, 0}
-    case 1 2 1:
-      pos{2, 1}
-    case 1 2 2:
-      pos{1, 2}
-    case 1 2 3:
       pos{0, 3}
+    case 1 2 0:
+      pos{0, 0}
+    case 1 2 1:
+      pos{1, 0}
+    case 1 2 2:
+      pos{2, 0}
+    case 1 2 3:
+      pos{3, 0}
     case 1 3 0:
       pos{0, 0}
     case 1 3 1:
-      pos{1, 1}
+      pos{0, 1}
     case 1 3 2:
-      pos{2, 2}
+      pos{0, 2}
     case 1 3 3:
-      pos{3, 3}
-    case 2 _ 0:
+      pos{0, 3}
+    case 2 0 0:
+      pos{3, 0}
+    case 2 0 1:
+      pos{2, 1}
+    case 2 0 2:
+      pos{1, 2}
+    case 2 0 3:
+      pos{0, 3}
+    case 2 1 0:
       pos{0, 0}
-    case 2 _ 1:
-      pos{2, 0}
-    case 2 _ 2:
+    case 2 1 1:
       pos{1, 1}
-    case 2 _ 3:
-      pos{0, 2}
-    case 2 _ 4:
+    case 2 1 2:
       pos{2, 2}
-    case 3 0 0:
+    case 2 1 3:
+      pos{3, 3}
+    case 2 2 0:
+      pos{3, 0}
+    case 2 2 1:
+      pos{2, 1}
+    case 2 2 2:
+      pos{1, 2}
+    case 2 2 3:
+      pos{0, 3}
+    case 2 3 0:
       pos{0, 0}
-    case 3 0 1:
-      pos{0, 1}
-    case 3 0 2:
+    case 2 3 1:
+      pos{1, 1}
+    case 2 3 2:
+      pos{2, 2}
+    case 2 3 3:
+      pos{3, 3}
+    case 3 _ 0:
+      pos{0, 0}
+    case 3 _ 1:
+      pos{2, 0}
+    case 3 _ 2:
+      pos{1, 1}
+    case 3 _ 3:
       pos{0, 2}
-    case 3 0 3:
-      pos{0, 3}
-    case 3 0 4:
-      pos{1, 3}
-    case 3 1 0:
-      pos{3, 0}
-    case 3 1 1:
-      pos{2, 0}
-    case 3 1 2:
-      pos{1, 0}
-    case 3 1 3:
+    case 3 _ 4:
+      pos{2, 2}
+    case 4 0 0:
       pos{0, 0}
-    case 3 1 4:
+    case 4 0 1:
       pos{0, 1}
-    case 3 2 0:
-      pos{3, 3}
-    case 3 2 1:
-      pos{3, 2}
-    case 3 2 2:
-      pos{3, 1}
-    case 3 2 3:
-      pos{3, 0}
-    case 3 2 4:
-      pos{2, 0}
-    case 3 3 0:
+    case 4 0 2:
+      pos{0, 2}
+    case 4 0 3:
       pos{0, 3}
-    case 3 3 1:
+    case 4 0 4:
       pos{1, 3}
-    case 3 3 2:
-      pos{2, 3}
-    case 3 3 3:
+    case 4 1 0:
+      pos{3, 0}
+    case 4 1 1:
+      pos{2, 0}
+    case 4 1 2:
+      pos{1, 0}
+    case 4 1 3:
+      pos{0, 0}
+    case 4 1 4:
+      pos{0, 1}
+    case 4 2 0:
       pos{3, 3}
-    case 3 3 4:
+    case 4 2 1:
+      pos{3, 2}
+    case 4 2 2:
+      pos{3, 1}
+    case 4 2 3:
+      pos{3, 0}
+    case 4 2 4:
+      pos{2, 0}
+    case 4 3 0:
+      pos{0, 3}
+    case 4 3 1:
+      pos{1, 3}
+    case 4 3 2:
+      pos{2, 3}
+    case 4 3 3:
+      pos{3, 3}
+    case 4 3 4:
       pos{3, 2}
     case _ _ _:
       pos{0, 0}
@@ -2270,12 +2306,16 @@ def _event_kind(evt: FightEvent) -> U32:
       10
     case evt_lobby_player_skill_3{}:
       11
-    case evt_lobby_bot_skill_1{}:
+    case evt_lobby_player_skill_4{}:
       12
-    case evt_lobby_bot_skill_2{}:
+    case evt_lobby_bot_skill_1{}:
       13
-    case evt_lobby_bot_skill_3{}:
+    case evt_lobby_bot_skill_2{}:
       14
+    case evt_lobby_bot_skill_3{}:
+      15
+    case evt_lobby_bot_skill_4{}:
+      16
     case _:
       0
 
@@ -2312,11 +2352,15 @@ def _on_event_kind_match(kind: U32, evt: FightEvent, app: AppState) -> AppState:
     case 11:
       _app_toggle_player_skill(app, 3)
     case 12:
-      _app_toggle_bot_skill(app, 1)
+      _app_toggle_player_skill(app, 4)
     case 13:
-      _app_toggle_bot_skill(app, 2)
+      _app_toggle_bot_skill(app, 1)
     case 14:
+      _app_toggle_bot_skill(app, 2)
+    case 15:
       _app_toggle_bot_skill(app, 3)
+    case 16:
+      _app_toggle_bot_skill(app, 4)
     case _:
       _app_match_event(evt, app)
 
@@ -2475,9 +2519,9 @@ def _render_home(app: AppState) -> HTML(FightEvent):
     <main class="menu-page">
       <section class="menu-card hero-card">
         <div class="menu-eyebrow">{text{"Vibi Fight"}}</div>
-        <h1 class="menu-title">{text{"Escolha um modo"}}</h1>
-        <p class="menu-copy">{text{"Play abre o lobby da luta atual. Play Story fica reservado para o game principal."}}</p>
-        <div class="menu-actions">
+        <h1 class="menu-title">{text{"Escolha como entrar"}}</h1>
+        <p class="menu-copy">{text{"Play abre o lobby da luta casual. Play Story fica reservado para a campanha."}}</p>
+        <div class="menu-actions menu-actions--stacked">
           <button {..._button_attrs("button button--menu", evt_open_play{})}>{text{"Play"}}</button>
           <button {..._button_attrs("button button--menu button--menu-secondary", evt_open_story{})}>{text{"Play Story"}}</button>
         </div>
@@ -2557,6 +2601,7 @@ def _lobby_side_card(side: U32, lobby: LobbyState) -> HTML(FightEvent):
       {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 1)}
       {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 2)}
       {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 3)}
+      {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 4)}
     </div>
   </section>
 
@@ -2691,7 +2736,7 @@ def _target_sidebar_text_value(active: U32, state: GameState) -> String:
     case 0:
       ""
     case _:
-      "Skill " ++ U32.show(_state_target_skill(state)) ++ ", rotacao " ++ U32.show(_state_target_rot(state)) ++ ", origem " ++ _pos_text(_state_target_origin(state)) ++ ", preview " ++ _target_valid_text(target_valid(state)) ++ "."
+      _skill_name(_state_target_skill(state)) ++ ", rotacao " ++ U32.show(_state_target_rot(state)) ++ ", origem " ++ _pos_text(_state_target_origin(state)) ++ ", preview " ++ _target_valid_text(target_valid(state)) ++ "."
 
 def _playback_help_text(state: GameState) -> HTML(FightEvent):
   _playback_help_text_active(_state_playback_active(state), state)
@@ -2898,7 +2943,7 @@ def _equipped_skill_caption(skill: U32) -> String:
     case 0:
       "Vazio"
     case current_skill:
-      "Skill " ++ U32.show(current_skill)
+      _skill_name(current_skill)
 
 def _equipped_skill_preview_attrs(state: GameState, idx: U32, skill: U32) -> List(Attr(FightEvent)):
   enabled = (1 ^ _state_playback_active(state)) & _loadout_nonzero(skill);
@@ -2929,7 +2974,7 @@ def _equipped_skill_preview_class_active(active: U32) -> String:
 
 def _lobby_skill_pick_card(side: U32, loadout_value: Loadout, skill: U32) -> HTML(FightEvent):
   <button {..._lobby_skill_pick_attrs(side, loadout_value, skill)}>
-    <span class="skill-pool-card__label">{text{"Skill " ++ U32.show(skill)}}</span>
+    <span class="skill-pool-card__label">{text{_skill_name(skill)}}</span>
     {_skill_visual(skill)}
   </button>
 
@@ -2959,8 +3004,10 @@ def _lobby_player_skill_evt(skill: U32) -> FightEvent:
       evt_lobby_player_skill_1{}
     case 2:
       evt_lobby_player_skill_2{}
-    case _:
+    case 3:
       evt_lobby_player_skill_3{}
+    case _:
+      evt_lobby_player_skill_4{}
 
 def _lobby_bot_skill_evt(skill: U32) -> FightEvent:
   match skill:
@@ -2968,8 +3015,10 @@ def _lobby_bot_skill_evt(skill: U32) -> FightEvent:
       evt_lobby_bot_skill_1{}
     case 2:
       evt_lobby_bot_skill_2{}
-    case _:
+    case 3:
       evt_lobby_bot_skill_3{}
+    case _:
+      evt_lobby_bot_skill_4{}
 
 def _skill_visual(skill: U32) -> HTML(FightEvent):
   cells = U32.grid(HTML(FightEvent), _skill_preview_width(skill), _skill_preview_height(skill), _skill_preview_cell(skill));
@@ -3433,6 +3482,19 @@ def _skill_button_class_active(active: U32) -> String:
     case _:
       "button button--secondary button--active"
 
+def _skill_name(skill: U32) -> String:
+  match skill:
+    case 1:
+      "M1"
+    case 2:
+      "M2"
+    case 3:
+      "M3"
+    case 4:
+      "M4"
+    case _:
+      "?"
+
 def _action_label(action: Action) -> String:
   match action:
     case wait{}:
@@ -3440,7 +3502,7 @@ def _action_label(action: Action) -> String:
     case move{dir}:
       "Mover " ++ _dir_label(dir)
     case attack{skill, anchor, rot}:
-      "Ataque " ++ U32.show(skill)
+      "Ataque " ++ _skill_name(skill)
 
 def _dir_label(dir: U32) -> String:
   match dir:
@@ -3546,7 +3608,7 @@ def _mode_text_mode(mode: Mode) -> String:
     case plan{}:
       "Planejando round"
     case target{skill, rot, origin}:
-      "Mira da skill " ++ U32.show(skill) ++ " rot " ++ U32.show(rot) ++ " origem " ++ _pos_text(origin)
+      "Mira de " ++ _skill_name(skill) ++ " rot " ++ U32.show(rot) ++ " origem " ++ _pos_text(origin)
     case playback{_, _, _, _, _, _, _}:
       "Resolvendo round"
 
@@ -3707,11 +3769,11 @@ def layout_css() -> String:
   ++ ".board-underbar{width:100%;padding:12px;display:flex;gap:12px;align-items:stretch;background:var(--panel);border:1px solid var(--border);}.player-hp-card{width:116px;padding:12px 14px;background:var(--card);border:1px solid #bda173;}.queue-inline{min-width:0;flex:1 1 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.queue-slot{padding:12px 14px;background:var(--panel);border:1px solid #c8ae83;}.queue-slot--active{background:#f1dfb8;border-color:var(--button);}.queue-slot--enemy-turn{border-color:var(--enemy);}.queue-slot__index{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}.queue-slot__value{margin-top:6px;font-weight:700;}"
   ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.sidebar{min-width:0;min-height:0;padding:18px;display:grid;gap:14px;align-content:start;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);background:var(--panel);}.card{padding:14px 16px;background:var(--card);border:1px solid #bda173;}.stat-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.stat-label--spaced{margin-top:12px;display:block;}.stat-value{margin-top:6px;font-size:28px;font-weight:800;}.sidebar-round{margin-top:2px;}.sidebar-phase{margin:0;font-size:22px;font-weight:800;line-height:1.2;}.controls{display:flex;gap:10px;flex-wrap:wrap;}.controls--actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;}.help{margin:0;color:var(--muted);line-height:1.5;}.help--hidden,.winner--hidden,.modal__card--hidden,.actor--hidden{display:none;}.help--spaced{margin-top:10px;}.help--playback{margin-top:8px;}.winner{margin:10px 0 0;color:#8f2416;font-weight:800;}"
   ++ "@media (max-width:1180px){.shell{grid-template-columns:minmax(0,1fr) var(--sidebar-width);}}"
-  ++ "@media (max-width:980px){.page{height:100svh;overflow:auto;}.shell{min-height:100%;height:auto;display:block;overflow:visible;}.board-stage{display:block;padding:0;overflow:visible;}.board-stack{width:min(100%,var(--board-shell-width));margin:0 auto;grid-column:auto;gap:12px;}.board-wrap-large{width:100%;}.board{width:min(100%,var(--board-width));grid-template-columns:repeat(18,minmax(0,1fr));}.board-underbar{flex-direction:column;}.player-hp-card{width:auto;}.sidebar{border:none;padding:12px 0 14px;overflow:visible;background:transparent;}.skill-strip{overflow:auto;max-width:100%;padding-bottom:2px;}.menu-page{padding:20px 14px;}.lobby-grid{grid-template-columns:1fr;}}"
+  ++ "@media (max-width:980px){.page{height:100svh;overflow:auto;}.shell{min-height:100%;height:auto;display:block;overflow:visible;}.board-stage{display:block;padding:0;overflow:visible;}.board-stack{width:min(100%,var(--board-shell-width));margin:0 auto;grid-column:auto;gap:12px;}.board-wrap-large{width:100%;}.board{width:min(100%,var(--board-width));grid-template-columns:repeat(18,minmax(0,1fr));}.board-underbar{flex-direction:column;}.player-hp-card{width:auto;}.sidebar{border:none;padding:12px 0 14px;overflow:visible;background:transparent;}.skill-strip{overflow:auto;max-width:100%;padding-bottom:2px;}.menu-page{padding:20px 14px;}.lobby-grid{grid-template-columns:1fr;}.skill-pool-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}"
 
 def menu_css() -> String:
   ""
-  ++ ".menu-page{min-height:100svh;padding:32px 24px;display:grid;place-items:center;overflow:auto;}.menu-page--lobby{place-items:start center;}.menu-card{width:min(100%,1120px);padding:24px;background:var(--panel);border:1px solid var(--border);}.hero-card,.story-card{width:min(100%,640px);display:grid;gap:16px;justify-items:start;}.menu-eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800;}.menu-title{margin:0;font-size:44px;line-height:1;}.menu-title--lobby{font-size:36px;}.menu-copy{margin:0;color:var(--muted);line-height:1.6;max-width:56ch;}.menu-copy--compact{max-width:none;}.menu-actions{display:flex;gap:12px;flex-wrap:wrap;}.lobby-shell{display:grid;gap:20px;}.lobby-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}.lobby-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}.lobby-card{display:grid;gap:12px;align-content:start;}.lobby-hp-row{margin-top:10px;display:flex;align-items:center;gap:12px;}.lobby-hp-label{font-size:14px;font-weight:800;color:var(--text);}.stepper{display:grid;grid-template-columns:40px minmax(82px,auto) 40px;gap:8px;align-items:center;}.stepper__value{padding:10px 12px;border:1px solid #c8ae83;background:var(--panel);font-size:22px;font-weight:800;line-height:1;text-align:center;}.lobby-slot-strip{display:flex;gap:10px;flex-wrap:wrap;}.skill-pool-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}.lobby-footer{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;}"
+  ++ ".menu-page{min-height:100svh;padding:32px 24px;display:grid;place-items:center;overflow:auto;}.menu-page--lobby{place-items:start center;}.menu-card{width:min(100%,1120px);padding:24px;background:var(--panel);border:1px solid var(--border);}.hero-card{width:min(100%,520px);display:grid;gap:18px;justify-items:center;text-align:center;padding:36px 28px;}.story-card{width:min(100%,640px);display:grid;gap:16px;justify-items:start;}.menu-eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800;}.menu-title{margin:0;font-size:44px;line-height:1;}.menu-title--lobby{font-size:36px;}.menu-copy{margin:0;color:var(--muted);line-height:1.6;max-width:56ch;}.menu-copy--compact{max-width:none;}.menu-actions{display:flex;gap:12px;flex-wrap:wrap;}.menu-actions--stacked{width:min(100%,280px);display:grid;grid-template-columns:1fr;}.menu-actions--stacked .button{width:100%;}.lobby-shell{display:grid;gap:20px;}.lobby-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}.lobby-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;}.lobby-card{display:grid;gap:12px;align-content:start;}.lobby-hp-row{margin-top:10px;display:flex;align-items:center;gap:12px;}.lobby-hp-label{font-size:14px;font-weight:800;color:var(--text);}.stepper{display:grid;grid-template-columns:40px minmax(82px,auto) 40px;gap:8px;align-items:center;}.stepper__value{padding:10px 12px;border:1px solid #c8ae83;background:var(--panel);font-size:22px;font-weight:800;line-height:1;text-align:center;}.lobby-slot-strip{display:flex;gap:10px;flex-wrap:wrap;}.skill-pool-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}.lobby-footer{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;}"
 
 def component_css() -> String:
   ""
