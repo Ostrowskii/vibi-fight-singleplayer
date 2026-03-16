@@ -1,54 +1,126 @@
+Fight Spec
+
+1. estrutura geral do app
+
+- a raiz do app tem 2 botoes centralizados, um embaixo do outro:
+  - Play
+  - Play Story
+- Play abre o lobby da luta casual
+- Play Story fica em pagina propria, separada, e por enquanto pode ser placeholder
+- Play e Play Story devem usar a mesma base de fight e a mesma tabela de habilidades
 
 
-+ jogo single player 
+2. arena e combate base
 
-visualização dividida em duas partes. o jogo / outras coisas
+- jogo single player
+- mapa em grid com 9 de altura x 18 de largura
+- player azul comeca na linha 4 coluna 6
+- inimigo verde comeca na linha 4 coluna 12
+- o inimigo deve ser um quadrado verde, nao um circulo
+- o player e o bot tem HP base 50
+- no futuro itens podem aumentar HP, mas por enquanto HP base de ambos e sempre 50
+- o combate e por rounds
+- cada round tem 3 slots
+- o player pode planejar ate 2 movimentos ortogonais e 1 ataque
+- nao existe movimento diagonal
+- se atacar, nao pode mais se mover naquele round
+- combinacoes validas de round:
+  - ataque parado parado
+  - move ataque parado
+  - move move ataque
+  - move move parado
+  - move parado parado
+  - parado parado parado
+- a resolucao e slot a slot, com o player agindo antes da AI no mesmo slot
+- se um move for bloqueado por outro ator, ele nao entra no tile ocupado
+- quando um move bate em outro ator e falha, deve existir feedback de "boing"
 
-1. o jogo fica a esquerda e contempla um mapa de grid 9 altura x 18 largura 
-player azul comecando na linha 4 coluna 6
-inimigo verde comecando na linha 4 coluna 12
-movimentação awsd e seta,
-jogo de turno contra ai.
-cada turno o jogador vai poder se mover 2 blocos (movimentação inteira e não digaonal)
-e ativar uma de suas habilidades para atacar o inimigo.
-ambos tem 50 de vida.
-vão ter 3 habilidades.
-as habilidades vão a partir do player até o inimigo, e tem formato de um conjunto de tiles, por exemplo:
 
- [
-    [A,   , A],
-    [  , A,   ],
-    [A,   , A]
-  ]
-a pessoa para usar habilidade ela obrigatoriamente tem q encaixar o player em um dos tiles da shape e os outros tiles serão aplicados conforme o tipo de efeito.
-o tile em que o player está encaixado não é afetado.
+3. fluxo do lobby casual
 
-novo modelo de tiles de habilidade:
+- no Play existe um lobby antes da luta
+- o lobby mostra todas as habilidades disponiveis visualmente
+- o player pode escolher de 1 a 3 habilidades
+- o bot pode escolher de 1 a 3 habilidades
+- o bot da luta casual atual e 1 bot apenas
+- o seletor visual de quantidade de bots nao deve aparecer no modo casual atual
+- no futuro podem existir levels pre-desenhados com mais de 1 bot
+- os slots restantes nao escolhidos ficam vazios
+- existe um unico botao Play no lobby para confirmar a escolha
+- as habilidades equipadas por default no lobby sao M1, M2 e M3
+
+
+4. classes e habilidades
+
+- as habilidades sao classificadas em 3 classes:
+  - melee
+  - ranged
+  - mage
+- o personagem nao fica preso a classe
+- ele pode equipar 3 habilidades de qualquer combinacao dessas classes
+- por enquanto todas as habilidades atuais sao melee
+- os nomes atuais seguem classe + numero:
+  - M1
+  - M2
+  - M3
+  - M4
+
+habilidades atuais:
+
+M1
+[
+  ["A", "A", "A", "A"]
+]
+
+M2
+[
+  [null, null, null, "A"],
+  [null, null, "A", null],
+  [null, "A", null, null],
+  ["A", null, null, null]
+]
+
+M3
+[
+  ["A", null, "A"],
+  [null, "A", null],
+  ["A", null, "A"]
+]
+
+M4
+[
+  ["A", null, null, null],
+  ["A", null, null, null],
+  ["A", null, null, null],
+  ["A", "A", null, null]
+]
+
+- todas as habilidades atuais causam 10 de dano quando aplicam dano
+- o preview visual da habilidade deve ficar em uma area fixa
+- a matriz da habilidade deve ser recortada no menor retangulo possivel
+- depois disso ela deve ser redimensionada proporcionalmente para caber no espaco fixo
+- o card externo da habilidade nao muda de tamanho entre skills
+
+
+5. sistema de tiles de habilidade
+
+- a habilidade e um conjunto de tiles locais
+- para usar uma habilidade, o player precisa encaixar o proprio ator em pelo menos um tile valido da shape
+- o tile em que o ator esta encaixado nao afeta o proprio ator
+- os outros tiles aplicam os efeitos daquela habilidade
+
+modelo de tiles:
+
 - A = ataque com dano
 - H = hook
 - I = ice
 - F = fire
-- uma mesma casa pode ter mais de uma letra e então aplica mais de um efeito
-- a ordem dos efeitos é definida pela skill; no exemplo abaixo, AH deve aplicar H e depois A
-- I fica no tile por 5 turnos
-- F fica no tile por 2 turnos
+- uma mesma casa pode ter mais de uma letra
+- se uma casa tiver mais de uma letra, ela aplica mais de um efeito
+- a ordem dos efeitos da casa e definida pela skill
+- exemplo: AH significa aplicar H e depois A
 
-regras do I:
-- o alvo afetado por I perde metade dos turnos de movimento, começando sem poder mover
-- se entrou num tile com I agora, o primeiro round realmente afetado é o proximo round
-- se está no quadrado com I no round afetado, naquele round ele nao consegue se mover
-- no round seguinte em que continuar afetado, ele consegue se mover
-- depois continua alternando assim: nao move, move, nao move, move
-
-regras do F:
-- F causa 15 de dano ao longo do tempo, em 3 ticks de 5
-- os ticks de F acontecem no fim do round
-- enquanto o alvo estiver no quadrado com F, o fogo na vitima reseta/renova, mas nao acumula
-- entao nao existe 15 + 15 + 15 por entrar varias vezes; existe so a renovacao do mesmo fogo
-- se sair do quadrado, ainda toma 5 no fim dos proximos 2 rounds
-- se continuar no quadrado, continua tomando 5 por round e renovando a duracao do fogo
-
-exemplo de shape com tiles compostos:
+exemplo de shape composta:
 [
   [A,  ,  ,  ,  ,  ,  ],
   [AH, AH, H, H, H, H, H],
@@ -69,79 +141,136 @@ shape de fire:
   [ , , , , , , , F, ]
 ]
 
-vou dar exemplo de habilidade q funciona e que vao ser usados nesse primeiro player.
-na versao atual nao precisa de mouse. a habilidade entra num modo de edicao por teclado.
-• [
-    [null, null, null, "A"],
-    [null, null, "A", null],
-    [null, "A", null, null],
-    ["A", null, null, null]
-  ]
- [
-    [A,   , A],
-    [  , A,   ],
-    [A,   , A]
-  ]
 
- [
-    ["A", null, null, null],
-    ["A", null, null, null],
-    ["A", null, null, null],
-    ["A", "A", null, null]
-  ]
+6. regras de status e terreno
+
+regras do I:
+
+- I deixa gelo no tile por 5 turnos
+- se um personagem entrou num tile com I agora, o primeiro round realmente afetado e o proximo round
+- o gelo faz o alvo perder metade dos rounds de movimento, comecando bloqueado
+- no primeiro round afetado pelo gelo, ele nao pode se mover
+- no round seguinte afetado, ele pode se mover
+- depois continua alternando:
+  - nao move
+  - move
+  - nao move
+  - move
+- a intencao e: se esta no quadrado com I, naquele round bloqueado ele nao anda; no round seguinte ele anda normalmente
+
+regras do F:
+
+- F deixa fogo no tile por 2 turnos
+- se um personagem entra ou permanece num tile com F, ele fica queimando
+- queimadura causa 15 de dano total, em 3 ticks de 5
+- os ticks da queimadura acontecem no fim do round
+- enquanto o alvo estiver no quadrado com F, a queimadura reseta/renova, mas nao acumula
+- entao nao existe 15 + 15 + 15 por entrar varias vezes; existe apenas renovacao da mesma queimadura
+- enquanto estiver no quadrado com F, ele leva 5 por round
+- quando sai do quadrado, ainda leva 5 no fim dos proximos 2 rounds
 
 
-  eu quero q o ataque tenha uma preview de onde vai cair.
-  quando o ataque for confirmado, ele precisa ser resolvido a partir da posicao real atual do ator no momento do slot.
-  se um move anterior bloquear, a skill nao pode sair de onde o ator estaria; ela tem q sair de onde ele realmente ficou.
-  a shape do ataque deve manter o mesmo encaixe relativo ao ator e ser deslocada junto com ele.
-  quando o player estiver planejando os 2 moves, eu quero tbm uma preview de onde o player vai parar.
-  essa preview do player pode mostrar a trilha dos moves e a posicao final planejada.
-  atalho de 1 2 3 para cada um dos 3 ataques defauts.
-  quando apertar 1 2 ou 3, entra no modo de mira da habilidade.
-  nesse modo, awsd/setas movem a preview, q/e giram, space confirma e esc cancela.
-  e quero q todos os ataques tirem 10 de vida (por enquanto, tu pode fazer o objeto normal, só q com 10 para todos)
-  quero um botao para limpar/refazer a jogada atual antes do ready, sem resetar a partida inteira.
-  
-  como é o round? ambos escolhem teus movimentos, (o player e o bot)
-  quando ready, os movimentos acontecem 1 por 1. são 3, 2 movimentos de andar e 1 de ataque. se atacar, não pode mais se mover. então pode ser:
-  - ataque parado parado
-  - move ataque parado
-  - move move ataque
-  - move move parado      (se der reay antes de completar os 3 moves)
-  - move parado parado    (se der reay antes de completar os 3 moves)
-  - parado parado parado  (se der reay antes de completar os 3 moves)
+7. mira, preview e input
 
-  ordem de resolucao:
-  slot a slot, com o player agindo primeiro e depois a ai no mesmo slot.
-  o ataque precisa ser deferido para a posicao real atual do ator no momento do slot.
-  se um move anterior bloquear, a skill nao sai de onde o ator estaria; ela sai de onde ele realmente ficou.
-  a shape do ataque mantem o mesmo encaixe relativo ao ator e anda junto com ele.
+- nao precisa de mouse para usar as habilidades no combate
+- atalhos 1, 2 e 3 selecionam os 3 slots de habilidade equipados
+- se o slot estiver vazio, nao acontece nada
+- ao apertar 1, 2 ou 3, entra no modo de mira
+- no modo de mira:
+  - WASD e setas movem a preview
+  - Q e E giram a shape
+  - Space confirma
+  - Esc cancela
+- Space confirma o turno inteiro, nao so o ataque
+- se estiver numa mira valida, Space confirma o ataque e ja da Ready
+- fora da mira, Space tambem pode confirmar o turno
+- Enter continua resolvendo o round
+- Esc, fora da mira, desfaz as decisoes de tras para frente:
+  - ataque
+  - depois move
+  - depois move
 
-  como o inimigo vai pensar:
-  ele vai calcular se ele consegue alcançar você com um ataque. se não conseguir, ele calcula se consegue te atacar com um move e um ataque,
-  se não conseguir ele vai calcular se consegue com 2 moves e um ataque. e se não tiver nada nada q funcione, ele caminha em direção ao player e solta
-  uma das 3 habilidades de forma aleatoria.
+preview:
 
-a primeira situação q satisfazer, é a que ocorre. mais para frente eu melhoro essa linha de pensamento.
- 
+- precisa existir preview de onde o ataque vai cair
+- essa preview de ataque fica estatica
+- quando o ataque realmente acontece, e so nesse momento, os tiles afetados piscam
+- o player tambem precisa ver preview da propria movimentacao planejada
+- essa preview pode mostrar a trilha e a posicao final planejada
 
-2.
-numero de level, qqr info q não seja para jogar o jogo fica aqui. (o lv ate podia ficar no game, mas n preciso)
 
-hud atual:
-- embaixo do mapa fica primeiro a vida do player
-- na direita da vida do player ficam os 3 slots de moves lado a lado
-- na direita dos slots ficam as 3 habilidades como preview visual, cada uma mostrando a tecla 1 2 ou 3
-- a vida do bot fica no proprio tile dele, no lugar do texto AI
+8. origem real do ataque
 
-fim de partida:
+- quando o ataque for confirmado, ele precisa ser resolvido a partir da posicao real atual do ator no momento do slot
+- se um move anterior bloquear, a skill nao pode sair da posicao onde o ator estaria
+- ela tem que sair da posicao onde ele realmente ficou
+- a shape do ataque deve manter o mesmo encaixe relativo ao ator e ser deslocada junto com ele
+- isso vale tanto para o player quanto para o bot
+
+
+9. AI
+
+- a AI tenta primeiro um plano com ataque imediato
+- se nao conseguir, tenta 1 movimento + ataque
+- se nao conseguir, tenta 2 movimentos + ataque
+- se nao existir plano de ataque valido, ela anda em direcao ao player e usa uma habilidade
+- os bots sao um time unico
+- bots nao causam dano entre si
+- quando houver varios bots no futuro, a ordem do round deve ser:
+  - player
+  - bot 1
+  - bot 2
+  - bot 3
+  - etc
+  dentro de cada slot
+
+
+10. HUD e layout de combate
+
+- no desktop/notebook, a tela de combate fica dividida em:
+  - area central com o mapa
+  - painel direito com informacoes
+- embaixo do mapa existe uma faixa horizontal unica
+- a ordem dessa faixa e:
+  - vida do player
+  - 3 slots do round
+  - habilidades equipadas
+- a vida do player fica primeiro
+- os 3 slots de moves ficam lado a lado
+- as habilidades ficam na direita dos slots
+- cada habilidade mostra:
+  - preview visual da matriz
+  - tecla que ativa ela
+- a vida do bot nao fica numa HUD global
+- a vida do bot fica no proprio tile dele
+- isso precisa continuar valido no futuro com mais de 1 bot
+- a pagina inteira deve evitar barra de rolagem; se precisar, o scroll deve ficar no componente certo
+
+
+11. feedback visual
+
+- ataques do player usam feedback azul
+- ataques dos inimigos usam feedback vermelho
+- ataque real pisca nos tiles afetados
+- preview de ataque nao pisca
 - quando o bot verde morre, ele pisca preto e desaparece do board
-- quando o player vence, aparece um popup com "vitoria", "jogar novamente?" e botao de reset
-- quando o player perde, aparece um popup com "derrota", "jogar novamente?" e botao de reset
+- quando o player vence, aparece popup com:
+  - Vitoria
+  - Jogar novamente?
+  - botao de reset
+- quando o player perde, aparece popup com:
+  - Derrota
+  - Jogar novamente?
+  - botao de reset
 
-hud atual:
-- embaixo do mapa fica primeiro a vida do player
-- na direita da vida do player ficam os 3 slots de moves lado a lado
-- na direita dos slots ficam as 3 habilidades como preview visual, cada uma mostrando a tecla 1 2 ou 3
-- a vida do bot fica no proprio tile dele, no lugar do texto AI, para facilitar no futuro ter mais de um bot
+
+12. futuro ja previsto
+
+- Play Story vai usar a mesma chamada de fight
+- fight deve aceitar no futuro:
+  - habilidades do player
+  - habilidades do bot/inimigos
+  - itens do player
+  - itens dos inimigos
+- itens ainda nao estao implementados, mas entram como parte do modelo futuro
+- armadura pode aumentar HP mais para frente
