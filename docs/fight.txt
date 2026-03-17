@@ -169,17 +169,17 @@ exemplo de shape composta:
 Ma1
 shape de ice:
 [
-  [ , P, , , , , , I, ],
-  [P,  , , , , , I, I, I],
-  [ , P, , , , , , I, ]
+  [ , P, , , , , I, ],
+  [P,  , , , , I, I, I],
+  [ , P, , , , , I, ]
 ]
 
 Ma2
 shape de fire:
 [
-  [ , P, , , , , , F, ],
-  [P,  , , , , , F, F, F],
-  [ , P, , , , , , F, ]
+  [ , P, , , , , F, ],
+  [P,  , , , , F, F, F],
+  [ , P, , , , , F, ]
 ]
 
 
