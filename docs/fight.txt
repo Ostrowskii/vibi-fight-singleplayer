@@ -442,3 +442,13 @@ preview:
 - os cards de habilidade fora do tabuleiro usam previews SVG estaticos gerados a partir do catalogo compartilhado
 - a mira no tabuleiro continua dinamica
 - o app de Play deve renderizar so a tela ativa, sem manter lobby e partida montados ao mesmo tempo por tras
+- para validar a divisao de responsabilidades, existe um fluxo de teste separado:
+  - `lobby-test` cuida so da escolha de setup
+  - `game-test` cuida so do combate
+- o `lobby-test` deve passar para o `game-test` apenas o setup filtrado da partida:
+  - 3 skills do player
+  - 3 skills do bot
+  - 3 slots de itens do player
+  - 3 slots de itens do bot
+- itens entram como contrato desde ja, mesmo ainda ficando zerados enquanto a feature nao existe
+- essa separacao `lobby-test -> game-test` e a referencia para evoluir o fluxo casual sem manter o lobby dentro da pagina do combate
