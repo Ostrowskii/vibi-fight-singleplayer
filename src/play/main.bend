@@ -218,6 +218,46 @@ def app_init() -> AppState:
   lobby = lobby_init();
   app_state{play_lobby{}, lobby, _game_from_lobby(lobby)}
 
+def fight_app_init() -> AppState:
+  fight_app_from_slots(
+    Fight.default_setup_skill(0, 0),
+    Fight.default_setup_skill(0, 1),
+    Fight.default_setup_skill(0, 2),
+    Fight.default_setup_skill(0, 0),
+    Fight.default_setup_skill(0, 1),
+    Fight.default_setup_skill(0, 2)
+  )
+
+def fight_app_from_slots(ps1: U32, ps2: U32, ps3: U32, bs1: U32, bs2: U32, bs3: U32) -> AppState:
+  player_loadout = _loadout_from_slots(ps1, ps2, ps3);
+  bot_loadout = _loadout_from_slots(bs1, bs2, bs3);
+  lobby = _lobby_from_loadouts(player_loadout, bot_loadout);
+  app_state{battle{}, lobby, _game_from_lobby(lobby)}
+
+def fight_render(app: AppState) -> HTML(FightEvent):
+  <div class="page">
+    <style>{text{css()}}</style>
+    <div {..._tick_attrs(_app_game(app))}></div>
+    {_render_match_screen(app, 1)}
+  </div>
+
+def _sanitize_skill_slot(skill: U32) -> U32:
+  match skill:
+    case 0:
+      0
+    case value:
+      match value <= Fight.skill_count():
+        case 0:
+          0
+        case _:
+          value
+
+def _loadout_from_slots(s1: U32, s2: U32, s3: U32) -> Loadout:
+  loadout{_sanitize_skill_slot(s1), _sanitize_skill_slot(s2), _sanitize_skill_slot(s3)}
+
+def _lobby_from_loadouts(player_loadout: Loadout, bot_loadout: Loadout) -> LobbyState:
+  lobby_state{Fight.default_hp(), Fight.default_hp(), player_loadout, bot_loadout, 0, 0}
+
 def state_init() -> GameState:
   state_init_count(1)
 
@@ -3327,8 +3367,8 @@ init : AppState =
 def render(app: AppState) -> HTML(FightEvent):
   <div class="page">
     <style>{text{css()}}</style>
-    <div {..._app_tick_attrs(app)}></div>
-    {_render_screen_content(app)}
+    <div {..._tick_attrs_idle()}></div>
+    {_render_lobby(app)}
   </div>
 
 def _app_tick_attrs(app: AppState) -> List(Attr(FightEvent)):
@@ -3482,7 +3522,7 @@ def _render_lobby_screen(app: AppState, active: U32) -> HTML(FightEvent):
 
       <div class="lobby-footer">
         <p class="menu-copy menu-copy--compact">{text{"Selecione de 1 a 3 skills por lado. Os slots vazios continuam vazios na partida."}}</p>
-        <button {..._lobby_play_attrs(lobby)}>{text{"Play"}}</button>
+        <a class={_lobby_play_class(lobby)} href={_lobby_play_href(lobby)}>{text{"Play"}}</a>
       </div>
     </section>
   </main>
@@ -3654,8 +3694,39 @@ def _lobby_equipped_skill_class(skill: U32) -> String:
       "skill-preview skill-preview--static"
 
 def _lobby_play_attrs(lobby: LobbyState) -> List(Attr(FightEvent)):
-  ready = _u32_lt(0, _loadout_count(_lobby_player_loadout(lobby))) & _u32_lt(0, _loadout_count(_lobby_bot_loadout(lobby)));
+  ready = _lobby_play_ready(lobby);
   _button_attrs_enabled("button button--menu", evt_lobby_play{}, ready)
+
+def _lobby_play_class(lobby: LobbyState) -> String:
+  ready = _lobby_play_ready(lobby);
+  _lobby_play_class_w(ready)
+
+def _lobby_play_class_w(ready: U32) -> String:
+  match ready:
+    case 0:
+      "button button--menu nav-link nav-link--disabled"
+    case _:
+      "button button--menu nav-link"
+
+def _lobby_play_href(lobby: LobbyState) -> String:
+  player = _lobby_player_loadout(lobby);
+  bot = _lobby_bot_loadout(lobby);
+  _lobby_play_href_w(player, bot, _lobby_play_ready(lobby))
+
+def _lobby_play_href_w(player: Loadout, bot: Loadout, ready: U32) -> String:
+  match ready:
+    case 0:
+      "#"
+    case _:
+      "../fight/?ps1=" ++ U32.show(_loadout_slot(player, 0))
+      ++ "&ps2=" ++ U32.show(_loadout_slot(player, 1))
+      ++ "&ps3=" ++ U32.show(_loadout_slot(player, 2))
+      ++ "&bs1=" ++ U32.show(_loadout_slot(bot, 0))
+      ++ "&bs2=" ++ U32.show(_loadout_slot(bot, 1))
+      ++ "&bs3=" ++ U32.show(_loadout_slot(bot, 2))
+
+def _lobby_play_ready(lobby: LobbyState) -> U32:
+  _u32_lt(0, _loadout_count(_lobby_player_loadout(lobby))) & _u32_lt(0, _loadout_count(_lobby_bot_loadout(lobby)))
 
 def _winner_sidebar_text(state: GameState) -> HTML(FightEvent):
   _winner_sidebar_text_w(_state_winner(state))
@@ -4742,7 +4813,7 @@ def menu_css() -> String:
 
 def component_css() -> String:
   ""
-  ++ ".button{border:none;border-radius:999px;padding:11px 15px;cursor:pointer;font:inherit;font-weight:800;color:#fff8eb;background:var(--button);}.button.alt{background:var(--button-alt);}.button.ghost{background:var(--danger);}.button--menu{min-width:140px;justify-content:center;}.button--menu-secondary{background:#b58a43;}.button--stepper{padding:10px 0;min-width:0;border-radius:12px;background:var(--button);}.button:disabled{opacity:.56;cursor:default;}.nav-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;}"
+  ++ ".button{border:none;border-radius:999px;padding:11px 15px;cursor:pointer;font:inherit;font-weight:800;color:#fff8eb;background:var(--button);}.button.alt{background:var(--button-alt);}.button.ghost{background:var(--danger);}.button--menu{min-width:140px;justify-content:center;}.button--menu-secondary{background:#b58a43;}.button--stepper{padding:10px 0;min-width:0;border-radius:12px;background:var(--button);}.button:disabled{opacity:.56;cursor:default;}.nav-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;}.nav-link--disabled{opacity:.56;pointer-events:none;}"
   ++ ".actor{position:absolute;inset:14%;display:grid;place-items:center;font-size:clamp(12px,1.25vw,18px);font-weight:900;color:#fff8eb;z-index:2;}.actor--player{background:var(--player);font-size:clamp(14px,1.15vw,18px);}.actor--enemy{background:var(--enemy);inset:10%;padding:0 4px;font-size:clamp(8px,.85vw,12px);line-height:1;letter-spacing:-.02em;text-align:center;}.actor--bump{will-change:transform;}.actor--bump-up{animation:actor-bump-up .18s ease-out 1;}.actor--bump-down{animation:actor-bump-down .18s ease-out 1;}.actor--bump-left{animation:actor-bump-left .18s ease-out 1;}.actor--bump-right{animation:actor-bump-right .18s ease-out 1;}.ghost{position:absolute;inset:18%;display:grid;place-items:center;background:transparent;color:var(--ghost);border:3px solid var(--ghost);font-size:clamp(12px,1.05vw,16px);font-weight:900;z-index:1;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;min-width:18px;height:18px;padding:0 5px;display:grid;place-items:center;font-size:11px;font-weight:900;line-height:1;color:#fff8eb;background:var(--player);z-index:4;}.trail--hidden{display:none;}.cell--attack-flash{animation-duration:.42s;animation-timing-function:linear;animation-iteration-count:1;}.cell--attack-flash-player{animation-name:attack-flash-player;}.cell--attack-flash-enemy{animation-name:attack-flash-enemy;}.cell--attack-flash .trail,.cell--attack-flash .ghost,.cell--attack-flash .actor{z-index:5;}@keyframes actor-bump-up{0%{transform:translateY(0);}45%{transform:translateY(-12%);}100%{transform:translateY(0);}}@keyframes actor-bump-down{0%{transform:translateY(0);}45%{transform:translateY(12%);}100%{transform:translateY(0);}}@keyframes actor-bump-left{0%{transform:translateX(0);}45%{transform:translateX(-12%);}100%{transform:translateX(0);}}@keyframes actor-bump-right{0%{transform:translateX(0);}45%{transform:translateX(12%);}100%{transform:translateX(0);}}@keyframes attack-flash-player{0%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}15%{background:var(--hit-player);box-shadow:inset 0 0 0 2px var(--hit-player-deep);}30%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}45%{background:var(--hit-player);box-shadow:inset 0 0 0 2px var(--hit-player-deep);}60%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}75%{background:var(--hit-player);box-shadow:inset 0 0 0 2px var(--hit-player-deep);}100%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}}@keyframes attack-flash-enemy{0%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}15%{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--hit-enemy-deep);}30%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}45%{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--hit-enemy-deep);}60%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}75%{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--hit-enemy-deep);}100%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}}"
   ++ ".skill-preview{width:106px;min-height:122px;padding:10px;display:grid;justify-items:center;align-content:start;gap:6px;border:1px solid #bda173;border-radius:14px;background:var(--card);color:var(--text);text-align:center;}.skill-preview--active{border-color:var(--button);background:#f1dfb8;}.skill-preview--empty{opacity:.72;}.skill-preview--static{pointer-events:none;}.skill-key{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--muted);}.skill-caption{font-size:12px;font-weight:700;color:var(--text);line-height:1.2;}.skill-grid-frame{width:64px;height:64px;display:grid;place-items:center;padding:4px;border:1px solid #ccb287;background:var(--panel);overflow:hidden;}.skill-grid-frame--empty{background:#f2e5cb;}.skill-grid-art{display:block;width:100%;height:100%;object-fit:contain;}.skill-pool-card{aspect-ratio:1/1;border:1px solid #bda173;border-radius:16px;padding:12px;display:grid;justify-items:center;align-content:start;gap:6px;background:var(--card);color:var(--text);text-align:center;}.skill-pool-card--selected{border-color:var(--button);background:#f1dfb8;}.skill-pool-card--hidden{display:none;}.skill-pool-card__label{font-size:12px;font-weight:800;color:var(--text);}.skill-pool-card__meta{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}.stepper--static{grid-template-columns:minmax(82px,auto);}"
   ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(42,33,21,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(42,33,21,.46);}.modal__card{width:min(100%,340px);display:grid;gap:12px;justify-items:center;padding:24px 22px;background:var(--card);border:1px solid #bda173;}.modal__eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;}.modal__title{margin:0;font-size:34px;line-height:1;}.timer-hook{display:none;}"
