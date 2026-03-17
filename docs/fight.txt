@@ -59,7 +59,7 @@ Fight Spec
 - o personagem nao fica preso a classe
 - ele pode equipar 3 habilidades de qualquer combinacao dessas classes
 - por enquanto:
-  - Me1, Me2, Me3 e Me4 sao melee
+  - Me1, Me2, Me3, Me4 e Me5 sao melee
   - Ma1 e Ma2 sao mage
 - os nomes seguem prefixo da classe + numero:
   - Me = melee
@@ -70,6 +70,7 @@ Fight Spec
   - Me2
   - Me3
   - Me4
+  - Me5
 - as duas habilidades novas com efeitos magicos ficam nomeadas como:
   - Ma1
   - Ma2
@@ -103,6 +104,11 @@ Me4
   ["A", null, null, null],
   ["A", null, null, null],
   ["A", "A", null, null]
+]
+
+Me5
+[
+  ["H", "H", "H", "H", "H", "H", "H"]
 ]
 
 - todas as habilidades atuais causam 10 de dano quando aplicam dano
@@ -196,6 +202,11 @@ regras do H:
 - H e um efeito de puxao
 - o valor do puxao pode variar por habilidade
 - o primeiro hook implementado puxa 4 celulas
+- Me5 e a primeira skill publica de hook:
+  - melee
+  - linha reta 1x7
+  - todos os tiles sao H
+  - sem dano direto
 - hooks sempre sao definidos em linhas retas ou diagonais
 - hooks nao devem ser usados em shapes irregulares ou sem ordem clara
 - o hook pega o primeiro alvo valido mais proximo do ator ao longo da linha/diagonal da habilidade
