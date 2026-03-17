@@ -60,6 +60,7 @@ Fight Spec
 - ele pode equipar 3 habilidades de qualquer combinacao dessas classes
 - por enquanto:
   - Me1, Me2, Me3, Me4 e Me5 sao melee
+  - Ra1 e ranged
   - Ma1 e Ma2 sao mage
 - os nomes seguem prefixo da classe + numero:
   - Me = melee
@@ -71,6 +72,7 @@ Fight Spec
   - Me3
   - Me4
   - Me5
+  - Ra1
 - as duas habilidades novas com efeitos magicos ficam nomeadas como:
   - Ma1
   - Ma2
@@ -111,6 +113,15 @@ Me5
   ["H", "H", "H", "H", "H", "H", "H"]
 ]
 
+Ra1
+[
+  [null, null, "P", null, null, null, "A", null, null],
+  [null, "P", null, null, null, null, "A", null, null],
+  ["P", null, null, null, "A", "A", "A", "A", "A"],
+  [null, "P", null, null, null, null, "A", null, null],
+  [null, null, "P", null, null, null, "A", null, null]
+]
+
 - todas as habilidades atuais causam 10 de dano quando aplicam dano
 - o preview visual da habilidade deve ficar em uma area fixa
 - a matriz da habilidade deve ser recortada no menor retangulo possivel
@@ -134,6 +145,10 @@ modelo de tiles:
 - F = fire
 - P nao aplica efeito por si so; ele so marca onde o ator pode encaixar para usar a skill
 - em skills de mage e ranged, a area de encaixe do ator pode ficar separada da area onde o ataque cai
+- Ra1 usa uma matriz 5x9:
+  - um "<" de P na esquerda
+  - um "+" maior de A na direita
+  - o "+" fica centralizado na altura e encostado no lado direito da matriz
 - se a skill tiver tiles P, o ator precisa encaixar em um dos P
 - se a skill nao tiver tiles P, como nas melee atuais, o ator pode encaixar em qualquer tile ocupado da shape
 - uma mesma casa pode ter mais de uma letra
