@@ -3328,7 +3328,7 @@ def render(app: AppState) -> HTML(FightEvent):
   <div class="page">
     <style>{text{css()}}</style>
     <div {..._app_tick_attrs(app)}></div>
-    {_render_active_screen(app)}
+    {_render_screen_content(app)}
   </div>
 
 def _app_tick_attrs(app: AppState) -> List(Attr(FightEvent)):
@@ -3337,6 +3337,17 @@ def _app_tick_attrs(app: AppState) -> List(Attr(FightEvent)):
       _tick_attrs_idle()
     case _:
       _tick_attrs(_app_game(app))
+
+def _render_screen_content(app: AppState) -> HTML(FightEvent):
+  screen = _app_screen(app);
+  match _screen_is_play_lobby(screen) | _screen_is_match(screen):
+    case 0:
+      _render_active_screen(app)
+    case _:
+      <div class="play-screen-stack">
+        {_render_lobby_screen(app, _screen_is_play_lobby(screen))}
+        {_render_match_screen(app, _screen_is_match(screen))}
+      </div>
 
 def _render_active_screen(app: AppState) -> HTML(FightEvent):
   _render_active_screen_w(_app_screen(app), app)
@@ -3350,9 +3361,9 @@ def _render_active_screen_w(screen: Screen, app: AppState) -> HTML(FightEvent):
     case story{} app:
       _render_story(app)
     case battle{} app:
-      _render_match(app)
+      _render_match_screen(app, 1)
 
-def _render_match(app: AppState) -> HTML(FightEvent):
+def _render_match_screen(app: AppState, active: U32) -> HTML(FightEvent):
   state = _app_game(app);
   lobby = _app_lobby(app);
   planned = _render_planned_pos(state);
@@ -3364,7 +3375,7 @@ def _render_match(app: AppState) -> HTML(FightEvent):
   hit_owner = _render_hit_owner(state);
   valid = _render_target_valid(state);
   board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, _loadout_hp_bot(lobby), planned, trail, preview, preview_anchor, hits, flash_hits, hit_owner, valid));
-  <main class="shell" tabindex="0" style="outline:none" on_key_down={key_event}>
+  <main class={_play_screen_class("shell play-screen", active)} tabindex="0" style="outline:none" on_key_down={key_event}>
     <section class="board-stage">
       <div class="board-stack">
         <section class="board-wrap board-wrap-large">
@@ -3448,10 +3459,13 @@ def _render_story(app: AppState) -> HTML(FightEvent):
   </main>
 
 def _render_lobby(app: AppState) -> HTML(FightEvent):
+  _render_lobby_screen(app, 1)
+
+def _render_lobby_screen(app: AppState, active: U32) -> HTML(FightEvent):
   lobby = _app_lobby(app);
   player_loadout = _lobby_player_loadout(lobby);
   bot_loadout = _lobby_bot_loadout(lobby);
-  <main class="menu-page menu-page--lobby">
+  <main class={_play_screen_class("menu-page menu-page--lobby play-screen", active)}>
     <section class="menu-card lobby-shell">
       <div class="lobby-header">
         <div>
@@ -3472,6 +3486,13 @@ def _render_lobby(app: AppState) -> HTML(FightEvent):
       </div>
     </section>
   </main>
+
+def _play_screen_class(base: String, active: U32) -> String:
+  match active:
+    case 0:
+      base ++ " play-screen--hidden"
+    case _:
+      base
 
 def _lobby_side_card(side: U32, lobby: LobbyState) -> HTML(FightEvent):
   <section class="card lobby-card">
@@ -4704,7 +4725,7 @@ def _state_playback_plans(state: GameState) -> List(List(Action)):
 def base_css() -> String:
   ""
   ++ ":root{--bg:#d3bb94;--panel:#efe2c6;--card:#f7ecd3;--text:#2a2115;--muted:#6b593c;--border:#7a613c;--board-frame:#6f5634;--grid:#7f6541;--cell:#f8efd7;--preview:#ddb151;--preview-anchor:#58d8e8;--preview-anchor-deep:#1494a8;--preview-hook:#e2bf48;--preview-ice:#70aee4;--preview-fire:#df8d39;--invalid:#cf6c5b;--hit-player:#2a74d8;--hit-player-deep:#184889;--hit-enemy:#d94933;--hit-enemy-deep:#8f2416;--route:#c9dff5;--player:#1f78db;--enemy:#32933a;--ghost:#5b9fe7;--button:#966320;--button-alt:#66794a;--danger:#b74431;--sidebar-width:278px;--cell-size:clamp(42px,3.3vw,52px);--board-shell-padding:12px;--board-width:calc((var(--cell-size) * 18) + 19px);--board-shell-width:calc(var(--board-width) + (var(--board-shell-padding) * 2) + 2px);}"
-  ++ "*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{overflow:hidden;}button{font:inherit;cursor:pointer;}#app,.page{width:100%;min-height:100svh;overflow:hidden;}"
+  ++ "*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{overflow:hidden;}button{font:inherit;cursor:pointer;}#app,.page{width:100%;min-height:100svh;overflow:hidden;}.play-screen-stack{width:100%;min-height:100svh;}.play-screen--hidden{display:none;}"
 
 def layout_css() -> String:
   ""
