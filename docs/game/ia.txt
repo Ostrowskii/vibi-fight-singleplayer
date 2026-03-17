@@ -1,0 +1,56 @@
+Fight IA Spec
+
+1. regras gerais da IA
+
+- os bots sao um time unico
+- bots nao causam dano entre si
+- quando houver varios bots no futuro, a ordem do round deve ser:
+  - player
+  - bot 1
+  - bot 2
+  - bot 3
+  - etc
+  dentro de cada slot
+
+
+2. fluxo atual da IA no game-test
+
+- o `game-test` usa uma IA simplificada para manter a confirmacao do turno responsiva
+- se o bot estiver travado por gelo, ele tenta ataque imediato da posicao atual
+- se nao encontrar ataque imediato travado, ele espera
+- se o bot puder se mover:
+  - ele calcula um primeiro passo de chase em direcao ao player
+  - calcula um segundo passo de chase a partir da nova posicao
+  - tenta um unico `_find_attack` a partir da posicao final desses dois passos
+  - se encontrar ataque valido, usa:
+    - move ou wait
+    - move ou wait
+    - ataque
+  - se nao encontrar, cai no fallback
+
+
+3. fallback atual da IA no game-test
+
+- o fallback escolhe a skill do round a partir do loadout do bot
+- depois:
+  - faz ate 2 passos de chase
+  - procura a primeira conjuracao valida dessa skill na posicao final
+- esse fallback busca uma conjuracao valida
+- ele nao exige que a habilidade acerte o player
+
+
+4. observacao de performance
+
+- o gargalo principal do script do bot hoje e `_find_attack`
+- `_find_attack` testa:
+  - os 3 slots do loadout
+  - as 4 rotacoes da skill
+  - os anchors possiveis da skill
+  - e para cada tentativa verifica hit no alvo
+- por isso o `game-test` parou de usar a busca mais combinatoria de:
+  - ataque imediato
+  - 1 move + ataque
+  - 2 moves + ataque
+  para todas as combinacoes possiveis
+- a versao simplificada existe para manter o `Space`/`Ready` mais rapido
+
