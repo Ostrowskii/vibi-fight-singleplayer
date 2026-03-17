@@ -1,0 +1,88 @@
+Mar 17 - hard coded e melhorias
+
+Definicao de hard coded
+
+- Hard coded e quando uma regra, valor ou variacao do sistema fica embutida
+  diretamente no fluxo do codigo, em vez de ser representada como dado.
+- O problema principal nao e "ter constante no codigo". O problema e:
+  para adicionar 1 coisa nova, precisar mexer em muitos pontos nao relacionados.
+
+Exemplos de hard coded ruim
+
+- "se skill for 10 faz isso, se for 11 faz aquilo" espalhado em varios lugares
+- um evento diferente para cada skill
+- render manual de 13 cards separados
+- coordenada de cada rotacao escrita a mao
+
+Exemplos aceitaveis
+
+- board = 18x9, se isso for regra fixa do jogo
+- hp base = 50, se isso for regra global de design por enquanto
+
+Onde isso ainda aparece no projeto
+
+- metadados de skill no catalogo compartilhado
+- eventos e render do lobby no Play
+- qualquer trecho onde adicionar 1 skill nova exige mexer em varios matchs
+
+Como o Bend ajuda
+
+- ADTs e match deixam o modelo explicito
+- funcoes puras ajudam a derivar comportamento a partir de dado
+- centralizar catalogo compartilhado reduz duplicacao
+
+Importante:
+
+- o que reduz hard code nao e apenas "usar Bend"
+- o que reduz hard code e modelar melhor os dados dentro dele
+
+O que seria melhor no app
+
+1. Um evento generico para skill no lobby
+- em vez de evt_lobby_player_skill_1, evt_lobby_player_skill_2, etc
+- algo como evt_lobby_skill{side, skill}
+
+2. Render do lobby por loop
+- em vez de renderizar skill por skill na mao
+- usar Fight.skill_count() para gerar a lista
+
+3. Definicao unica por skill
+- hoje nome, classe, dano, rank e shape ficam espalhados em funcoes separadas
+- o ideal e cada skill ter uma definicao unica, e o resto ler dela
+
+4. Compactar mais o catalogo interno
+- hoje a matriz base ainda usa varios case
+- da para guardar a grade de forma mais compacta e ler por helper
+- isso reduz volume, mas pode piorar legibilidade
+
+Minha avaliacao pratica
+
+- da para diminuir mais o codigo, sim
+- mas depois de um ponto se troca verbosidade por opacidade
+- o melhor ganho agora e:
+  - evento generico por skill
+  - loop no lobby
+  - definicao unica por skill
+- o ganho mais agressivo seria compactar ainda mais a matriz, mas isso e menos
+  agradavel para editar a mao
+
+Como o Bend poderia melhorar como linguagem/tooling
+
+- melhor suporte a update de records/structs
+- melhor suporte a colecoes indexaveis e literais de dados
+- melhor suporte a tabelas/constantes estruturadas
+- melhor ergonomia para eventos parametrizados
+- melhor metaprogramacao ou geracao de codigo orientada a dados
+
+Leitura final
+
+- o Bend nao obriga hard code ruim
+- mas ele ainda nao oferece tanta ergonomia para catalogos grandes quanto
+  linguagens com records, arrays, maps e macros mais confortaveis
+
+Prioridade recomendada para este app
+
+1. evento generico de lobby por skill
+2. render do lobby por loop
+3. definicao unica por skill
+4. so depois pensar em compactar ainda mais o catalogo interno
