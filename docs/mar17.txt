@@ -86,3 +86,49 @@ Prioridade recomendada para este app
 2. render do lobby por loop
 3. definicao unica por skill
 4. so depois pensar em compactar ainda mais o catalogo interno
+
+Runtime web do Bend: o que ajudaria a evitar bugs de patch
+
+1. key para nos e listas
+- o runtime precisa de uma forma explicita de identidade para itens dinamicos
+- isso evita reaproveitar o no errado quando a arvore muda
+- especialmente importante para:
+  - listas de skills
+  - cards de lobby
+  - blocos que aparecem e somem
+
+2. replace/remount boundary para subarvore
+- em alguns casos e melhor descartar um bloco inteiro e montar de novo
+- isso e mais seguro do que tentar diff fino em arvore muito diferente
+- telas como lobby, match, modal e previews grandes se beneficiariam disso
+
+3. ancoras fixas para blocos condicionais
+- o runtime deveria manter limites estaveis de DOM para cada bloco dinamico
+- isso reduz erro de patch quando uma tela substitui outra
+- ajuda a evitar casos de conteudo duplicado ou replaceChild falhando
+
+4. static ou memo para subarvores estaveis
+- se um bloco nao mudou, ele nao deveria ser recalculado nem repatchado
+- isso serviria muito para:
+  - cards de skill
+  - imagens estaticas
+  - partes da HUD
+
+5. diff mais conservador
+- se a estrutura mudou demais, o runtime deveria parar de tentar patch fino
+- nesses casos, seria melhor fazer remount total daquela subarvore
+- hoje o problema aparente e tentar reconciliar estruturas diferentes demais
+
+O que seria mais importante dessas melhorias
+
+- key
+- remount boundary
+- memo/static
+
+Resumo tecnico
+
+- o problema nao parece ser "DOM grande" sozinho
+- o problema maior e mudar demais a estrutura sem primitives explicitas de:
+  - identidade
+  - remount
+  - memoizacao
