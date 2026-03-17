@@ -1045,22 +1045,8 @@ def _effect_tiles_for(skill: U32, rot: U32, origin: Pos, actor: Pos, flag: U32, 
       _pos_nil()
 
 def _placement_valid(skill: U32, rot: U32, origin: Pos, actor: Pos) -> U32:
-  _placement_all_in(skill, rot, origin, 0) & _placement_covers(skill, rot, origin, actor, 0)
-
-def _placement_all_in(skill: U32, rot: U32, origin: Pos, idx: U32) -> U32:
-  len = skill_len(skill);
-  stop = idx === len;
-  match stop:
-    case 0:
-      cell = _pos_add(origin, skill_point(skill, rot, idx));
-      inside = _pos_inside(cell);
-      match inside:
-        case 0:
-          0
-        case _:
-          _placement_all_in(skill, rot, origin, idx + 1)
-    case _:
-      1
+  _placement_covers(skill, rot, origin, actor, 0)
+  & _placement_has_visible_effect(skill, rot, origin, actor, 0)
 
 def _placement_covers(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -> U32:
   len = skill_len(skill);
@@ -1072,6 +1058,24 @@ def _placement_covers(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -
       match same:
         case 0:
           _placement_covers(skill, rot, origin, actor, idx + 1)
+        case _:
+          1
+    case _:
+      0
+
+def _placement_has_visible_effect(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -> U32:
+  len = skill_len(skill);
+  stop = idx === len;
+  match stop:
+    case 0:
+      cell = _pos_add(origin, skill_point(skill, rot, idx));
+      inside = _pos_inside(cell);
+      same = _pos_eq(cell, actor);
+      code = _skill_effect_mask(skill, idx);
+      useful = inside & (1 ^ same) & (1 ^ (code === 0));
+      match useful:
+        case 0:
+          _placement_has_visible_effect(skill, rot, origin, actor, idx + 1)
         case _:
           1
     case _:

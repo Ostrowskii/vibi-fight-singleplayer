@@ -5298,121 +5298,27 @@ export function $n2f706c61792f6d61696e235f706c6163656d656e745f76616c6964(v0_skil
   var v4;
   v4 = v2_origin;
   var v5;
-  v5 = 0;
-  v1 = $n2f706c61792f6d61696e235f706c6163656d656e745f616c6c5f696e(v2, v3, v4, v5);
+  v5 = v3_actor;
   var v6;
+  v6 = 0;
+  v1 = $n2f706c61792f6d61696e235f706c6163656d656e745f636f76657273(v2, v3, v4, v5, v6);
   var v7;
-  v7 = v0_skill;
   var v8;
-  v8 = v1_rot;
+  v8 = v0_skill;
   var v9;
-  v9 = v2_origin;
+  v9 = v1_rot;
   var v10;
-  v10 = v3_actor;
+  v10 = v2_origin;
   var v11;
-  v11 = 0;
-  v6 = $n2f706c61792f6d61696e235f706c6163656d656e745f636f76657273(v7, v8, v9, v10, v11);
-  r0 = (((v1) & (v6)) >>> 0);
+  v11 = v3_actor;
+  var v12;
+  v12 = 0;
+  v7 = $n2f706c61792f6d61696e235f706c6163656d656e745f6861735f76697369626c655f656666656374(v8, v9, v10, v11, v12);
+  r0 = (((v1) & (v7)) >>> 0);
   return r0;
 }
 
 export const n2f706c61792f6d61696e235f706c6163656d656e745f76616c6964 = () => ((a0) => ((a1) => ((a2) => ((a3) => ($n2f706c61792f6d61696e235f706c6163656d656e745f76616c6964(a0, a1, a2, a3))))));
-
-export function $n2f706c61792f6d61696e235f706c6163656d656e745f616c6c5f696e(v0_skill, v1_rot, v2_origin, v3_idx) {
-  while (true) {
-    var r0;
-    var v4_len;
-    var v1;
-    v1 = v0_skill;
-    v4_len = $n2f706c61792f6d61696e2f736b696c6c5f6c656e(v1);
-    var v5_stop;
-    var v2;
-    v2 = v3_idx;
-    var v3;
-    var v4;
-    v4 = v0_skill;
-    v3 = $n2f706c61792f6d61696e2f736b696c6c5f6c656e(v4);
-    v5_stop = ((v2) >>> 0) === ((v3) >>> 0) ? 1 : 0;
-    var v5;
-    var v6;
-    v6 = v3_idx;
-    var v7;
-    var v8;
-    v8 = v0_skill;
-    v7 = $n2f706c61792f6d61696e2f736b696c6c5f6c656e(v8);
-    v5 = ((v6) >>> 0) === ((v7) >>> 0) ? 1 : 0;
-    if (((v5) >>> 0) === 0) {
-      var v6_cell;
-      var v9;
-      v9 = v2_origin;
-      var v10;
-      var v11;
-      v11 = v0_skill;
-      var v12;
-      v12 = v1_rot;
-      var v13;
-      v13 = v3_idx;
-      v10 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v11, v12, v13);
-      v6_cell = $n2f706c61792f6d61696e235f706f735f616464(v9, v10);
-      var v7_inside;
-      var v14;
-      var v15;
-      v15 = v2_origin;
-      var v16;
-      var v17;
-      v17 = v0_skill;
-      var v18;
-      v18 = v1_rot;
-      var v19;
-      v19 = v3_idx;
-      v16 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v17, v18, v19);
-      v14 = $n2f706c61792f6d61696e235f706f735f616464(v15, v16);
-      v7_inside = $n2f706c61792f6d61696e235f706f735f696e73696465(v14);
-      var v20;
-      var v21;
-      var v22;
-      v22 = v2_origin;
-      var v23;
-      var v24;
-      v24 = v0_skill;
-      var v25;
-      v25 = v1_rot;
-      var v26;
-      v26 = v3_idx;
-      v23 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v24, v25, v26);
-      v21 = $n2f706c61792f6d61696e235f706f735f616464(v22, v23);
-      v20 = $n2f706c61792f6d61696e235f706f735f696e73696465(v21);
-      if (((v20) >>> 0) === 0) {
-        r0 = 0;
-      } else {
-        var v8__ = v20;
-        var v27;
-        v27 = v0_skill;
-        var v28;
-        v28 = v1_rot;
-        var v29;
-        v29 = v2_origin;
-        var v30;
-        var v31;
-        v31 = v3_idx;
-        var v32;
-        v32 = 1;
-        v30 = (((v31) + (v32)) >>> 0);
-        v0_skill = v27;
-        v1_rot = v28;
-        v2_origin = v29;
-        v3_idx = v30;
-        continue;
-      }
-    } else {
-      var v6__ = v5;
-      r0 = 1;
-    }
-    return r0;
-  }
-}
-
-export const n2f706c61792f6d61696e235f706c6163656d656e745f616c6c5f696e = () => ((a0) => ((a1) => ((a2) => ((a3) => ($n2f706c61792f6d61696e235f706c6163656d656e745f616c6c5f696e(a0, a1, a2, a3))))));
 
 export function $n2f706c61792f6d61696e235f706c6163656d656e745f636f76657273(v0_skill, v1_rot, v2_origin, v3_actor, v4_idx) {
   while (true) {
@@ -5516,6 +5422,217 @@ export function $n2f706c61792f6d61696e235f706c6163656d656e745f636f76657273(v0_sk
 }
 
 export const n2f706c61792f6d61696e235f706c6163656d656e745f636f76657273 = () => ((a0) => ((a1) => ((a2) => ((a3) => ((a4) => ($n2f706c61792f6d61696e235f706c6163656d656e745f636f76657273(a0, a1, a2, a3, a4)))))));
+
+export function $n2f706c61792f6d61696e235f706c6163656d656e745f6861735f76697369626c655f656666656374(v0_skill, v1_rot, v2_origin, v3_actor, v4_idx) {
+  while (true) {
+    var r0;
+    var v5_len;
+    var v1;
+    v1 = v0_skill;
+    v5_len = $n2f706c61792f6d61696e2f736b696c6c5f6c656e(v1);
+    var v6_stop;
+    var v2;
+    v2 = v4_idx;
+    var v3;
+    var v4;
+    v4 = v0_skill;
+    v3 = $n2f706c61792f6d61696e2f736b696c6c5f6c656e(v4);
+    v6_stop = ((v2) >>> 0) === ((v3) >>> 0) ? 1 : 0;
+    var v5;
+    var v6;
+    v6 = v4_idx;
+    var v7;
+    var v8;
+    v8 = v0_skill;
+    v7 = $n2f706c61792f6d61696e2f736b696c6c5f6c656e(v8);
+    v5 = ((v6) >>> 0) === ((v7) >>> 0) ? 1 : 0;
+    if (((v5) >>> 0) === 0) {
+      var v7_cell;
+      var v9;
+      v9 = v2_origin;
+      var v10;
+      var v11;
+      v11 = v0_skill;
+      var v12;
+      v12 = v1_rot;
+      var v13;
+      v13 = v4_idx;
+      v10 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v11, v12, v13);
+      v7_cell = $n2f706c61792f6d61696e235f706f735f616464(v9, v10);
+      var v8_inside;
+      var v14;
+      var v15;
+      v15 = v2_origin;
+      var v16;
+      var v17;
+      v17 = v0_skill;
+      var v18;
+      v18 = v1_rot;
+      var v19;
+      v19 = v4_idx;
+      v16 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v17, v18, v19);
+      v14 = $n2f706c61792f6d61696e235f706f735f616464(v15, v16);
+      v8_inside = $n2f706c61792f6d61696e235f706f735f696e73696465(v14);
+      var v9_same;
+      var v20;
+      var v21;
+      v21 = v2_origin;
+      var v22;
+      var v23;
+      v23 = v0_skill;
+      var v24;
+      v24 = v1_rot;
+      var v25;
+      v25 = v4_idx;
+      v22 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v23, v24, v25);
+      v20 = $n2f706c61792f6d61696e235f706f735f616464(v21, v22);
+      var v26;
+      v26 = v3_actor;
+      v9_same = $n2f706c61792f6d61696e235f706f735f6571(v20, v26);
+      var v10_code;
+      var v27;
+      v27 = v0_skill;
+      var v28;
+      v28 = v4_idx;
+      v10_code = $n2f706c61792f6d61696e235f736b696c6c5f6566666563745f6d61736b(v27, v28);
+      var v11_useful;
+      var v29;
+      var v30;
+      var v31;
+      var v32;
+      v32 = v2_origin;
+      var v33;
+      var v34;
+      v34 = v0_skill;
+      var v35;
+      v35 = v1_rot;
+      var v36;
+      v36 = v4_idx;
+      v33 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v34, v35, v36);
+      v31 = $n2f706c61792f6d61696e235f706f735f616464(v32, v33);
+      v30 = $n2f706c61792f6d61696e235f706f735f696e73696465(v31);
+      var v37;
+      var v38;
+      v38 = 1;
+      var v39;
+      var v40;
+      var v41;
+      v41 = v2_origin;
+      var v42;
+      var v43;
+      v43 = v0_skill;
+      var v44;
+      v44 = v1_rot;
+      var v45;
+      v45 = v4_idx;
+      v42 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v43, v44, v45);
+      v40 = $n2f706c61792f6d61696e235f706f735f616464(v41, v42);
+      var v46;
+      v46 = v3_actor;
+      v39 = $n2f706c61792f6d61696e235f706f735f6571(v40, v46);
+      v37 = (((v38) ^ (v39)) >>> 0);
+      v29 = (((v30) & (v37)) >>> 0);
+      var v47;
+      var v48;
+      v48 = 1;
+      var v49;
+      var v50;
+      var v51;
+      v51 = v0_skill;
+      var v52;
+      v52 = v4_idx;
+      v50 = $n2f706c61792f6d61696e235f736b696c6c5f6566666563745f6d61736b(v51, v52);
+      var v53;
+      v53 = 0;
+      v49 = ((v50) >>> 0) === ((v53) >>> 0) ? 1 : 0;
+      v47 = (((v48) ^ (v49)) >>> 0);
+      v11_useful = (((v29) & (v47)) >>> 0);
+      var v54;
+      var v55;
+      var v56;
+      var v57;
+      var v58;
+      v58 = v2_origin;
+      var v59;
+      var v60;
+      v60 = v0_skill;
+      var v61;
+      v61 = v1_rot;
+      var v62;
+      v62 = v4_idx;
+      v59 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v60, v61, v62);
+      v57 = $n2f706c61792f6d61696e235f706f735f616464(v58, v59);
+      v56 = $n2f706c61792f6d61696e235f706f735f696e73696465(v57);
+      var v63;
+      var v64;
+      v64 = 1;
+      var v65;
+      var v66;
+      var v67;
+      v67 = v2_origin;
+      var v68;
+      var v69;
+      v69 = v0_skill;
+      var v70;
+      v70 = v1_rot;
+      var v71;
+      v71 = v4_idx;
+      v68 = $n2f706c61792f6d61696e2f736b696c6c5f706f696e74(v69, v70, v71);
+      v66 = $n2f706c61792f6d61696e235f706f735f616464(v67, v68);
+      var v72;
+      v72 = v3_actor;
+      v65 = $n2f706c61792f6d61696e235f706f735f6571(v66, v72);
+      v63 = (((v64) ^ (v65)) >>> 0);
+      v55 = (((v56) & (v63)) >>> 0);
+      var v73;
+      var v74;
+      v74 = 1;
+      var v75;
+      var v76;
+      var v77;
+      v77 = v0_skill;
+      var v78;
+      v78 = v4_idx;
+      v76 = $n2f706c61792f6d61696e235f736b696c6c5f6566666563745f6d61736b(v77, v78);
+      var v79;
+      v79 = 0;
+      v75 = ((v76) >>> 0) === ((v79) >>> 0) ? 1 : 0;
+      v73 = (((v74) ^ (v75)) >>> 0);
+      v54 = (((v55) & (v73)) >>> 0);
+      if (((v54) >>> 0) === 0) {
+        var v80;
+        v80 = v0_skill;
+        var v81;
+        v81 = v1_rot;
+        var v82;
+        v82 = v2_origin;
+        var v83;
+        v83 = v3_actor;
+        var v84;
+        var v85;
+        v85 = v4_idx;
+        var v86;
+        v86 = 1;
+        v84 = (((v85) + (v86)) >>> 0);
+        v0_skill = v80;
+        v1_rot = v81;
+        v2_origin = v82;
+        v3_actor = v83;
+        v4_idx = v84;
+        continue;
+      } else {
+        var v12__ = v54;
+        r0 = 1;
+      }
+    } else {
+      var v7__ = v5;
+      r0 = 0;
+    }
+    return r0;
+  }
+}
+
+export const n2f706c61792f6d61696e235f706c6163656d656e745f6861735f76697369626c655f656666656374 = () => ((a0) => ((a1) => ((a2) => ((a3) => ((a4) => ($n2f706c61792f6d61696e235f706c6163656d656e745f6861735f76697369626c655f656666656374(a0, a1, a2, a3, a4)))))));
 
 export function $n2f706c61792f6d61696e235f707265766965775f6869745f636f6e7461696e73(v0_skill, v1_rot, v2_origin, v3_actor, v4_target, v5_idx) {
   while (true) {
