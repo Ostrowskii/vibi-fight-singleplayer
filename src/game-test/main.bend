@@ -1778,25 +1778,23 @@ def _build_bot_locked_plan(enemy: Pos, player: Pos, bot_loadout: Loadout) -> Lis
       _queue3(attack, _wait_action(), _wait_action())
 
 def _build_bot_plan(player: Pos, enemy: Pos, bots: List(Bot), bot_idx: U32, round: U32, bot_loadout: Loadout) -> List(Action):
-  immediate = _find_attack(enemy, player, bot_loadout);
-  hit = _action_is_attack(immediate);
-  match hit:
+  _build_bot_simple_plan(round, enemy, player, bots, bot_idx, bot_loadout)
+
+def _build_bot_simple_plan(round: U32, enemy: Pos, player: Pos, bots: List(Bot), bot_idx: U32, bot_loadout: Loadout) -> List(Action):
+  dir1 = _chase_dir(enemy, player);
+  pos1 = _step_or_stay_bot(enemy, dir1, player, bots, bot_idx);
+  _build_bot_simple_plan_step2(round, enemy, player, bots, bot_idx, bot_loadout, dir1, pos1)
+
+def _build_bot_simple_plan_step2(round: U32, enemy: Pos, player: Pos, bots: List(Bot), bot_idx: U32, bot_loadout: Loadout, dir1: U32, pos1: Pos) -> List(Action):
+  dir2 = _chase_dir(pos1, player);
+  pos2 = _step_or_stay_bot(pos1, dir2, player, bots, bot_idx);
+  attack2 = _find_attack(pos2, player, bot_loadout);
+  hit2 = _action_is_attack(attack2);
+  match hit2:
     case 0:
-      one_move = _find_one_move_plan(enemy, player, bots, bot_idx, 0, bot_loadout);
-      one_hit = _queue_has_attack(one_move);
-      match one_hit:
-        case 0:
-          two_move = _find_two_move_plan(enemy, player, bots, bot_idx, 0, bot_loadout);
-          two_hit = _queue_has_attack(two_move);
-          match two_hit:
-            case 0:
-              _fallback_plan(round, enemy, player, bots, bot_idx, bot_loadout)
-            case _:
-              two_move
-        case _:
-          one_move
+      _fallback_plan(round, enemy, player, bots, bot_idx, bot_loadout)
     case _:
-      _queue3(immediate, _wait_action(), _wait_action())
+      _queue3(_move_or_wait(dir1), _move_or_wait(dir2), attack2)
 
 def _find_one_move_plan(enemy: Pos, player: Pos, bots: List(Bot), bot_idx: U32, dir: U32, bot_loadout: Loadout) -> List(Action):
   match dir:
