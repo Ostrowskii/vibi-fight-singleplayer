@@ -171,6 +171,8 @@ Ra5
 - a matriz da habilidade deve ser recortada no menor retangulo possivel
 - depois disso ela deve ser redimensionada proporcionalmente para caber no espaco fixo
 - o card externo da habilidade nao muda de tamanho entre skills
+- os cards estaticos de skill no lobby e nas faixas da UI podem usar imagem SVG gerada a partir do catalogo compartilhado
+- a mira no tabuleiro continua dinamica; a imagem serve so para previews estaticos
 
 
 5. sistema de tiles de habilidade
@@ -424,6 +426,7 @@ preview:
 - o app de Play Story fica separado para poder evoluir sem misturar tela com o Play casual
 - a tabela de habilidades fica centralizada em modulo compartilhado
 - nome, classe, dano, shape e mascaras de efeito devem sair dessa tabela compartilhada
+- existe um gerador de previews de skill que le o catalogo compartilhado e cria SVGs estaticos em assets/skills
 - o estado do combate no Play fica dividido em blocos menores:
   - meta do round
   - arena/runtime
@@ -436,3 +439,6 @@ preview:
   - primeiro todos os tiles com P, em leitura de cima para baixo e da esquerda para a direita
   - depois os outros tiles ocupados, na mesma leitura
 - essa regra existe para reduzir a quantidade de case manual sem mudar o comportamento atual de preview, anchor e resolucao
+- os cards de habilidade fora do tabuleiro usam previews SVG estaticos gerados a partir do catalogo compartilhado
+- a mira no tabuleiro continua dinamica
+- o app de Play deve renderizar so a tela ativa, sem manter lobby e partida montados ao mesmo tempo por tras

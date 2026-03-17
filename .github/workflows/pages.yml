@@ -34,6 +34,8 @@ jobs:
           cp play/index.html dist/play/index.html
           mkdir -p dist/story
           cp story/index.html dist/story/index.html
+          mkdir -p dist/assets/skills
+          cp assets/skills/*.svg dist/assets/skills/
           touch dist/.nojekyll
 
       - name: Setup Pages
