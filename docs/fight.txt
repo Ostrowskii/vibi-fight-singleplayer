@@ -307,3 +307,24 @@ preview:
   - itens dos inimigos
 - itens ainda nao estao implementados, mas entram como parte do modelo futuro
 - armadura pode aumentar HP mais para frente
+
+
+13. fluxo e arquitetura atual
+
+- a estrutura web esta separada em 3 entradas:
+  - menu inicial
+  - Play
+  - Play Story
+- o menu inicial so cuida de navegação
+- o app de Play concentra:
+  - lobby casual
+  - partida casual
+- o app de Play Story fica separado para poder evoluir sem misturar tela com o Play casual
+- a tabela de habilidades fica centralizada em modulo compartilhado
+- nome, classe, dano, shape e mascaras de efeito devem sair dessa tabela compartilhada
+- o estado do combate no Play fica dividido em blocos menores:
+  - meta do round
+  - arena/runtime
+  - plano/UI do round
+- a intencao dessa divisao e diminuir o custo de mexer no estado quando novas regras entrarem
+- o catalogo compartilhado e usado tanto para renderizar nomes/classes quanto para resolver shape e dano da skill

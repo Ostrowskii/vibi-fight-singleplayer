@@ -1,5 +1,7 @@
 import /App/
 import /HTML/
+import /U32/ as U32
+import /shared/fight/ as Fight
 
 type StoryState {
   story_state{}
@@ -29,16 +31,16 @@ def render(state: StoryState) -> HTML(StoryEvent):
         </div>
         <div class="story-fact">
           <span class="story-fact__label">{text{"Skills atuais"}}</span>
-          <strong class="story-fact__value">{text{"6"}}</strong>
+          <strong class="story-fact__value">{text{U32.show(Fight.skill_count())}}</strong>
         </div>
       </div>
       <div class="story-skill-row">
-        {_story_skill_card("Me1", "Melee")}
-        {_story_skill_card("Me2", "Melee")}
-        {_story_skill_card("Me3", "Melee")}
-        {_story_skill_card("Me4", "Melee")}
-        {_story_skill_card("Ma1", "Mage")}
-        {_story_skill_card("Ma2", "Mage")}
+        {_story_skill_card(1)}
+        {_story_skill_card(2)}
+        {_story_skill_card(3)}
+        {_story_skill_card(4)}
+        {_story_skill_card(5)}
+        {_story_skill_card(6)}
       </div>
       <div class="story-actions">
         <a class="story-link" href="../">{text{"Voltar ao menu"}}</a>
@@ -47,10 +49,10 @@ def render(state: StoryState) -> HTML(StoryEvent):
     </section>
   </main>
 
-def _story_skill_card(name: String, class_name: String) -> HTML(StoryEvent):
+def _story_skill_card(skill: U32) -> HTML(StoryEvent):
   <div class="story-skill">
-    <span class="story-skill__name">{text{name}}</span>
-    <span class="story-skill__class">{text{class_name}}</span>
+    <span class="story-skill__name">{text{Fight.skill_name(skill)}}</span>
+    <span class="story-skill__class">{text{Fight.skill_class_label(skill)}}</span>
   </div>
 
 def css() -> String:

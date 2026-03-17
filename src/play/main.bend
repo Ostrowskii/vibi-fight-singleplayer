@@ -2,6 +2,7 @@ import /App/
 import /HTML/
 import /Attr/
 import /U32/ as U32
+import /shared/fight/ as Fight
 
 # main.bend
 # =========
@@ -66,19 +67,37 @@ type LobbyState {
   }
 }
 
-type GameState {
-  game_state{
+type GameMeta {
+  game_meta{
     round: U32,
     level: U32,
     bot_total: U32,
+  }
+}
+
+type GameArena {
+  game_arena{
     player_hp: U32,
     player: Pos,
     bots: List(Bot),
+    winner: U32,
+  }
+}
+
+type GamePlan {
+  game_plan{
     queue: List(Action),
     queue_len: U32,
     queue_locked: U32,
     mode: Mode,
-    winner: U32,
+  }
+}
+
+type GameState {
+  game_state{
+    meta: GameMeta,
+    arena: GameArena,
+    plan: GamePlan,
   }
 }
 
@@ -162,10 +181,14 @@ def _runtime_empty() -> RuntimeData:
   runtime_data{[], 0, 0}
 
 def loadout_default() -> Loadout:
-  loadout{1, 2, 3}
+  loadout{
+    Fight.default_setup_skill(0, 0),
+    Fight.default_setup_skill(0, 1),
+    Fight.default_setup_skill(0, 2),
+  }
 
 def lobby_init() -> LobbyState:
-  lobby_state{50, 50, loadout_default(), loadout_default()}
+  lobby_state{Fight.default_hp(), Fight.default_hp(), loadout_default(), loadout_default()}
 
 def app_init() -> AppState:
   lobby = lobby_init();
@@ -174,37 +197,30 @@ def app_init() -> AppState:
 def state_init() -> GameState:
   state_init_count(1)
 
+def _meta(round: U32, level: U32, bot_total: U32) -> GameMeta:
+  game_meta{round, level, bot_total}
+
+def _arena(player_hp: U32, player: Pos, bots: List(Bot), winner: U32) -> GameArena:
+  game_arena{player_hp, player, bots, winner}
+
+def _plan_state(queue: List(Action), queue_len: U32, queue_locked: U32, mode: Mode) -> GamePlan:
+  game_plan{queue, queue_len, queue_locked, mode}
+
 def _game_from_lobby(lobby: LobbyState) -> GameState:
   match lobby:
     case lobby_state{player_hp, bot_hp, _, _}:
       game_state{
-        1,
-        1,
-        1,
-        player_hp,
-        pos{6, 4},
-        _init_bots_with_hp(1, 0, bot_hp),
-        _queue_waits(),
-        0,
-        0,
-        _plan_mode(_runtime_empty()),
-        0,
+        _meta(1, 1, 1),
+        _arena(player_hp, pos{6, 4}, _init_bots_with_hp(1, 0, bot_hp), 0),
+        _plan_state(_queue_waits(), 0, 0, _plan_mode(_runtime_empty())),
       }
 
 def state_init_count(bot_total: U32) -> GameState:
   total = _clamp_bot_total(bot_total);
   game_state{
-    1,
-    1,
-    total,
-    50,
-    pos{6, 4},
-    _init_bots(total, 0),
-    _queue_waits(),
-    0,
-    0,
-    _plan_mode(_runtime_empty()),
-    0,
+    _meta(1, 1, total),
+    _arena(Fight.default_hp(), pos{6, 4}, _init_bots(total, 0), 0),
+    _plan_state(_queue_waits(), 0, 0, _plan_mode(_runtime_empty())),
   }
 
 def _clamp_bot_total(bot_total: U32) -> U32:
@@ -220,7 +236,7 @@ def _init_bots(remaining: U32, idx: U32) -> List(Bot):
     case 0:
       []
     case count:
-      bot{_spawn_bot_pos(idx), 50, 0, 0}<>_init_bots(count - 1, idx + 1)
+      bot{_spawn_bot_pos(idx), Fight.default_hp(), 0, 0}<>_init_bots(count - 1, idx + 1)
 
 def _init_bots_with_hp(remaining: U32, idx: U32, hp: U32) -> List(Bot):
   match remaining:
@@ -255,201 +271,34 @@ def _spawn_extra_bot_col(col_idx: U32) -> U32:
       7
 
 def skill_len(skill: U32) -> U32:
-  match skill:
-    case 1:
-      4
-    case 2:
-      4
-    case 3:
-      5
-    case 4:
-      5
-    case 5:
-      5
-    case 6:
-      5
-    case _:
-      0
+  Fight.skill_len(skill)
 
 def skill_point(skill: U32, rot: U32, idx: U32) -> Pos:
-  match skill rot idx:
-    case 1 0 0:
-      pos{0, 0}
-    case 1 0 1:
-      pos{1, 0}
-    case 1 0 2:
-      pos{2, 0}
-    case 1 0 3:
-      pos{3, 0}
-    case 1 1 0:
-      pos{0, 0}
-    case 1 1 1:
-      pos{0, 1}
-    case 1 1 2:
-      pos{0, 2}
-    case 1 1 3:
-      pos{0, 3}
-    case 1 2 0:
-      pos{0, 0}
-    case 1 2 1:
-      pos{1, 0}
-    case 1 2 2:
-      pos{2, 0}
-    case 1 2 3:
-      pos{3, 0}
-    case 1 3 0:
-      pos{0, 0}
-    case 1 3 1:
-      pos{0, 1}
-    case 1 3 2:
-      pos{0, 2}
-    case 1 3 3:
-      pos{0, 3}
-    case 2 0 0:
-      pos{3, 0}
-    case 2 0 1:
-      pos{2, 1}
-    case 2 0 2:
-      pos{1, 2}
-    case 2 0 3:
-      pos{0, 3}
-    case 2 1 0:
-      pos{0, 0}
-    case 2 1 1:
-      pos{1, 1}
-    case 2 1 2:
-      pos{2, 2}
-    case 2 1 3:
-      pos{3, 3}
-    case 2 2 0:
-      pos{3, 0}
-    case 2 2 1:
-      pos{2, 1}
-    case 2 2 2:
-      pos{1, 2}
-    case 2 2 3:
-      pos{0, 3}
-    case 2 3 0:
-      pos{0, 0}
-    case 2 3 1:
-      pos{1, 1}
-    case 2 3 2:
-      pos{2, 2}
-    case 2 3 3:
-      pos{3, 3}
-    case 3 _ 0:
-      pos{0, 0}
-    case 3 _ 1:
-      pos{2, 0}
-    case 3 _ 2:
-      pos{1, 1}
-    case 3 _ 3:
-      pos{0, 2}
-    case 3 _ 4:
-      pos{2, 2}
-    case 4 0 0:
-      pos{0, 0}
-    case 4 0 1:
-      pos{0, 1}
-    case 4 0 2:
-      pos{0, 2}
-    case 4 0 3:
-      pos{0, 3}
-    case 4 0 4:
-      pos{1, 3}
-    case 4 1 0:
-      pos{3, 0}
-    case 4 1 1:
-      pos{2, 0}
-    case 4 1 2:
-      pos{1, 0}
-    case 4 1 3:
-      pos{0, 0}
-    case 4 1 4:
-      pos{0, 1}
-    case 4 2 0:
-      pos{3, 3}
-    case 4 2 1:
-      pos{3, 2}
-    case 4 2 2:
-      pos{3, 1}
-    case 4 2 3:
-      pos{3, 0}
-    case 4 2 4:
-      pos{2, 0}
-    case 4 3 0:
-      pos{0, 3}
-    case 4 3 1:
-      pos{1, 3}
-    case 4 3 2:
-      pos{2, 3}
-    case 4 3 3:
-      pos{3, 3}
-    case 4 3 4:
-      pos{3, 2}
-    case 5 _ 0:
-      pos{1, 0}
-    case 5 _ 1:
-      pos{0, 1}
-    case 5 _ 2:
-      pos{1, 1}
-    case 5 _ 3:
-      pos{2, 1}
-    case 5 _ 4:
-      pos{1, 2}
-    case 6 _ 0:
-      pos{1, 0}
-    case 6 _ 1:
-      pos{0, 1}
-    case 6 _ 2:
-      pos{1, 1}
-    case 6 _ 3:
-      pos{2, 1}
-    case 6 _ 4:
-      pos{1, 2}
-    case _ _ _:
-      pos{0, 0}
+  pos{
+    Fight.skill_point_x(skill, rot, idx),
+    Fight.skill_point_y(skill, rot, idx),
+  }
 
 def _skill_effect_mask(skill: U32, idx: U32) -> U32:
-  match skill:
-    case 1:
-      1
-    case 2:
-      1
-    case 3:
-      1
-    case 4:
-      1
-    case 5:
-      4
-    case 6:
-      8
-    case _:
-      0
+  Fight.skill_effect_mask(skill, idx)
 
 def _effect_has(mask: U32, flag: U32) -> U32:
-  match mask & flag:
-    case 0:
-      0
-    case _:
-      1
+  Fight.effect_has(mask, flag)
 
 def _effect_damage(mask: U32) -> U32:
-  _effect_has(mask, 1)
+  Fight.effect_damage(mask)
 
 def _effect_hook(mask: U32) -> U32:
-  _effect_has(mask, 2)
+  Fight.effect_hook(mask)
 
 def _effect_ice(mask: U32) -> U32:
-  _effect_has(mask, 4)
+  Fight.effect_ice(mask)
 
 def _effect_fire(mask: U32) -> U32:
-  _effect_has(mask, 8)
+  Fight.effect_fire(mask)
 
 def _skill_hook_pull(skill: U32) -> U32:
-  match skill:
-    case _:
-      4
+  Fight.skill_hook_pull(skill)
 
 def _loadout_slot(loadout_value: Loadout, idx: U32) -> U32:
   match loadout_value:
@@ -585,19 +434,75 @@ def _hp_step_down(hp: U32) -> U32:
 def _hp_step_up(hp: U32) -> U32:
   _min_u32(hp + 10, 200)
 
+def _meta_round(meta: GameMeta) -> U32:
+  match meta:
+    case game_meta{round, _, _}:
+      round
+
+def _meta_level(meta: GameMeta) -> U32:
+  match meta:
+    case game_meta{_, level, _}:
+      level
+
+def _meta_bot_total(meta: GameMeta) -> U32:
+  match meta:
+    case game_meta{_, _, bot_total}:
+      bot_total
+
+def _arena_player_hp(arena: GameArena) -> U32:
+  match arena:
+    case game_arena{player_hp, _, _, _}:
+      player_hp
+
+def _arena_player(arena: GameArena) -> Pos:
+  match arena:
+    case game_arena{_, player, _, _}:
+      player
+
+def _arena_bots(arena: GameArena) -> List(Bot):
+  match arena:
+    case game_arena{_, _, bots, _}:
+      bots
+
+def _arena_winner(arena: GameArena) -> U32:
+  match arena:
+    case game_arena{_, _, _, winner}:
+      winner
+
+def _plan_queue(plan_value: GamePlan) -> List(Action):
+  match plan_value:
+    case game_plan{queue, _, _, _}:
+      queue
+
+def _plan_queue_len(plan_value: GamePlan) -> U32:
+  match plan_value:
+    case game_plan{_, queue_len, _, _}:
+      queue_len
+
+def _plan_queue_locked(plan_value: GamePlan) -> U32:
+  match plan_value:
+    case game_plan{_, _, queue_locked, _}:
+      queue_locked
+
+def _plan_mode_value(plan_value: GamePlan) -> Mode:
+  match plan_value:
+    case game_plan{_, _, _, mode}:
+      mode
+
 def planned_player_pos(state: GameState) -> Pos:
   match state:
-    case game_state{_, _, _, _, player, _, queue, _, _, _, _}:
-      _planned_pos_from_queue(player, queue)
+    case game_state{_, arena, plan_value}:
+      _planned_pos_from_queue(_arena_player(arena), _plan_queue(plan_value))
 
 def movement_trail(state: GameState) -> List(TrailStep):
   match state:
-    case game_state{_, _, _, _, player, _, queue, _, _, _, _}:
-      _movement_trail_from_queue(player, queue, 1)
+    case game_state{_, arena, plan_value}:
+      _movement_trail_from_queue(_arena_player(arena), _plan_queue(plan_value), 1)
 
 def preview_tiles(state: GameState) -> List(Pos):
   match state:
-    case game_state{_, _, _, _, _, _, _, _, _, mode, _}:
+    case game_state{_, _, plan_value}:
+      mode = _plan_mode_value(plan_value);
       active = _mode_is_target(mode);
       match active:
         case 0:
@@ -607,7 +512,10 @@ def preview_tiles(state: GameState) -> List(Pos):
 
 def preview_hits(state: GameState) -> List(Pos):
   match state:
-    case game_state{_, _, _, _, player, _, queue, _, _, mode, _}:
+    case game_state{_, arena, plan_value}:
+      player = _arena_player(arena);
+      queue = _plan_queue(plan_value);
+      mode = _plan_mode_value(plan_value);
       active = _mode_is_target(mode);
       match active:
         case 0:
@@ -618,7 +526,10 @@ def preview_hits(state: GameState) -> List(Pos):
 
 def target_valid(state: GameState) -> U32:
   match state:
-    case game_state{_, _, _, _, player, _, queue, _, _, mode, _}:
+    case game_state{_, arena, plan_value}:
+      player = _arena_player(arena);
+      queue = _plan_queue(plan_value);
+      mode = _plan_mode_value(plan_value);
       active = _mode_is_target(mode);
       match active:
         case 0:
@@ -629,17 +540,54 @@ def target_valid(state: GameState) -> U32:
 
 def queue_move_state(state: GameState, dir: U32) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
-      _queue_move_w(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner, dir)
+    case game_state{meta, arena, plan_value}:
+      _queue_move_w(
+        _meta_round(meta),
+        _meta_level(meta),
+        _meta_bot_total(meta),
+        _arena_player_hp(arena),
+        _arena_player(arena),
+        _arena_bots(arena),
+        _plan_queue(plan_value),
+        _plan_queue_len(plan_value),
+        _plan_queue_locked(plan_value),
+        _plan_mode_value(plan_value),
+        _arena_winner(arena),
+        dir
+      )
 
 def start_target_state(state: GameState, skill: U32) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
-      _start_target_w(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner, skill)
+    case game_state{meta, arena, plan_value}:
+      _start_target_w(
+        _meta_round(meta),
+        _meta_level(meta),
+        _meta_bot_total(meta),
+        _arena_player_hp(arena),
+        _arena_player(arena),
+        _arena_bots(arena),
+        _plan_queue(plan_value),
+        _plan_queue_len(plan_value),
+        _plan_queue_locked(plan_value),
+        _plan_mode_value(plan_value),
+        _arena_winner(arena),
+        skill
+      )
 
 def move_target_state(state: GameState, dir: U32) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{meta, arena, plan_value}:
+      round = _meta_round(meta);
+      level = _meta_level(meta);
+      bot_total = _meta_bot_total(meta);
+      player_hp = _arena_player_hp(arena);
+      player = _arena_player(arena);
+      bots = _arena_bots(arena);
+      queue = _plan_queue(plan_value);
+      queue_len = _plan_queue_len(plan_value);
+      queue_locked = _plan_queue_locked(plan_value);
+      mode = _plan_mode_value(plan_value);
+      winner = _arena_winner(arena);
       active = _mode_is_target(mode);
       match active:
         case 0:
@@ -652,7 +600,18 @@ def move_target_state(state: GameState, dir: U32) -> GameState:
 
 def rotate_target_state(state: GameState, clockwise: U32) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{meta, arena, plan_value}:
+      round = _meta_round(meta);
+      level = _meta_level(meta);
+      bot_total = _meta_bot_total(meta);
+      player_hp = _arena_player_hp(arena);
+      player = _arena_player(arena);
+      bots = _arena_bots(arena);
+      queue = _plan_queue(plan_value);
+      queue_len = _plan_queue_len(plan_value);
+      queue_locked = _plan_queue_locked(plan_value);
+      mode = _plan_mode_value(plan_value);
+      winner = _arena_winner(arena);
       active = _mode_is_target(mode);
       match active:
         case 0:
@@ -664,7 +623,18 @@ def rotate_target_state(state: GameState, clockwise: U32) -> GameState:
 
 def cancel_target_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{meta, arena, plan_value}:
+      round = _meta_round(meta);
+      level = _meta_level(meta);
+      bot_total = _meta_bot_total(meta);
+      player_hp = _arena_player_hp(arena);
+      player = _arena_player(arena);
+      bots = _arena_bots(arena);
+      queue = _plan_queue(plan_value);
+      queue_len = _plan_queue_len(plan_value);
+      queue_locked = _plan_queue_locked(plan_value);
+      mode = _plan_mode_value(plan_value);
+      winner = _arena_winner(arena);
       active = _mode_is_target(mode);
       match active:
         case 0:
@@ -674,7 +644,18 @@ def cancel_target_state(state: GameState) -> GameState:
 
 def confirm_target_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{meta, arena, plan_value}:
+      round = _meta_round(meta);
+      level = _meta_level(meta);
+      bot_total = _meta_bot_total(meta);
+      player_hp = _arena_player_hp(arena);
+      player = _arena_player(arena);
+      bots = _arena_bots(arena);
+      queue = _plan_queue(plan_value);
+      queue_len = _plan_queue_len(plan_value);
+      queue_locked = _plan_queue_locked(plan_value);
+      mode = _plan_mode_value(plan_value);
+      winner = _arena_winner(arena);
       active = _mode_is_target(mode);
       match active:
         case 0:
@@ -695,7 +676,18 @@ def confirm_target_state(state: GameState) -> GameState:
 
 def clear_round_plan_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{meta, arena, plan_value}:
+      round = _meta_round(meta);
+      level = _meta_level(meta);
+      bot_total = _meta_bot_total(meta);
+      player_hp = _arena_player_hp(arena);
+      player = _arena_player(arena);
+      bots = _arena_bots(arena);
+      queue = _plan_queue(plan_value);
+      queue_len = _plan_queue_len(plan_value);
+      queue_locked = _plan_queue_locked(plan_value);
+      mode = _plan_mode_value(plan_value);
+      winner = _arena_winner(arena);
       match winner | _mode_is_playback(mode):
         case 0:
           _state(round, level, bot_total, player_hp, player, bots, _queue_waits(), 0, 0, _plan_mode(_mode_runtime(mode)), 0)
@@ -704,13 +696,25 @@ def clear_round_plan_state(state: GameState) -> GameState:
 
 def pop_last_planned_action_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
-      _pop_last_w(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
+    case game_state{meta, arena, plan_value}:
+      _pop_last_w(
+        _meta_round(meta),
+        _meta_level(meta),
+        _meta_bot_total(meta),
+        _arena_player_hp(arena),
+        _arena_player(arena),
+        _arena_bots(arena),
+        _plan_queue(plan_value),
+        _plan_queue_len(plan_value),
+        _plan_queue_locked(plan_value),
+        _plan_mode_value(plan_value),
+        _arena_winner(arena)
+      )
 
 def build_bot_plan(state: GameState, bot_loadout: Loadout) -> List(List(Action)):
   match state:
-    case game_state{round, _, _, player_hp, player, bots, _, _, _, _, winner}:
-      _build_all_bot_plans(round, player_hp, player, bots, winner, 0, bot_loadout)
+    case game_state{meta, arena, _}:
+      _build_all_bot_plans(_meta_round(meta), _arena_player_hp(arena), _arena_player(arena), _arena_bots(arena), _arena_winner(arena), 0, bot_loadout)
 
 def resolve_actor_action_state(state: GameState, actor: U32, actor_idx: U32, action: Action) -> GameState:
   match actor:
@@ -734,12 +738,28 @@ def _state(
   player: Pos, bots: List(Bot), queue: List(Action),
   queue_len: U32, queue_locked: U32, mode: Mode, winner: U32,
 ) -> GameState:
-  game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}
+  game_state{
+    _meta(round, level, bot_total),
+    _arena(player_hp, player, bots, winner),
+    _plan_state(queue, queue_len, queue_locked, mode),
+  }
 
 def _set_mode_state(state: GameState, mode: Mode) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _, winner}:
-      _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
+    case game_state{meta, arena, plan_value}:
+      _state(
+        _meta_round(meta),
+        _meta_level(meta),
+        _meta_bot_total(meta),
+        _arena_player_hp(arena),
+        _arena_player(arena),
+        _arena_bots(arena),
+        _plan_queue(plan_value),
+        _plan_queue_len(plan_value),
+        _plan_queue_locked(plan_value),
+        mode,
+        _arena_winner(arena)
+      )
 
 def _wait_action() -> Action:
   wait{}
@@ -1238,22 +1258,22 @@ def _bots_hit_any_tiles(items: List(Bot), tiles: List(Pos)) -> U32:
         case _:
           1
 
-def _damage_bots_on_tiles(items: List(Bot), tiles: List(Pos)) -> List(Bot):
+def _damage_bots_on_tiles(items: List(Bot), tiles: List(Pos), amount: U32) -> List(Bot):
   match items:
     case []:
       []
     case head<>tail:
       live = _bot_alive(head);
       hit = _pos_list_has(tiles, _bot_pos(head));
-      next_bot = _damage_bot_hit(head, live & hit);
-      next_bot<>_damage_bots_on_tiles(tail, tiles)
+      next_bot = _damage_bot_hit(head, live & hit, amount);
+      next_bot<>_damage_bots_on_tiles(tail, tiles, amount)
 
-def _damage_bot_hit(item: Bot, hit: U32) -> Bot:
+def _damage_bot_hit(item: Bot, hit: U32, amount: U32) -> Bot:
   match hit:
     case 0:
       item
     case _:
-      _bot_with_hp(item, _damage_hp(_bot_hp(item)))
+      _bot_with_hp(item, _damage_hp_by(_bot_hp(item), amount))
 
 def _bots_any_died_between(before: List(Bot), after: List(Bot)) -> U32:
   match before:
@@ -1597,7 +1617,18 @@ def _find_attack_anchor(actor: Pos, target: Pos, skill: U32, rot: U32, idx: U32)
 
 def _resolve_player_action_state(state: GameState, action: Action) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{meta, arena, plan_value}:
+      round = _meta_round(meta);
+      level = _meta_level(meta);
+      bot_total = _meta_bot_total(meta);
+      player_hp = _arena_player_hp(arena);
+      player = _arena_player(arena);
+      bots = _arena_bots(arena);
+      queue = _plan_queue(plan_value);
+      queue_len = _plan_queue_len(plan_value);
+      queue_locked = _plan_queue_locked(plan_value);
+      mode = _plan_mode_value(plan_value);
+      winner = _arena_winner(arena);
       stopped = winner | _hp_empty(player_hp);
       match stopped:
         case 0:
@@ -1607,7 +1638,18 @@ def _resolve_player_action_state(state: GameState, action: Action) -> GameState:
 
 def _resolve_bot_action_state(state: GameState, bot_idx: U32, action: Action) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{meta, arena, plan_value}:
+      round = _meta_round(meta);
+      level = _meta_level(meta);
+      bot_total = _meta_bot_total(meta);
+      player_hp = _arena_player_hp(arena);
+      player = _arena_player(arena);
+      bots = _arena_bots(arena);
+      queue = _plan_queue(plan_value);
+      queue_len = _plan_queue_len(plan_value);
+      queue_locked = _plan_queue_locked(plan_value);
+      mode = _plan_mode_value(plan_value);
+      winner = _arena_winner(arena);
       stopped = winner | _bot_dead_at(bots, bot_idx);
       match stopped:
         case 0:
@@ -1643,7 +1685,7 @@ def _resolve_player_attack_with_runtime(
   ice_tiles = _effect_tiles_for(skill, rot, origin, player, 4, 0);
   fire_tiles = _effect_tiles_for(skill, rot, origin, player, 8, 0);
   bots_after_hook = _hook_player_bots(player, bots, hook_tiles, _skill_hook_pull(skill));
-  bots_after_damage = _damage_bots_on_tiles(bots_after_hook, damage_tiles);
+  bots_after_damage = _damage_bots_on_tiles(bots_after_hook, damage_tiles, Fight.skill_damage(skill));
   terrain_ice = _terrain_apply_tiles(_runtime_terrain(runtime), 0, 1, 5, ice_tiles);
   terrain_fire = _terrain_apply_tiles(terrain_ice, 0, 2, 2, fire_tiles);
   next_runtime = _runtime_with_terrain(runtime, terrain_fire);
@@ -1695,23 +1737,34 @@ def _resolve_bot_attack(
   fire_tiles = _effect_tiles_for(skill, rot, origin, enemy, 8, 0);
   next_player = _hook_bot_player(enemy, player, bots, bot_idx, hook_tiles, _skill_hook_pull(skill));
   hit = _pos_list_has(damage_tiles, next_player);
-  next_player_hp = _damage_hp_by(player_hp, _attack_damage_amount(hit));
+  next_player_hp = _damage_hp_by(player_hp, _attack_damage_amount(skill, hit));
   terrain_ice = _terrain_apply_tiles(_runtime_terrain(runtime), 1, 1, 5, ice_tiles);
   terrain_fire = _terrain_apply_tiles(terrain_ice, 1, 2, 2, fire_tiles);
   next_runtime = _runtime_with_terrain(runtime, terrain_fire);
   next_winner = _compute_winner(next_player_hp, bots);
   _state(round, level, bot_total, next_player_hp, next_player, bots, queue, queue_len, queue_locked, _plan_mode(next_runtime), next_winner)
 
-def _attack_damage_amount(hit: U32) -> U32:
+def _attack_damage_amount(skill: U32, hit: U32) -> U32:
   match hit:
     case 0:
       0
     case _:
-      10
+      Fight.skill_damage(skill)
 
 def _simulate_player_action(state: GameState, action: Action) -> ActionSim:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{meta, arena, plan_value}:
+      round = _meta_round(meta);
+      level = _meta_level(meta);
+      bot_total = _meta_bot_total(meta);
+      player_hp = _arena_player_hp(arena);
+      player = _arena_player(arena);
+      bots = _arena_bots(arena);
+      queue = _plan_queue(plan_value);
+      queue_len = _plan_queue_len(plan_value);
+      queue_locked = _plan_queue_locked(plan_value);
+      mode = _plan_mode_value(plan_value);
+      winner = _arena_winner(arena);
       current_state = _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner);
       kind = _action_kind(action);
       _simulate_player_action_kind(current_state, player_hp, player, bots, action, kind)
@@ -1744,7 +1797,18 @@ def _simulate_player_attack(
 
 def _simulate_bot_action(state: GameState, bot_idx: U32, action: Action) -> ActionSim:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
+    case game_state{meta, arena, plan_value}:
+      round = _meta_round(meta);
+      level = _meta_level(meta);
+      bot_total = _meta_bot_total(meta);
+      player_hp = _arena_player_hp(arena);
+      player = _arena_player(arena);
+      bots = _arena_bots(arena);
+      queue = _plan_queue(plan_value);
+      queue_len = _plan_queue_len(plan_value);
+      queue_locked = _plan_queue_locked(plan_value);
+      mode = _plan_mode_value(plan_value);
+      winner = _arena_winner(arena);
       enemy = _bot_pos_at(bots, bot_idx);
       current_state = _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner);
       kind = _action_kind(action);
@@ -1805,8 +1869,17 @@ def _action_sim_attack_tiles(sim: ActionSim) -> List(Pos):
 
 def _reset_round_planning_state(state: GameState) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, _, _, _, mode, winner}:
-      _reset_round_planning_mode(round, level, bot_total, player_hp, player, bots, mode, winner)
+    case game_state{meta, arena, plan_value}:
+      _reset_round_planning_mode(
+        _meta_round(meta),
+        _meta_level(meta),
+        _meta_bot_total(meta),
+        _arena_player_hp(arena),
+        _arena_player(arena),
+        _arena_bots(arena),
+        _plan_mode_value(plan_value),
+        _arena_winner(arena)
+      )
 
 def _reset_round_planning_mode(
   round: U32, level: U32, bot_total: U32, player_hp: U32,
@@ -1841,9 +1914,6 @@ def _round_after_reset(round: U32, winner: U32) -> U32:
       round + 1
     case _:
       round
-
-def _damage_hp(hp: U32) -> U32:
-  _sub_floor(hp, 10)
 
 def _hp_empty(hp: U32) -> U32:
   match hp:
@@ -1985,28 +2055,28 @@ def _action_set(queue: List(Action), idx: U32, val: Action) -> List(Action):
 
 def _state_queue(state: GameState) -> List(Action):
   match state:
-    case game_state{_, _, _, _, _, _, queue, _, _, _, _}:
-      queue
+    case game_state{_, _, plan_value}:
+      _plan_queue(plan_value)
 
 def _state_player(state: GameState) -> Pos:
   match state:
-    case game_state{_, _, _, _, player, _, _, _, _, _, _}:
-      player
+    case game_state{_, arena, _}:
+      _arena_player(arena)
 
 def _state_bots(state: GameState) -> List(Bot):
   match state:
-    case game_state{_, _, _, _, _, bots, _, _, _, _, _}:
-      bots
+    case game_state{_, arena, _}:
+      _arena_bots(arena)
 
 def _state_bot_total(state: GameState) -> U32:
   match state:
-    case game_state{_, _, bot_total, _, _, _, _, _, _, _, _}:
-      bot_total
+    case game_state{meta, _, _}:
+      _meta_bot_total(meta)
 
 def _state_player_hp(state: GameState) -> U32:
   match state:
-    case game_state{_, _, _, player_hp, _, _, _, _, _, _, _}:
-      player_hp
+    case game_state{_, arena, _}:
+      _arena_player_hp(arena)
 
 def _state_runtime(state: GameState) -> RuntimeData:
   _mode_runtime(_state_mode_value(state))
@@ -2496,8 +2566,21 @@ def _screen_is_match(screen: Screen) -> U32:
 
 def ready_round_state(state: GameState, bot_loadout: Loadout) -> GameState:
   match state:
-    case game_state{round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner}:
-      _ready_round_state_w(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner, bot_loadout)
+    case game_state{meta, arena, plan_value}:
+      _ready_round_state_w(
+        _meta_round(meta),
+        _meta_level(meta),
+        _meta_bot_total(meta),
+        _arena_player_hp(arena),
+        _arena_player(arena),
+        _arena_bots(arena),
+        _plan_queue(plan_value),
+        _plan_queue_len(plan_value),
+        _plan_queue_locked(plan_value),
+        _plan_mode_value(plan_value),
+        _arena_winner(arena),
+        bot_loadout
+      )
 
 def _ready_round_state_w(
   round: U32, level: U32, bot_total: U32, player_hp: U32,
@@ -3946,38 +4029,10 @@ def _skill_button_class_active(active: U32) -> String:
       "button button--secondary button--active"
 
 def _skill_name(skill: U32) -> String:
-  match skill:
-    case 1:
-      "Me1"
-    case 2:
-      "Me2"
-    case 3:
-      "Me3"
-    case 4:
-      "Me4"
-    case 5:
-      "Ma1"
-    case 6:
-      "Ma2"
-    case _:
-      "?"
+  Fight.skill_name(skill)
 
 def _skill_class_label(skill: U32) -> String:
-  match skill:
-    case 1:
-      "Melee"
-    case 2:
-      "Melee"
-    case 3:
-      "Melee"
-    case 4:
-      "Melee"
-    case 5:
-      "Mage"
-    case 6:
-      "Mage"
-    case _:
-      "Unknown"
+  Fight.skill_class_label(skill)
 
 def _action_label(action: Action) -> String:
   match action:
@@ -4184,18 +4239,18 @@ def _trail_step_at(items: List(TrailStep), target: Pos) -> U32:
 
 def _state_round(state: GameState) -> U32:
   match state:
-    case game_state{round, _, _, _, _, _, _, _, _, _, _}:
-      round
+    case game_state{meta, _, _}:
+      _meta_round(meta)
 
 def _state_winner(state: GameState) -> U32:
   match state:
-    case game_state{_, _, _, _, _, _, _, _, _, _, winner}:
-      winner
+    case game_state{_, arena, _}:
+      _arena_winner(arena)
 
 def _state_mode_value(state: GameState) -> Mode:
   match state:
-    case game_state{_, _, _, _, _, _, _, _, _, mode, _}:
-      mode
+    case game_state{_, _, plan_value}:
+      _plan_mode_value(plan_value)
 
 def _state_target_active(state: GameState) -> U32:
   _mode_is_target(_state_mode_value(state))

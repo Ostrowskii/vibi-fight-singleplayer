@@ -103,12 +103,21 @@ def skill_class_label_id(class_id: U32) -> String:
       "Unknown"
 
 def skill_name(skill: U32) -> String:
-  rank = skill_rank(skill);
-  match rank:
-    case 0:
+  match skill:
+    case 1:
+      "Me1"
+    case 2:
+      "Me2"
+    case 3:
+      "Me3"
+    case 4:
+      "Me4"
+    case 5:
+      "Ma1"
+    case 6:
+      "Ma2"
+    case _:
       "?"
-    case value:
-      skill_class_short(skill) ++ U32.show(value)
 
 def skill_len(skill: U32) -> U32:
   match skill:
@@ -404,3 +413,44 @@ def skill_point_y(skill: U32, rot: U32, idx: U32) -> U32:
       2
     case _ _ _:
       0
+
+def skill_effect_mask(skill: U32, idx: U32) -> U32:
+  match skill idx:
+    case 1 _:
+      1
+    case 2 _:
+      1
+    case 3 _:
+      1
+    case 4 _:
+      1
+    case 5 _:
+      4
+    case 6 _:
+      8
+    case _ _:
+      0
+
+def effect_has(mask: U32, flag: U32) -> U32:
+  match mask & flag:
+    case 0:
+      0
+    case _:
+      1
+
+def effect_damage(mask: U32) -> U32:
+  effect_has(mask, 1)
+
+def effect_hook(mask: U32) -> U32:
+  effect_has(mask, 2)
+
+def effect_ice(mask: U32) -> U32:
+  effect_has(mask, 4)
+
+def effect_fire(mask: U32) -> U32:
+  effect_has(mask, 8)
+
+def skill_hook_pull(skill: U32) -> U32:
+  match skill:
+    case _:
+      4
