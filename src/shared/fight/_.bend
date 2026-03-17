@@ -4,7 +4,7 @@ def default_hp() -> U32:
   50
 
 def skill_count() -> U32:
-  8
+  9
 
 def empty_item_slot() -> U32:
   0
@@ -41,6 +41,8 @@ def skill_damage(skill: U32) -> U32:
       0
     case 8:
       10
+    case 9:
+      0
     case _:
       0
 
@@ -62,6 +64,8 @@ def skill_rank(skill: U32) -> U32:
       5
     case 8:
       1
+    case 9:
+      3
     case _:
       0
 
@@ -83,6 +87,8 @@ def skill_class_id(skill: U32) -> U32:
       0
     case 8:
       1
+    case 9:
+      2
     case _:
       0
 
@@ -132,6 +138,8 @@ def skill_name(skill: U32) -> String:
       "Me5"
     case 8:
       "Ra1"
+    case 9:
+      "Ma3"
     case _:
       "?"
 
@@ -153,6 +161,8 @@ def skill_len(skill: U32) -> U32:
       7
     case 8:
       14
+    case 9:
+      10
     case _:
       0
 
@@ -567,6 +577,86 @@ def skill_point_x(skill: U32, rot: U32, idx: U32) -> U32:
     case 8 3 12:
       3
     case 8 3 13:
+      4
+    case 9 0 0:
+      1
+    case 9 0 1:
+      0
+    case 9 0 2:
+      1
+    case 9 0 3:
+      2
+    case 9 0 4:
+      1
+    case 9 0 5:
+      6
+    case 9 0 6:
+      5
+    case 9 0 7:
+      4
+    case 9 0 8:
+      5
+    case 9 0 9:
+      6
+    case 9 1 0:
+      3
+    case 9 1 1:
+      2
+    case 9 1 2:
+      2
+    case 9 1 3:
+      2
+    case 9 1 4:
+      1
+    case 9 1 5:
+      4
+    case 9 1 6:
+      3
+    case 9 1 7:
+      2
+    case 9 1 8:
+      1
+    case 9 1 9:
+      0
+    case 9 2 0:
+      5
+    case 9 2 1:
+      6
+    case 9 2 2:
+      5
+    case 9 2 3:
+      4
+    case 9 2 4:
+      5
+    case 9 2 5:
+      0
+    case 9 2 6:
+      1
+    case 9 2 7:
+      2
+    case 9 2 8:
+      1
+    case 9 2 9:
+      0
+    case 9 3 0:
+      1
+    case 9 3 1:
+      2
+    case 9 3 2:
+      2
+    case 9 3 3:
+      2
+    case 9 3 4:
+      3
+    case 9 3 5:
+      0
+    case 9 3 6:
+      1
+    case 9 3 7:
+      2
+    case 9 3 8:
+      3
+    case 9 3 9:
       4
     case _ _ _:
       0
@@ -983,6 +1073,86 @@ def skill_point_y(skill: U32, rot: U32, idx: U32) -> U32:
       2
     case 8 3 13:
       2
+    case 9 0 0:
+      1
+    case 9 0 1:
+      2
+    case 9 0 2:
+      2
+    case 9 0 3:
+      2
+    case 9 0 4:
+      3
+    case 9 0 5:
+      0
+    case 9 0 6:
+      1
+    case 9 0 7:
+      2
+    case 9 0 8:
+      3
+    case 9 0 9:
+      4
+    case 9 1 0:
+      1
+    case 9 1 1:
+      0
+    case 9 1 2:
+      1
+    case 9 1 3:
+      2
+    case 9 1 4:
+      1
+    case 9 1 5:
+      6
+    case 9 1 6:
+      5
+    case 9 1 7:
+      4
+    case 9 1 8:
+      5
+    case 9 1 9:
+      6
+    case 9 2 0:
+      3
+    case 9 2 1:
+      2
+    case 9 2 2:
+      2
+    case 9 2 3:
+      2
+    case 9 2 4:
+      1
+    case 9 2 5:
+      4
+    case 9 2 6:
+      3
+    case 9 2 7:
+      2
+    case 9 2 8:
+      1
+    case 9 2 9:
+      0
+    case 9 3 0:
+      5
+    case 9 3 1:
+      6
+    case 9 3 2:
+      5
+    case 9 3 3:
+      4
+    case 9 3 4:
+      5
+    case 9 3 5:
+      0
+    case 9 3 6:
+      1
+    case 9 3 7:
+      2
+    case 9 3 8:
+      1
+    case 9 3 9:
+      0
     case _ _ _:
       0
 
@@ -1009,6 +1179,16 @@ def skill_player_mask(skill: U32, idx: U32) -> U32:
     case 8 3:
       1
     case 8 4:
+      1
+    case 9 0:
+      1
+    case 9 1:
+      1
+    case 9 2:
+      1
+    case 9 3:
+      1
+    case 9 4:
       1
     case _ _:
       0
@@ -1063,6 +1243,16 @@ def skill_effect_mask(skill: U32, idx: U32) -> U32:
       1
     case 8 13:
       1
+    case 9 5:
+      4
+    case 9 6:
+      4
+    case 9 7:
+      4
+    case 9 8:
+      4
+    case 9 9:
+      4
     case _ _:
       0
 

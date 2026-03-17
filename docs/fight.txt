@@ -61,7 +61,7 @@ Fight Spec
 - por enquanto:
   - Me1, Me2, Me3, Me4 e Me5 sao melee
   - Ra1 e ranged
-  - Ma1 e Ma2 sao mage
+  - Ma1, Ma2 e Ma3 sao mage
 - os nomes seguem prefixo da classe + numero:
   - Me = melee
   - Ra = ranged
@@ -73,10 +73,14 @@ Fight Spec
   - Me4
   - Me5
   - Ra1
-- as duas habilidades novas com efeitos magicos ficam nomeadas como:
   - Ma1
   - Ma2
-- no Play casual, Ma1 e Ma2 tambem precisam estar disponiveis no lobby e funcionais no combate
+  - Ma3
+- as habilidades magicas atuais ficam nomeadas como:
+  - Ma1
+  - Ma2
+  - Ma3
+- no Play casual, Ma1, Ma2 e Ma3 tambem precisam estar disponiveis no lobby e funcionais no combate
 
 habilidades atuais:
 
@@ -180,6 +184,16 @@ shape de fire:
   [ , P, , , , , F, ],
   [P,  , , , , F, F, F],
   [ , P, , , , , F, ]
+]
+
+Ma3
+shape de ice:
+[
+  [null, null, null, null, null, null, I],
+  [null, P,    null, null, null, I,    null],
+  [P,    P,    P,    null, I,    null, null],
+  [null, P,    null, null, null, I,    null],
+  [null, null, null, null, null, null, I]
 ]
 
 
