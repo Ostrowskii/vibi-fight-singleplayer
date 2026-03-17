@@ -121,10 +121,15 @@ Me4
 
 modelo de tiles:
 
+- P = tile de encaixe do player/ator
 - A = ataque com dano
 - H = hook
 - I = ice
 - F = fire
+- P nao aplica efeito por si so; ele so marca onde o ator pode encaixar para usar a skill
+- em skills de mage e ranged, a area de encaixe do ator pode ficar separada da area onde o ataque cai
+- se a skill tiver tiles P, o ator precisa encaixar em um dos P
+- se a skill nao tiver tiles P, como nas melee atuais, o ator pode encaixar em qualquer tile ocupado da shape
 - uma mesma casa pode ter mais de uma letra
 - se uma casa tiver mais de uma letra, ela aplica mais de um efeito
 - a ordem dos efeitos da casa e definida pela skill
@@ -143,17 +148,17 @@ exemplo de shape composta:
 Ma1
 shape de ice:
 [
-  [ , , , , , , , I, ],
-  [ , , , , , , I, I, I],
-  [ , , , , , , , I, ]
+  [ , P, , , , , , I, ],
+  [P,  , , , , , I, I, I],
+  [ , P, , , , , , I, ]
 ]
 
 Ma2
 shape de fire:
 [
-  [ , , , , , , , F, ],
-  [ , , , , , , F, F, F],
-  [ , , , , , , , F, ]
+  [ , P, , , , , , F, ],
+  [P,  , , , , , F, F, F],
+  [ , P, , , , , , F, ]
 ]
 
 
@@ -161,7 +166,7 @@ shape de fire:
 
 regras do I:
 
-- I deixa gelo no tile por 5 turnos
+- I deixa gelo no tile por 10 turnos
 - se um tile de gelo receber fogo, o gelo some e o tile vira fogo
 - se um personagem entrou num tile com I agora, o primeiro round realmente afetado e o proximo round
 - o gelo faz o alvo perder metade dos rounds de movimento, comecando bloqueado
@@ -176,7 +181,7 @@ regras do I:
 
 regras do F:
 
-- F deixa fogo no tile por 2 turnos
+- F deixa fogo no tile por 5 turnos
 - se um tile de fogo receber gelo, o fogo some e o tile vira gelo
 - se um personagem entra ou permanece num tile com F, ele fica queimando
 - queimadura causa 15 de dano total, em 3 ticks de 5

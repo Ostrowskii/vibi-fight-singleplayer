@@ -130,9 +130,9 @@ def skill_len(skill: U32) -> U32:
     case 4:
       5
     case 5:
-      5
+      8
     case 6:
-      5
+      8
     case _:
       0
 
@@ -252,26 +252,134 @@ def skill_point_x(skill: U32, rot: U32, idx: U32) -> U32:
       3
     case 4 3 4:
       3
-    case 5 _ 0:
+    case 5 0 0:
       1
-    case 5 _ 1:
+    case 5 0 1:
       0
-    case 5 _ 2:
+    case 5 0 2:
       1
-    case 5 _ 3:
+    case 5 0 3:
+      7
+    case 5 0 4:
+      6
+    case 5 0 5:
+      7
+    case 5 0 6:
+      8
+    case 5 0 7:
+      7
+    case 5 1 0:
       2
-    case 5 _ 4:
+    case 5 1 1:
       1
-    case 6 _ 0:
-      1
-    case 6 _ 1:
+    case 5 1 2:
       0
-    case 6 _ 2:
-      1
-    case 6 _ 3:
+    case 5 1 3:
       2
-    case 6 _ 4:
+    case 5 1 4:
       1
+    case 5 1 5:
+      1
+    case 5 1 6:
+      1
+    case 5 1 7:
+      0
+    case 5 2 0:
+      7
+    case 5 2 1:
+      8
+    case 5 2 2:
+      7
+    case 5 2 3:
+      1
+    case 5 2 4:
+      2
+    case 5 2 5:
+      1
+    case 5 2 6:
+      0
+    case 5 2 7:
+      1
+    case 5 3 0:
+      0
+    case 5 3 1:
+      1
+    case 5 3 2:
+      2
+    case 5 3 3:
+      0
+    case 5 3 4:
+      1
+    case 5 3 5:
+      1
+    case 5 3 6:
+      1
+    case 5 3 7:
+      2
+    case 6 0 0:
+      1
+    case 6 0 1:
+      0
+    case 6 0 2:
+      1
+    case 6 0 3:
+      7
+    case 6 0 4:
+      6
+    case 6 0 5:
+      7
+    case 6 0 6:
+      8
+    case 6 0 7:
+      7
+    case 6 1 0:
+      2
+    case 6 1 1:
+      1
+    case 6 1 2:
+      0
+    case 6 1 3:
+      2
+    case 6 1 4:
+      1
+    case 6 1 5:
+      1
+    case 6 1 6:
+      1
+    case 6 1 7:
+      0
+    case 6 2 0:
+      7
+    case 6 2 1:
+      8
+    case 6 2 2:
+      7
+    case 6 2 3:
+      1
+    case 6 2 4:
+      2
+    case 6 2 5:
+      1
+    case 6 2 6:
+      0
+    case 6 2 7:
+      1
+    case 6 3 0:
+      0
+    case 6 3 1:
+      1
+    case 6 3 2:
+      2
+    case 6 3 3:
+      0
+    case 6 3 4:
+      1
+    case 6 3 5:
+      1
+    case 6 3 6:
+      1
+    case 6 3 7:
+      2
     case _ _ _:
       0
 
@@ -391,27 +499,152 @@ def skill_point_y(skill: U32, rot: U32, idx: U32) -> U32:
       3
     case 4 3 4:
       2
-    case 5 _ 0:
+    case 5 0 0:
       0
-    case 5 _ 1:
+    case 5 0 1:
       1
-    case 5 _ 2:
-      1
-    case 5 _ 3:
-      1
-    case 5 _ 4:
+    case 5 0 2:
       2
-    case 6 _ 0:
+    case 5 0 3:
       0
-    case 6 _ 1:
+    case 5 0 4:
       1
-    case 6 _ 2:
+    case 5 0 5:
       1
-    case 6 _ 3:
+    case 5 0 6:
       1
-    case 6 _ 4:
+    case 5 0 7:
       2
+    case 5 1 0:
+      1
+    case 5 1 1:
+      0
+    case 5 1 2:
+      1
+    case 5 1 3:
+      7
+    case 5 1 4:
+      6
+    case 5 1 5:
+      7
+    case 5 1 6:
+      8
+    case 5 1 7:
+      7
+    case 5 2 0:
+      2
+    case 5 2 1:
+      1
+    case 5 2 2:
+      0
+    case 5 2 3:
+      2
+    case 5 2 4:
+      1
+    case 5 2 5:
+      1
+    case 5 2 6:
+      1
+    case 5 2 7:
+      0
+    case 5 3 0:
+      7
+    case 5 3 1:
+      8
+    case 5 3 2:
+      7
+    case 5 3 3:
+      1
+    case 5 3 4:
+      2
+    case 5 3 5:
+      1
+    case 5 3 6:
+      0
+    case 5 3 7:
+      1
+    case 6 0 0:
+      0
+    case 6 0 1:
+      1
+    case 6 0 2:
+      2
+    case 6 0 3:
+      0
+    case 6 0 4:
+      1
+    case 6 0 5:
+      1
+    case 6 0 6:
+      1
+    case 6 0 7:
+      2
+    case 6 1 0:
+      1
+    case 6 1 1:
+      0
+    case 6 1 2:
+      1
+    case 6 1 3:
+      7
+    case 6 1 4:
+      6
+    case 6 1 5:
+      7
+    case 6 1 6:
+      8
+    case 6 1 7:
+      7
+    case 6 2 0:
+      2
+    case 6 2 1:
+      1
+    case 6 2 2:
+      0
+    case 6 2 3:
+      2
+    case 6 2 4:
+      1
+    case 6 2 5:
+      1
+    case 6 2 6:
+      1
+    case 6 2 7:
+      0
+    case 6 3 0:
+      7
+    case 6 3 1:
+      8
+    case 6 3 2:
+      7
+    case 6 3 3:
+      1
+    case 6 3 4:
+      2
+    case 6 3 5:
+      1
+    case 6 3 6:
+      0
+    case 6 3 7:
+      1
     case _ _ _:
+      0
+
+def skill_player_mask(skill: U32, idx: U32) -> U32:
+  match skill idx:
+    case 5 0:
+      1
+    case 5 1:
+      1
+    case 5 2:
+      1
+    case 6 0:
+      1
+    case 6 1:
+      1
+    case 6 2:
+      1
+    case _ _:
       0
 
 def skill_effect_mask(skill: U32, idx: U32) -> U32:
@@ -424,9 +657,25 @@ def skill_effect_mask(skill: U32, idx: U32) -> U32:
       1
     case 4 _:
       1
-    case 5 _:
+    case 5 3:
       4
-    case 6 _:
+    case 5 4:
+      4
+    case 5 5:
+      4
+    case 5 6:
+      4
+    case 5 7:
+      4
+    case 6 3:
+      8
+    case 6 4:
+      8
+    case 6 5:
+      8
+    case 6 6:
+      8
+    case 6 7:
       8
     case _ _:
       0

@@ -282,6 +282,9 @@ def skill_point(skill: U32, rot: U32, idx: U32) -> Pos:
 def _skill_effect_mask(skill: U32, idx: U32) -> U32:
   Fight.skill_effect_mask(skill, idx)
 
+def _skill_player_mask(skill: U32, idx: U32) -> U32:
+  Fight.skill_player_mask(skill, idx)
+
 def _effect_has(mask: U32, flag: U32) -> U32:
   Fight.effect_has(mask, flag)
 
@@ -509,6 +512,17 @@ def preview_tiles(state: GameState) -> List(Pos):
           _pos_nil()
         case _:
           _preview_tiles_for(_mode_skill(mode), _mode_rot(mode), _mode_origin(mode), 0)
+
+def preview_anchor_tiles(state: GameState) -> List(Pos):
+  match state:
+    case game_state{_, _, plan_value}:
+      mode = _plan_mode_value(plan_value);
+      active = _mode_is_target(mode);
+      match active:
+        case 0:
+          _pos_nil()
+        case _:
+          _preview_anchor_tiles_for(_mode_skill(mode), _mode_rot(mode), _mode_origin(mode), 0)
 
 def preview_hits(state: GameState) -> List(Pos):
   match state:
@@ -1007,6 +1021,23 @@ def _preview_tiles_for(skill: U32, rot: U32, origin: Pos, idx: U32) -> List(Pos)
     case _:
       _pos_nil()
 
+def _preview_anchor_tiles_for(skill: U32, rot: U32, origin: Pos, idx: U32) -> List(Pos):
+  len = skill_len(skill);
+  stop = idx === len;
+  match stop:
+    case 0:
+      cell = _pos_add(origin, skill_point(skill, rot, idx));
+      rest = _preview_anchor_tiles_for(skill, rot, origin, idx + 1);
+      inside = _pos_inside(cell);
+      keep = inside & _skill_player_mask(skill, idx);
+      match keep:
+        case 0:
+          rest
+        case _:
+          _pos_cons(cell, rest)
+    case _:
+      _pos_nil()
+
 def _preview_hits_for(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -> List(Pos):
   len = skill_len(skill);
   stop = idx === len;
@@ -1016,7 +1047,7 @@ def _preview_hits_for(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -
       rest = _preview_hits_for(skill, rot, origin, actor, idx + 1);
       inside = _pos_inside(cell);
       same = _pos_eq(cell, actor);
-      keep = inside & (1 ^ same);
+      keep = inside & (1 ^ same) & _skill_has_effect(skill, idx);
       match keep:
         case 0:
           rest
@@ -1055,7 +1086,7 @@ def _placement_covers(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -
     case 0:
       cell = _pos_add(origin, skill_point(skill, rot, idx));
       same = _pos_eq(cell, actor);
-      match same:
+      match same & _skill_can_anchor_at(skill, idx):
         case 0:
           _placement_covers(skill, rot, origin, actor, idx + 1)
         case _:
@@ -1071,8 +1102,7 @@ def _placement_has_visible_effect(skill: U32, rot: U32, origin: Pos, actor: Pos,
       cell = _pos_add(origin, skill_point(skill, rot, idx));
       inside = _pos_inside(cell);
       same = _pos_eq(cell, actor);
-      code = _skill_effect_mask(skill, idx);
-      useful = inside & (1 ^ same) & (1 ^ (code === 0));
+      useful = inside & (1 ^ same) & _skill_has_effect(skill, idx);
       match useful:
         case 0:
           _placement_has_visible_effect(skill, rot, origin, actor, idx + 1)
@@ -1090,7 +1120,7 @@ def _preview_hit_contains(skill: U32, rot: U32, origin: Pos, actor: Pos, target:
       inside = _pos_inside(cell);
       same_actor = _pos_eq(cell, actor);
       same_target = _pos_eq(cell, target);
-      hit = inside & (1 ^ same_actor) & same_target;
+      hit = inside & (1 ^ same_actor) & same_target & _skill_has_effect(skill, idx);
       match hit:
         case 0:
           _preview_hit_contains(skill, rot, origin, actor, target, idx + 1)
@@ -1108,7 +1138,7 @@ def _attack_hits(skill: U32, rot: U32, origin: Pos, actor: Pos, target: Pos) -> 
       _preview_hit_contains(skill, rot, origin, actor, target, 0)
 
 def _default_target_origin(skill: U32, actor: Pos) -> Pos:
-  anchor = skill_point(skill, 0, 0);
+  anchor = _default_anchor_for_skill(skill, 0, 0);
   _origin_from_anchor(actor, anchor)
 
 def _origin_from_anchor(actor: Pos, anchor: Pos) -> Pos:
@@ -1125,7 +1155,7 @@ def _anchor_for_origin(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) 
     case 0:
       local = skill_point(skill, rot, idx);
       world = _pos_add(origin, local);
-      same = _pos_eq(world, actor);
+      same = _pos_eq(world, actor) & _skill_can_anchor_at(skill, idx);
       match same:
         case 0:
           _anchor_for_origin(skill, rot, origin, actor, idx + 1)
@@ -1133,6 +1163,41 @@ def _anchor_for_origin(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) 
           local
     case _:
       pos{0, 0}
+
+def _default_anchor_for_skill(skill: U32, rot: U32, idx: U32) -> Pos:
+  len = skill_len(skill);
+  match idx === len:
+    case 0:
+      point = skill_point(skill, rot, idx);
+      match _skill_can_anchor_at(skill, idx):
+        case 0:
+          _default_anchor_for_skill(skill, rot, idx + 1)
+        case _:
+          point
+    case _:
+      pos{0, 0}
+
+def _skill_uses_player_tiles(skill: U32, idx: U32) -> U32:
+  len = skill_len(skill);
+  match idx === len:
+    case 0:
+      match _skill_player_mask(skill, idx):
+        case 0:
+          _skill_uses_player_tiles(skill, idx + 1)
+        case _:
+          1
+    case _:
+      0
+
+def _skill_can_anchor_at(skill: U32, idx: U32) -> U32:
+  match _skill_uses_player_tiles(skill, 0):
+    case 0:
+      1
+    case _:
+      _skill_player_mask(skill, idx)
+
+def _skill_has_effect(skill: U32, idx: U32) -> U32:
+  1 ^ (_skill_effect_mask(skill, idx) === 0)
 
 def _bot_pos(item: Bot) -> Pos:
   match item:
@@ -1690,8 +1755,8 @@ def _resolve_player_attack_with_runtime(
   fire_tiles = _effect_tiles_for(skill, rot, origin, player, 8, 0);
   bots_after_hook = _hook_player_bots(player, bots, hook_tiles, _skill_hook_pull(skill));
   bots_after_damage = _damage_bots_on_tiles(bots_after_hook, damage_tiles, Fight.skill_damage(skill));
-  terrain_ice = _terrain_apply_tiles(_runtime_terrain(runtime), 0, 1, 5, ice_tiles);
-  terrain_fire = _terrain_apply_tiles(terrain_ice, 0, 2, 2, fire_tiles);
+  terrain_ice = _terrain_apply_tiles(_runtime_terrain(runtime), 0, 1, 10, ice_tiles);
+  terrain_fire = _terrain_apply_tiles(terrain_ice, 0, 2, 5, fire_tiles);
   next_runtime = _runtime_with_terrain(runtime, terrain_fire);
   next_winner = _compute_winner(player_hp, bots_after_damage);
   _state(round, level, bot_total, player_hp, player, bots_after_damage, queue, queue_len, queue_locked, _plan_mode(next_runtime), next_winner)
@@ -1742,8 +1807,8 @@ def _resolve_bot_attack(
   next_player = _hook_bot_player(enemy, player, bots, bot_idx, hook_tiles, _skill_hook_pull(skill));
   hit = _pos_list_has(damage_tiles, next_player);
   next_player_hp = _damage_hp_by(player_hp, _attack_damage_amount(skill, hit));
-  terrain_ice = _terrain_apply_tiles(_runtime_terrain(runtime), 1, 1, 5, ice_tiles);
-  terrain_fire = _terrain_apply_tiles(terrain_ice, 1, 2, 2, fire_tiles);
+  terrain_ice = _terrain_apply_tiles(_runtime_terrain(runtime), 1, 1, 10, ice_tiles);
+  terrain_fire = _terrain_apply_tiles(terrain_ice, 1, 2, 5, fire_tiles);
   next_runtime = _runtime_with_terrain(runtime, terrain_fire);
   next_winner = _compute_winner(next_player_hp, bots);
   _state(round, level, bot_total, next_player_hp, next_player, bots, queue, queue_len, queue_locked, _plan_mode(next_runtime), next_winner)
@@ -2987,11 +3052,12 @@ def _render_match(app: AppState) -> HTML(FightEvent):
   planned = _render_planned_pos(state);
   trail = _render_trail(state);
   preview = _render_preview_tiles(state);
+  preview_anchor = _render_preview_anchor_tiles(state);
   hits = _render_preview_hits(state);
   flash_hits = _render_attack_flash_active(state);
   hit_owner = _render_hit_owner(state);
   valid = _render_target_valid(state);
-  board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, _loadout_hp_bot(lobby), planned, trail, preview, hits, flash_hits, hit_owner, valid));
+  board = U32.grid(HTML(FightEvent), 18, 9, _board_cell(state, _loadout_hp_bot(lobby), planned, trail, preview, preview_anchor, hits, flash_hits, hit_owner, valid));
   <main class="shell" tabindex="0" style="outline:none" on_key_down={key_event}>
     <section class="board-stage">
       <div class="board-stack">
@@ -3345,6 +3411,13 @@ def _render_preview_tiles(state: GameState) -> List(Pos):
     case _:
       _pos_nil()
 
+def _render_preview_anchor_tiles(state: GameState) -> List(Pos):
+  match _state_playback_active(state):
+    case 0:
+      preview_anchor_tiles(state)
+    case _:
+      _pos_nil()
+
 def _render_preview_hits(state: GameState) -> List(Pos):
   match _state_playback_active(state):
     case 0:
@@ -3612,35 +3685,98 @@ def _skill_preview_cell(skill: U32, x: U32, y: U32) -> HTML(FightEvent):
   <span class={_skill_preview_cell_class(skill, x, y)}></span>
 
 def _skill_preview_cell_class(skill: U32, x: U32, y: U32) -> String:
-  _skill_preview_cell_class_active(_skill_preview_has_cell(skill, x, y, 0))
+  _skill_preview_cell_class_active(_skill_preview_cell_kind(skill, x, y, 0))
 
-def _skill_preview_cell_class_active(active: U32) -> String:
-  match active:
+def _skill_preview_cell_class_active(kind: U32) -> String:
+  match kind:
     case 0:
       "skill-mini-cell"
-    case _:
+    case 1:
+      "skill-mini-cell skill-mini-cell--anchor"
+    case 2:
       "skill-mini-cell skill-mini-cell--filled"
+    case 3:
+      "skill-mini-cell skill-mini-cell--hook"
+    case 4:
+      "skill-mini-cell skill-mini-cell--ice"
+    case 5:
+      "skill-mini-cell skill-mini-cell--fire"
+    case 6:
+      "skill-mini-cell skill-mini-cell--attack-hook"
+    case 7:
+      "skill-mini-cell skill-mini-cell--attack-ice"
+    case 8:
+      "skill-mini-cell skill-mini-cell--attack-fire"
+    case _:
+      "skill-mini-cell"
 
-def _skill_preview_has_cell(skill: U32, x: U32, y: U32, idx: U32) -> U32:
+def _skill_preview_cell_kind(skill: U32, x: U32, y: U32, idx: U32) -> U32:
   len = skill_len(skill);
   match idx === len:
     case 0:
       point = skill_point(skill, 0, idx);
-      _skill_preview_has_cell_point(skill, x, y, idx, point)
+      _skill_preview_cell_kind_point(skill, x, y, idx, point)
     case _:
       0
 
-def _skill_preview_has_cell_point(skill: U32, x: U32, y: U32, idx: U32, point: Pos) -> U32:
+def _skill_preview_cell_kind_point(skill: U32, x: U32, y: U32, idx: U32, point: Pos) -> U32:
   nx = _pos_x(point) - _skill_min_x(skill);
   ny = _pos_y(point) - _skill_min_y(skill);
-  _skill_preview_has_cell_xy(skill, x, y, idx, nx, ny)
+  _skill_preview_cell_kind_xy(skill, x, y, idx, nx, ny)
 
-def _skill_preview_has_cell_xy(skill: U32, x: U32, y: U32, idx: U32, px: U32, py: U32) -> U32:
+def _skill_preview_cell_kind_xy(skill: U32, x: U32, y: U32, idx: U32, px: U32, py: U32) -> U32:
   match (px === x) & (py === y):
     case 0:
-      _skill_preview_has_cell(skill, x, y, idx + 1)
+      _skill_preview_cell_kind(skill, x, y, idx + 1)
     case _:
-      1
+      match _skill_player_mask(skill, idx):
+        case 0:
+          _skill_preview_effect_kind(_skill_effect_mask(skill, idx))
+        case _:
+          1
+
+def _skill_preview_effect_kind(mask: U32) -> U32:
+  match _effect_damage(mask):
+    case 0:
+      _skill_preview_effect_kind_non_damage(mask)
+    case _:
+      _skill_preview_effect_kind_damage(mask)
+
+def _skill_preview_effect_kind_damage(mask: U32) -> U32:
+  match _effect_hook(mask):
+    case 0:
+      _skill_preview_effect_kind_damage_magic(mask)
+    case _:
+      6
+
+def _skill_preview_effect_kind_damage_magic(mask: U32) -> U32:
+  match _effect_ice(mask):
+    case 0:
+      match _effect_fire(mask):
+        case 0:
+          2
+        case _:
+          8
+    case _:
+      7
+
+def _skill_preview_effect_kind_non_damage(mask: U32) -> U32:
+  match _effect_hook(mask):
+    case 0:
+      _skill_preview_effect_kind_magic(mask)
+    case _:
+      3
+
+def _skill_preview_effect_kind_magic(mask: U32) -> U32:
+  match _effect_ice(mask):
+    case 0:
+      match _effect_fire(mask):
+        case 0:
+          0
+        case _:
+          5
+    case _:
+      4
 
 def _skill_min_x(skill: U32) -> U32:
   point = skill_point(skill, 0, 0);
@@ -3737,6 +3873,7 @@ def _board_cell(
   planned: Pos,
   trail: List(TrailStep),
   preview: List(Pos),
+  preview_anchor: List(Pos),
   hits: List(Pos),
   flash_hits: U32,
   hit_owner: U32,
@@ -3744,7 +3881,7 @@ def _board_cell(
   x: U32,
   y: U32,
 ) -> HTML(FightEvent):
-  _board_cell_at(state, bot_max_hp, planned, trail, preview, hits, flash_hits, hit_owner, valid, pos{x, y})
+  _board_cell_at(state, bot_max_hp, planned, trail, preview, preview_anchor, hits, flash_hits, hit_owner, valid, pos{x, y})
 
 def _board_cell_at(
   state: GameState,
@@ -3752,13 +3889,14 @@ def _board_cell_at(
   planned: Pos,
   trail: List(TrailStep),
   preview: List(Pos),
+  preview_anchor: List(Pos),
   hits: List(Pos),
   flash_hits: U32,
   hit_owner: U32,
   valid: U32,
   cell_pos: Pos,
 ) -> HTML(FightEvent):
-  <div class={_board_cell_class(state, planned, trail, preview, hits, flash_hits, hit_owner, valid, cell_pos)}>
+  <div class={_board_cell_class(state, planned, trail, preview, preview_anchor, hits, flash_hits, hit_owner, valid, cell_pos)}>
     {_board_cell_actor(state, bot_max_hp, cell_pos)}
     {_board_cell_ghost(state, planned, cell_pos)}
     {_board_cell_route(trail, cell_pos)}
@@ -3769,6 +3907,7 @@ def _board_cell_class(
   planned: Pos,
   trail: List(TrailStep),
   preview: List(Pos),
+  preview_anchor: List(Pos),
   hits: List(Pos),
   flash_hits: U32,
   hit_owner: U32,
@@ -3778,7 +3917,7 @@ def _board_cell_class(
   ""
   ++ "cell"
   ++ _board_cell_terrain_class(_runtime_terrain(_state_runtime(state)), pos)
-  ++ _board_cell_preview_class(preview, valid, pos)
+  ++ _board_cell_preview_class(preview, preview_anchor, valid, pos)
   ++ _board_cell_hit_class(hits, flash_hits, hit_owner, pos)
   ++ _board_cell_route_class(trail, pos)
 
@@ -3794,8 +3933,15 @@ def _board_cell_terrain_class_w(effect: U32) -> String:
     case _:
       ""
 
-def _board_cell_preview_class(preview: List(Pos), valid: U32, cell_pos: Pos) -> String:
-  _board_cell_preview_class_hit(_pos_list_has(preview, cell_pos), valid)
+def _board_cell_preview_class(preview: List(Pos), preview_anchor: List(Pos), valid: U32, cell_pos: Pos) -> String:
+  _board_cell_preview_class_anchor(_pos_list_has(preview_anchor, cell_pos), _pos_list_has(preview, cell_pos), valid)
+
+def _board_cell_preview_class_anchor(anchor_hit: U32, hit: U32, valid: U32) -> String:
+  match anchor_hit:
+    case 0:
+      _board_cell_preview_class_hit(hit, valid)
+    case _:
+      _board_cell_preview_anchor_class(valid)
 
 def _board_cell_preview_class_hit(hit: U32, valid: U32) -> String:
   match hit:
@@ -3807,6 +3953,13 @@ def _board_cell_preview_class_hit(hit: U32, valid: U32) -> String:
           " cell--preview cell--preview-invalid"
         case _:
           " cell--preview"
+
+def _board_cell_preview_anchor_class(valid: U32) -> String:
+  match valid:
+    case 0:
+      " cell--preview-anchor cell--preview-invalid"
+    case _:
+      " cell--preview-anchor"
 
 def _board_cell_hit_class(hits: List(Pos), flash_hits: U32, hit_owner: U32, cell_pos: Pos) -> String:
   _board_cell_hit_class_hit(_pos_list_has(hits, cell_pos), flash_hits, hit_owner)
@@ -4301,13 +4454,13 @@ def _state_playback_plans(state: GameState) -> List(List(Action)):
 
 def base_css() -> String:
   ""
-  ++ ":root{--bg:#d3bb94;--panel:#efe2c6;--card:#f7ecd3;--text:#2a2115;--muted:#6b593c;--border:#7a613c;--board-frame:#6f5634;--grid:#7f6541;--cell:#f8efd7;--preview:#ddb151;--invalid:#cf6c5b;--hit-player:#2a74d8;--hit-player-deep:#184889;--hit-enemy:#d94933;--hit-enemy-deep:#8f2416;--route:#c9dff5;--player:#1f78db;--enemy:#32933a;--ghost:#5b9fe7;--button:#966320;--button-alt:#66794a;--danger:#b74431;--sidebar-width:278px;--cell-size:clamp(42px,3.3vw,52px);--board-shell-padding:12px;--board-width:calc((var(--cell-size) * 18) + 19px);--board-shell-width:calc(var(--board-width) + (var(--board-shell-padding) * 2) + 2px);}"
+  ++ ":root{--bg:#d3bb94;--panel:#efe2c6;--card:#f7ecd3;--text:#2a2115;--muted:#6b593c;--border:#7a613c;--board-frame:#6f5634;--grid:#7f6541;--cell:#f8efd7;--preview:#ddb151;--preview-anchor:#58d8e8;--preview-anchor-deep:#1494a8;--preview-hook:#e2bf48;--preview-ice:#70aee4;--preview-fire:#df8d39;--invalid:#cf6c5b;--hit-player:#2a74d8;--hit-player-deep:#184889;--hit-enemy:#d94933;--hit-enemy-deep:#8f2416;--route:#c9dff5;--player:#1f78db;--enemy:#32933a;--ghost:#5b9fe7;--button:#966320;--button-alt:#66794a;--danger:#b74431;--sidebar-width:278px;--cell-size:clamp(42px,3.3vw,52px);--board-shell-padding:12px;--board-width:calc((var(--cell-size) * 18) + 19px);--board-shell-width:calc(var(--board-width) + (var(--board-shell-padding) * 2) + 2px);}"
   ++ "*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{overflow:hidden;}button{font:inherit;cursor:pointer;}#app,.page{width:100%;min-height:100svh;overflow:hidden;}.screen-panel--hidden{display:none;}"
 
 def layout_css() -> String:
   ""
   ++ ".shell{width:100%;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) var(--sidebar-width);overflow:hidden;}.board-stage{min-width:0;min-height:0;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,var(--board-shell-width)) minmax(0,1fr);align-items:center;overflow:auto;overscroll-behavior:contain;}.board-stack{width:var(--board-shell-width);display:grid;gap:14px;grid-column:2;}.board-wrap{position:relative;padding:var(--board-shell-padding);background:var(--board-frame);border:1px solid var(--border);overflow:hidden;}.board-wrap-large{width:var(--board-shell-width);}"
-  ++ ".board{width:var(--board-width);display:grid;grid-template-columns:repeat(18,var(--cell-size));gap:1px;padding:1px;background:var(--grid);}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--terrain-ice{background:#d9eef6;}.cell--terrain-fire{background:#f0c08b;}.cell--preview{background:var(--preview);}.cell--preview-invalid{background:var(--invalid);}.cell--hit-player{box-shadow:inset 0 0 0 2px var(--hit-player);}.cell--hit-enemy{box-shadow:inset 0 0 0 2px var(--hit-enemy);}.cell--route{background:var(--route);}"
+  ++ ".board{width:var(--board-width);display:grid;grid-template-columns:repeat(18,var(--cell-size));gap:1px;padding:1px;background:var(--grid);}.cell{position:relative;aspect-ratio:1/1;min-width:0;background:var(--cell);display:grid;place-items:center;overflow:hidden;}.cell--terrain-ice{background:#d9eef6;}.cell--terrain-fire{background:#f0c08b;}.cell--preview{background:var(--preview);}.cell--preview-anchor{background:var(--preview-anchor);}.cell--preview-invalid{background:var(--invalid);}.cell--hit-player{box-shadow:inset 0 0 0 2px var(--hit-player);}.cell--hit-enemy{box-shadow:inset 0 0 0 2px var(--hit-enemy);}.cell--route{background:var(--route);}"
   ++ ".board-underbar{width:100%;padding:12px;display:flex;gap:12px;align-items:stretch;background:var(--panel);border:1px solid var(--border);}.player-hp-card{width:116px;padding:12px 14px;background:var(--card);border:1px solid #bda173;}.queue-inline{min-width:0;flex:1 1 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.queue-slot{padding:12px 14px;background:var(--panel);border:1px solid #c8ae83;}.queue-slot--active{background:#f1dfb8;border-color:var(--button);}.queue-slot--enemy-turn{border-color:var(--enemy);}.queue-slot__index{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}.queue-slot__value{margin-top:6px;font-weight:700;}"
   ++ ".skill-strip{display:flex;gap:10px;align-items:stretch;}.sidebar{min-width:0;min-height:0;padding:18px;display:grid;gap:14px;align-content:start;overflow:auto;overscroll-behavior:contain;border-left:1px solid var(--border);background:var(--panel);}.card{padding:14px 16px;background:var(--card);border:1px solid #bda173;}.stat-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.stat-label--spaced{margin-top:12px;display:block;}.stat-value{margin-top:6px;font-size:28px;font-weight:800;}.sidebar-round{margin-top:2px;}.sidebar-phase{margin:0;font-size:22px;font-weight:800;line-height:1.2;}.controls{display:flex;gap:10px;flex-wrap:wrap;}.controls--actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;}.help{margin:0;color:var(--muted);line-height:1.5;}.help--hidden,.winner--hidden,.modal__card--hidden,.actor--hidden{display:none;}.help--spaced{margin-top:10px;}.help--playback{margin-top:8px;}.winner{margin:10px 0 0;color:#8f2416;font-weight:800;}"
   ++ "@media (max-width:1180px){.shell{grid-template-columns:minmax(0,1fr) var(--sidebar-width);}}"
@@ -4321,7 +4474,7 @@ def component_css() -> String:
   ""
   ++ ".button{border:none;border-radius:999px;padding:11px 15px;cursor:pointer;font:inherit;font-weight:800;color:#fff8eb;background:var(--button);}.button.alt{background:var(--button-alt);}.button.ghost{background:var(--danger);}.button--menu{min-width:140px;justify-content:center;}.button--menu-secondary{background:#b58a43;}.button--stepper{padding:10px 0;min-width:0;border-radius:12px;background:var(--button);}.button:disabled{opacity:.56;cursor:default;}.nav-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;}"
   ++ ".actor{position:absolute;inset:14%;display:grid;place-items:center;font-size:clamp(12px,1.25vw,18px);font-weight:900;color:#fff8eb;z-index:2;}.actor--player{background:var(--player);font-size:clamp(14px,1.15vw,18px);}.actor--enemy{background:var(--enemy);inset:10%;padding:0 4px;font-size:clamp(8px,.85vw,12px);line-height:1;letter-spacing:-.02em;text-align:center;}.actor--bump{will-change:transform;}.actor--bump-up{animation:actor-bump-up .18s ease-out 1;}.actor--bump-down{animation:actor-bump-down .18s ease-out 1;}.actor--bump-left{animation:actor-bump-left .18s ease-out 1;}.actor--bump-right{animation:actor-bump-right .18s ease-out 1;}.ghost{position:absolute;inset:18%;display:grid;place-items:center;background:transparent;color:var(--ghost);border:3px solid var(--ghost);font-size:clamp(12px,1.05vw,16px);font-weight:900;z-index:1;}.ghost--hidden{display:none;}.trail{position:absolute;top:4px;left:4px;min-width:18px;height:18px;padding:0 5px;display:grid;place-items:center;font-size:11px;font-weight:900;line-height:1;color:#fff8eb;background:var(--player);z-index:4;}.trail--hidden{display:none;}.cell--attack-flash{animation-duration:.42s;animation-timing-function:linear;animation-iteration-count:1;}.cell--attack-flash-player{animation-name:attack-flash-player;}.cell--attack-flash-enemy{animation-name:attack-flash-enemy;}.cell--attack-flash .trail,.cell--attack-flash .ghost,.cell--attack-flash .actor{z-index:5;}@keyframes actor-bump-up{0%{transform:translateY(0);}45%{transform:translateY(-12%);}100%{transform:translateY(0);}}@keyframes actor-bump-down{0%{transform:translateY(0);}45%{transform:translateY(12%);}100%{transform:translateY(0);}}@keyframes actor-bump-left{0%{transform:translateX(0);}45%{transform:translateX(-12%);}100%{transform:translateX(0);}}@keyframes actor-bump-right{0%{transform:translateX(0);}45%{transform:translateX(12%);}100%{transform:translateX(0);}}@keyframes attack-flash-player{0%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}15%{background:var(--hit-player);box-shadow:inset 0 0 0 2px var(--hit-player-deep);}30%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}45%{background:var(--hit-player);box-shadow:inset 0 0 0 2px var(--hit-player-deep);}60%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}75%{background:var(--hit-player);box-shadow:inset 0 0 0 2px var(--hit-player-deep);}100%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}}@keyframes attack-flash-enemy{0%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}15%{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--hit-enemy-deep);}30%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}45%{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--hit-enemy-deep);}60%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}75%{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--hit-enemy-deep);}100%{background:var(--cell);box-shadow:inset 0 0 0 2px transparent;}}"
-  ++ ".skill-preview{width:106px;min-height:122px;padding:10px;display:grid;justify-items:center;align-content:start;gap:6px;border:1px solid #bda173;border-radius:14px;background:var(--card);color:var(--text);text-align:center;}.skill-preview--active{border-color:var(--button);background:#f1dfb8;}.skill-preview--empty{opacity:.72;}.skill-preview--static{pointer-events:none;}.skill-key{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--muted);}.skill-caption{font-size:12px;font-weight:700;color:var(--text);line-height:1.2;}.skill-grid-frame{width:64px;height:64px;display:grid;place-items:center;padding:4px;border:1px solid #ccb287;background:var(--panel);}.skill-grid{display:grid;align-self:center;justify-self:center;grid-template-columns:repeat(var(--mini-cols),var(--mini-cell));grid-template-rows:repeat(var(--mini-rows),var(--mini-cell));gap:1px;padding:1px;background:var(--grid);}.skill-mini-cell{width:var(--mini-cell);height:var(--mini-cell);background:var(--cell);}.skill-mini-cell--filled{background:var(--preview);}.skill-preview--active .skill-mini-cell--filled,.skill-pool-card--selected .skill-mini-cell--filled{background:var(--button);} .skill-pool-card{aspect-ratio:1/1;border:1px solid #bda173;border-radius:16px;padding:12px;display:grid;justify-items:center;align-content:start;gap:6px;background:var(--card);color:var(--text);text-align:center;}.skill-pool-card--selected{border-color:var(--button);background:#f1dfb8;}.skill-pool-card__label{font-size:12px;font-weight:800;color:var(--text);}.skill-pool-card__meta{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}.stepper--static{grid-template-columns:minmax(82px,auto);}"
+  ++ ".skill-preview{width:106px;min-height:122px;padding:10px;display:grid;justify-items:center;align-content:start;gap:6px;border:1px solid #bda173;border-radius:14px;background:var(--card);color:var(--text);text-align:center;}.skill-preview--active{border-color:var(--button);background:#f1dfb8;}.skill-preview--empty{opacity:.72;}.skill-preview--static{pointer-events:none;}.skill-key{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--muted);}.skill-caption{font-size:12px;font-weight:700;color:var(--text);line-height:1.2;}.skill-grid-frame{width:64px;height:64px;display:grid;place-items:center;padding:4px;border:1px solid #ccb287;background:var(--panel);}.skill-grid{display:grid;align-self:center;justify-self:center;grid-template-columns:repeat(var(--mini-cols),var(--mini-cell));grid-template-rows:repeat(var(--mini-rows),var(--mini-cell));gap:1px;padding:1px;background:var(--grid);}.skill-mini-cell{width:var(--mini-cell);height:var(--mini-cell);background:var(--cell);box-shadow:inset 0 0 0 0 transparent;}.skill-mini-cell--anchor{background:var(--preview-anchor);}.skill-mini-cell--filled{background:var(--preview);}.skill-mini-cell--hook{background:var(--preview-hook);}.skill-mini-cell--ice{background:var(--preview-ice);}.skill-mini-cell--fire{background:var(--preview-fire);}.skill-mini-cell--attack-hook{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--preview-hook);}.skill-mini-cell--attack-ice{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--preview-ice);}.skill-mini-cell--attack-fire{background:var(--hit-enemy);box-shadow:inset 0 0 0 2px var(--preview-fire);}.skill-preview--active .skill-mini-cell--filled,.skill-pool-card--selected .skill-mini-cell--filled{background:var(--button);}.skill-preview--active .skill-mini-cell--anchor,.skill-pool-card--selected .skill-mini-cell--anchor{background:var(--preview-anchor-deep);} .skill-pool-card{aspect-ratio:1/1;border:1px solid #bda173;border-radius:16px;padding:12px;display:grid;justify-items:center;align-content:start;gap:6px;background:var(--card);color:var(--text);text-align:center;}.skill-pool-card--selected{border-color:var(--button);background:#f1dfb8;}.skill-pool-card__label{font-size:12px;font-weight:800;color:var(--text);}.skill-pool-card__meta{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}.stepper--static{grid-template-columns:minmax(82px,auto);}"
   ++ ".modal{position:absolute;inset:0;display:grid;place-items:center;padding:16px;opacity:0;pointer-events:none;background:rgba(42,33,21,0);}.modal--visible{opacity:1;pointer-events:auto;background:rgba(42,33,21,.46);}.modal__card{width:min(100%,340px);display:grid;gap:12px;justify-items:center;padding:24px 22px;background:var(--card);border:1px solid #bda173;}.modal__eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;}.modal__title{margin:0;font-size:34px;line-height:1;}.timer-hook{display:none;}"
 
 def css() -> String:
