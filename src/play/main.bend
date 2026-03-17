@@ -638,8 +638,11 @@ def rotate_target_state(state: GameState, clockwise: U32) -> GameState:
           _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
         case _:
           add = _rotate_step(clockwise);
-          rot = (_mode_rot(mode) + add) % 4;
-          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _target_mode(_mode_skill(mode), rot, _mode_origin(mode), _mode_runtime(mode)), winner)
+          skill = _mode_skill(mode);
+          old_rot = _mode_rot(mode);
+          rot = (old_rot + add) % 4;
+          origin = _rotate_target_origin(skill, old_rot, rot, _mode_origin(mode));
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _target_mode(skill, rot, origin, _mode_runtime(mode)), winner)
 
 def cancel_target_state(state: GameState) -> GameState:
   match state:
@@ -1145,6 +1148,18 @@ def _attack_hits(skill: U32, rot: U32, origin: Pos, actor: Pos, target: Pos) -> 
 def _default_target_origin(skill: U32, actor: Pos) -> Pos:
   _default_anchor_for_skill(skill, 0, 0)
 
+def _rotate_target_origin(skill: U32, old_rot: U32, new_rot: U32, origin: Pos) -> Pos:
+  match _skill_uses_player_tiles(skill, 0):
+    case 0:
+      origin
+    case _:
+      old_default = _default_anchor_for_skill(skill, old_rot, 0);
+      match _pos_eq(origin, old_default):
+        case 0:
+          origin
+        case _:
+          _default_anchor_for_skill(skill, new_rot, 0)
+
 def _step_target_origin(origin: Pos, dir: U32) -> Pos:
   match origin:
     case pos{x, y}:
@@ -1216,17 +1231,110 @@ def _anchor_for_origin(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) 
       pos{0, 0}
 
 def _default_anchor_for_skill(skill: U32, rot: U32, idx: U32) -> Pos:
+  match _skill_uses_player_tiles(skill, 0):
+    case 0:
+      _first_anchor_for_skill(skill, rot, idx)
+    case _:
+      _preferred_anchor_for_skill(skill, rot)
+
+def _first_anchor_for_skill(skill: U32, rot: U32, idx: U32) -> Pos:
   len = skill_len(skill);
   match idx === len:
     case 0:
       point = skill_point(skill, rot, idx);
       match _skill_can_anchor_at(skill, idx):
         case 0:
-          _default_anchor_for_skill(skill, rot, idx + 1)
+          _first_anchor_for_skill(skill, rot, idx + 1)
         case _:
           point
     case _:
       pos{0, 0}
+
+def _preferred_anchor_for_skill(skill: U32, rot: U32) -> Pos:
+  first = _first_anchor_for_skill(skill, rot, 0);
+  min_x = _anchor_min_x(skill, rot, 0, _pos_x(first));
+  max_x = _anchor_max_x(skill, rot, 0, _pos_x(first));
+  min_y = _anchor_min_y(skill, rot, 0, _pos_y(first));
+  max_y = _anchor_max_y(skill, rot, 0, _pos_y(first));
+  _preferred_anchor_for_skill_pick(skill, rot, 0, min_x + max_x, min_y + max_y, first, _anchor_center_dist(first, min_x + max_x, min_y + max_y))
+
+def _preferred_anchor_for_skill_pick(
+  skill: U32, rot: U32, idx: U32,
+  center_x2: U32, center_y2: U32,
+  best: Pos, best_dist: U32,
+) -> Pos:
+  len = skill_len(skill);
+  match idx === len:
+    case 0:
+      point = skill_point(skill, rot, idx);
+      match _skill_can_anchor_at(skill, idx):
+        case 0:
+          _preferred_anchor_for_skill_pick(skill, rot, idx + 1, center_x2, center_y2, best, best_dist)
+        case _:
+          dist = _anchor_center_dist(point, center_x2, center_y2);
+          match _u32_lt(dist, best_dist):
+            case 0:
+              _preferred_anchor_for_skill_pick(skill, rot, idx + 1, center_x2, center_y2, best, best_dist)
+            case _:
+              _preferred_anchor_for_skill_pick(skill, rot, idx + 1, center_x2, center_y2, point, dist)
+    case _:
+      best
+
+def _anchor_center_dist(point: Pos, center_x2: U32, center_y2: U32) -> U32:
+  _abs_diff(_pos_x(point) + _pos_x(point), center_x2)
+  + _abs_diff(_pos_y(point) + _pos_y(point), center_y2)
+
+def _anchor_min_x(skill: U32, rot: U32, idx: U32, current: U32) -> U32:
+  len = skill_len(skill);
+  match idx === len:
+    case 0:
+      point = skill_point(skill, rot, idx);
+      match _skill_can_anchor_at(skill, idx):
+        case 0:
+          _anchor_min_x(skill, rot, idx + 1, current)
+        case _:
+          _anchor_min_x(skill, rot, idx + 1, _min_u32(current, _pos_x(point)))
+    case _:
+      current
+
+def _anchor_max_x(skill: U32, rot: U32, idx: U32, current: U32) -> U32:
+  len = skill_len(skill);
+  match idx === len:
+    case 0:
+      point = skill_point(skill, rot, idx);
+      match _skill_can_anchor_at(skill, idx):
+        case 0:
+          _anchor_max_x(skill, rot, idx + 1, current)
+        case _:
+          _anchor_max_x(skill, rot, idx + 1, _max_u32(current, _pos_x(point)))
+    case _:
+      current
+
+def _anchor_min_y(skill: U32, rot: U32, idx: U32, current: U32) -> U32:
+  len = skill_len(skill);
+  match idx === len:
+    case 0:
+      point = skill_point(skill, rot, idx);
+      match _skill_can_anchor_at(skill, idx):
+        case 0:
+          _anchor_min_y(skill, rot, idx + 1, current)
+        case _:
+          _anchor_min_y(skill, rot, idx + 1, _min_u32(current, _pos_y(point)))
+    case _:
+      current
+
+def _anchor_max_y(skill: U32, rot: U32, idx: U32, current: U32) -> U32:
+  len = skill_len(skill);
+  match idx === len:
+    case 0:
+      point = skill_point(skill, rot, idx);
+      match _skill_can_anchor_at(skill, idx):
+        case 0:
+          _anchor_max_y(skill, rot, idx + 1, current)
+        case _:
+          _anchor_max_y(skill, rot, idx + 1, _max_u32(current, _pos_y(point)))
+    case _:
+      current
 
 def _skill_uses_player_tiles(skill: U32, idx: U32) -> U32:
   len = skill_len(skill);
