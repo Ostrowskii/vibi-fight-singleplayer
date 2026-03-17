@@ -4,7 +4,7 @@ def default_hp() -> U32:
   50
 
 def skill_count() -> U32:
-  4
+  6
 
 def empty_item_slot() -> U32:
   0
@@ -33,6 +33,10 @@ def skill_damage(skill: U32) -> U32:
       10
     case 4:
       10
+    case 5:
+      0
+    case 6:
+      0
     case _:
       0
 
@@ -46,6 +50,10 @@ def skill_rank(skill: U32) -> U32:
       3
     case 4:
       4
+    case 5:
+      1
+    case 6:
+      2
     case _:
       0
 
@@ -59,6 +67,10 @@ def skill_class_id(skill: U32) -> U32:
       0
     case 4:
       0
+    case 5:
+      2
+    case 6:
+      2
     case _:
       0
 
@@ -107,6 +119,10 @@ def skill_len(skill: U32) -> U32:
     case 3:
       5
     case 4:
+      5
+    case 5:
+      5
+    case 6:
       5
     case _:
       0
@@ -227,6 +243,26 @@ def skill_point_x(skill: U32, rot: U32, idx: U32) -> U32:
       3
     case 4 3 4:
       3
+    case 5 _ 0:
+      1
+    case 5 _ 1:
+      0
+    case 5 _ 2:
+      1
+    case 5 _ 3:
+      2
+    case 5 _ 4:
+      1
+    case 6 _ 0:
+      1
+    case 6 _ 1:
+      0
+    case 6 _ 2:
+      1
+    case 6 _ 3:
+      2
+    case 6 _ 4:
+      1
     case _ _ _:
       0
 
@@ -345,6 +381,26 @@ def skill_point_y(skill: U32, rot: U32, idx: U32) -> U32:
     case 4 3 3:
       3
     case 4 3 4:
+      2
+    case 5 _ 0:
+      0
+    case 5 _ 1:
+      1
+    case 5 _ 2:
+      1
+    case 5 _ 3:
+      1
+    case 5 _ 4:
+      2
+    case 6 _ 0:
+      0
+    case 6 _ 1:
+      1
+    case 6 _ 2:
+      1
+    case 6 _ 3:
+      1
+    case 6 _ 4:
       2
     case _ _ _:
       0

@@ -29,7 +29,7 @@ def render(state: StoryState) -> HTML(StoryEvent):
         </div>
         <div class="story-fact">
           <span class="story-fact__label">{text{"Skills atuais"}}</span>
-          <strong class="story-fact__value">{text{"4"}}</strong>
+          <strong class="story-fact__value">{text{"6"}}</strong>
         </div>
       </div>
       <div class="story-skill-row">
@@ -37,6 +37,8 @@ def render(state: StoryState) -> HTML(StoryEvent):
         {_story_skill_card("Me2", "Melee")}
         {_story_skill_card("Me3", "Melee")}
         {_story_skill_card("Me4", "Melee")}
+        {_story_skill_card("Ma1", "Mage")}
+        {_story_skill_card("Ma2", "Mage")}
       </div>
       <div class="story-actions">
         <a class="story-link" href="../">{text{"Voltar ao menu"}}</a>
@@ -54,7 +56,7 @@ def _story_skill_card(name: String, class_name: String) -> HTML(StoryEvent):
 def css() -> String:
   ""
   ++ ":root{--bg:#d3bb94;--panel:#efe2c6;--card:#f7ecd3;--text:#2a2115;--muted:#6b593c;--border:#7a613c;--button:#966320;--button-alt:#b58a43;}*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{min-height:100svh;}a{text-decoration:none;}"
-  ++ ".story-page{min-height:100svh;padding:32px 20px;display:grid;place-items:center;}.story-card{width:min(100%,760px);display:grid;gap:18px;padding:28px;background:var(--panel);border:1px solid var(--border);}.story-eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800;}.story-title{margin:0;font-size:42px;line-height:1;}.story-copy{margin:0;color:var(--muted);line-height:1.6;}.story-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}.story-fact{padding:14px;background:var(--card);border:1px solid #bda173;}.story-fact__label{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.story-fact__value{display:block;margin-top:6px;font-size:28px;}.story-skill-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}.story-skill{padding:14px;background:var(--card);border:1px solid #bda173;display:grid;gap:6px;justify-items:center;text-align:center;}.story-skill__name{font-weight:800;}.story-skill__class{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}.story-actions{display:flex;gap:12px;flex-wrap:wrap;}.story-link{display:inline-flex;align-items:center;justify-content:center;min-width:140px;padding:11px 15px;border-radius:999px;background:var(--button-alt);color:#fff8eb;font-weight:800;}.story-link--primary{background:var(--button);}@media (max-width:720px){.story-page{padding:20px 14px;}.story-title{font-size:34px;}.story-facts,.story-skill-row{grid-template-columns:1fr 1fr;}}"
+  ++ ".story-page{min-height:100svh;padding:32px 20px;display:grid;place-items:center;}.story-card{width:min(100%,860px);display:grid;gap:18px;padding:28px;background:var(--panel);border:1px solid var(--border);}.story-eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800;}.story-title{margin:0;font-size:42px;line-height:1;}.story-copy{margin:0;color:var(--muted);line-height:1.6;}.story-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}.story-fact{padding:14px;background:var(--card);border:1px solid #bda173;}.story-fact__label{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.story-fact__value{display:block;margin-top:6px;font-size:28px;}.story-skill-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}.story-skill{padding:14px;background:var(--card);border:1px solid #bda173;display:grid;gap:6px;justify-items:center;text-align:center;}.story-skill__name{font-weight:800;}.story-skill__class{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}.story-actions{display:flex;gap:12px;flex-wrap:wrap;}.story-link{display:inline-flex;align-items:center;justify-content:center;min-width:140px;padding:11px 15px;border-radius:999px;background:var(--button-alt);color:#fff8eb;font-weight:800;}.story-link--primary{background:var(--button);}@media (max-width:720px){.story-page{padding:20px 14px;}.story-title{font-size:34px;}.story-facts,.story-skill-row{grid-template-columns:1fr 1fr;}}"
 
 main : App =
   app{StoryState, StoryEvent, init, render, on_event}

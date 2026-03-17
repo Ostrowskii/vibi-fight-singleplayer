@@ -58,7 +58,9 @@ Fight Spec
   - mage
 - o personagem nao fica preso a classe
 - ele pode equipar 3 habilidades de qualquer combinacao dessas classes
-- por enquanto todas as habilidades atuais sao melee
+- por enquanto:
+  - Me1, Me2, Me3 e Me4 sao melee
+  - Ma1 e Ma2 sao mage
 - os nomes seguem prefixo da classe + numero:
   - Me = melee
   - Ra = ranged
@@ -71,6 +73,7 @@ Fight Spec
 - as duas habilidades novas com efeitos magicos ficam nomeadas como:
   - Ma1
   - Ma2
+- no Play casual, Ma1 e Ma2 tambem precisam estar disponiveis no lobby e funcionais no combate
 
 habilidades atuais:
 
@@ -126,6 +129,9 @@ modelo de tiles:
 - se uma casa tiver mais de uma letra, ela aplica mais de um efeito
 - a ordem dos efeitos da casa e definida pela skill
 - exemplo: AH significa aplicar H e depois A
+- fogo e gelo nunca coexistem no mesmo tile:
+  - F substitui I
+  - I substitui F
 
 exemplo de shape composta:
 [
@@ -156,6 +162,7 @@ shape de fire:
 regras do I:
 
 - I deixa gelo no tile por 5 turnos
+- se um tile de gelo receber fogo, o gelo some e o tile vira fogo
 - se um personagem entrou num tile com I agora, o primeiro round realmente afetado e o proximo round
 - o gelo faz o alvo perder metade dos rounds de movimento, comecando bloqueado
 - no primeiro round afetado pelo gelo, ele nao pode se mover
@@ -170,6 +177,7 @@ regras do I:
 regras do F:
 
 - F deixa fogo no tile por 2 turnos
+- se um tile de fogo receber gelo, o fogo some e o tile vira gelo
 - se um personagem entra ou permanece num tile com F, ele fica queimando
 - queimadura causa 15 de dano total, em 3 ticks de 5
 - os ticks da queimadura acontecem no fim do round
@@ -177,6 +185,22 @@ regras do F:
 - entao nao existe 15 + 15 + 15 por entrar varias vezes; existe apenas renovacao da mesma queimadura
 - enquanto estiver no quadrado com F, ele leva 5 por round
 - quando sai do quadrado, ainda leva 5 no fim dos proximos 2 rounds
+
+regras do H:
+
+- H e um efeito de puxao
+- o valor do puxao pode variar por habilidade
+- o primeiro hook implementado puxa 4 celulas
+- hooks sempre sao definidos em linhas retas ou diagonais
+- hooks nao devem ser usados em shapes irregulares ou sem ordem clara
+- o hook pega o primeiro alvo valido mais proximo do ator ao longo da linha/diagonal da habilidade
+- depois ele tenta trazer esse alvo 4 celulas na direcao do ator
+- o puxao para antes se houver qualquer impeditivo:
+  - o proprio ator
+  - outro bot
+  - o player
+  - borda do mapa
+- se uma casa tiver AH, aplica primeiro H e depois A
 
 
 7. mira, preview e input
