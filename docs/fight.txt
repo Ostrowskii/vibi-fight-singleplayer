@@ -247,10 +247,18 @@ regras do H:
   - Esc cancela
 - a shape pode ultrapassar a borda do mapa
 - nao e mais obrigatorio que a habilidade fique 100% dentro do board
+- isso vale em todos os sentidos: cima, baixo, esquerda e direita
+- isso vale para todos os tiles da skill: P, A, H, I e F
 - a confirmacao so e valida se:
   - o ator continuar encaixado em algum tile da shape
   - existir pelo menos 1 tile util da habilidade dentro do mapa alem do proprio tile do ator
 - entao uma skill pode ser usada parcialmente cortada pela borda, desde que ainda sobre efeito real dentro do board
+- a parte da skill que ficar fora do mapa e ignorada:
+  - nao gera preview funcional
+  - nao gera dano
+  - nao aplica hook
+  - nao aplica fogo/gelo
+  - nao entra em calculo de efeito
 - Space confirma o turno inteiro, nao so o ataque
 - se estiver numa mira valida, Space confirma o ataque e ja da Ready
 - fora da mira, Space tambem pode confirmar o turno

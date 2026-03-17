@@ -141,12 +141,16 @@ type FightEvent {
   evt_lobby_player_skill_4{}
   evt_lobby_player_skill_5{}
   evt_lobby_player_skill_6{}
+  evt_lobby_player_skill_7{}
+  evt_lobby_player_skill_8{}
   evt_lobby_bot_skill_1{}
   evt_lobby_bot_skill_2{}
   evt_lobby_bot_skill_3{}
   evt_lobby_bot_skill_4{}
   evt_lobby_bot_skill_5{}
   evt_lobby_bot_skill_6{}
+  evt_lobby_bot_skill_7{}
+  evt_lobby_bot_skill_8{}
   evt_move_up{}
   evt_move_down{}
   evt_move_left{}
@@ -504,25 +508,27 @@ def movement_trail(state: GameState) -> List(TrailStep):
 
 def preview_tiles(state: GameState) -> List(Pos):
   match state:
-    case game_state{_, _, plan_value}:
+    case game_state{_, arena, plan_value}:
+      actor = _planned_pos_from_queue(_arena_player(arena), _plan_queue(plan_value));
       mode = _plan_mode_value(plan_value);
       active = _mode_is_target(mode);
       match active:
         case 0:
           _pos_nil()
         case _:
-          _preview_tiles_for(_mode_skill(mode), _mode_rot(mode), _mode_origin(mode), 0)
+          _preview_tiles_for(_mode_skill(mode), _mode_rot(mode), _mode_origin(mode), actor, 0)
 
 def preview_anchor_tiles(state: GameState) -> List(Pos):
   match state:
-    case game_state{_, _, plan_value}:
+    case game_state{_, arena, plan_value}:
+      actor = _planned_pos_from_queue(_arena_player(arena), _plan_queue(plan_value));
       mode = _plan_mode_value(plan_value);
       active = _mode_is_target(mode);
       match active:
         case 0:
           _pos_nil()
         case _:
-          _preview_anchor_tiles_for(_mode_skill(mode), _mode_rot(mode), _mode_origin(mode), 0)
+          _preview_anchor_tiles_for(_mode_skill(mode), _mode_rot(mode), _mode_origin(mode), actor, 0)
 
 def preview_hits(state: GameState) -> List(Pos):
   match state:
@@ -610,7 +616,7 @@ def move_target_state(state: GameState, dir: U32) -> GameState:
           origin = _mode_origin(mode);
           skill = _mode_skill(mode);
           rot = _mode_rot(mode);
-          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _target_mode(skill, rot, _step_free(origin, dir), _mode_runtime(mode)), winner)
+          _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, _target_mode(skill, rot, _step_target_origin(origin, dir), _mode_runtime(mode)), winner)
 
 def rotate_target_state(state: GameState, clockwise: U32) -> GameState:
   match state:
@@ -684,8 +690,7 @@ def confirm_target_state(state: GameState) -> GameState:
             case 0:
               _state(round, level, bot_total, player_hp, player, bots, queue, queue_len, queue_locked, mode, winner)
             case _:
-              anchor = _anchor_for_origin(skill, rot, origin, actor, 0);
-              queue = _action_set(queue, queue_len, _attack_action(skill, anchor, rot));
+              queue = _action_set(queue, queue_len, _attack_action(skill, origin, rot));
               _state(round, level, bot_total, player_hp, player, bots, queue, queue_len + 1, 1, _plan_mode(_mode_runtime(mode)), winner)
 
 def clear_round_plan_state(state: GameState) -> GameState:
@@ -1005,36 +1010,36 @@ def _movement_trail_from_queue(pos: Pos, queue: List(Action), step: U32) -> List
         case _:
           _movement_trail_from_queue(pos, tl, step)
 
-def _preview_tiles_for(skill: U32, rot: U32, origin: Pos, idx: U32) -> List(Pos):
+def _preview_tiles_for(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -> List(Pos):
   len = skill_len(skill);
   stop = idx === len;
   match stop:
     case 0:
-      cell = _pos_add(origin, skill_point(skill, rot, idx));
-      rest = _preview_tiles_for(skill, rot, origin, idx + 1);
-      inside = _pos_inside(cell);
+      local = skill_point(skill, rot, idx);
+      rest = _preview_tiles_for(skill, rot, origin, actor, idx + 1);
+      inside = _skill_world_inside(actor, origin, local);
       match inside:
         case 0:
           rest
         case _:
-          _pos_cons(cell, rest)
+          _pos_cons(_skill_world_pos(actor, origin, local), rest)
     case _:
       _pos_nil()
 
-def _preview_anchor_tiles_for(skill: U32, rot: U32, origin: Pos, idx: U32) -> List(Pos):
+def _preview_anchor_tiles_for(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -> List(Pos):
   len = skill_len(skill);
   stop = idx === len;
   match stop:
     case 0:
-      cell = _pos_add(origin, skill_point(skill, rot, idx));
-      rest = _preview_anchor_tiles_for(skill, rot, origin, idx + 1);
-      inside = _pos_inside(cell);
+      local = skill_point(skill, rot, idx);
+      rest = _preview_anchor_tiles_for(skill, rot, origin, actor, idx + 1);
+      inside = _skill_world_inside(actor, origin, local);
       keep = inside & _skill_player_mask(skill, idx);
       match keep:
         case 0:
           rest
         case _:
-          _pos_cons(cell, rest)
+          _pos_cons(_skill_world_pos(actor, origin, local), rest)
     case _:
       _pos_nil()
 
@@ -1043,16 +1048,16 @@ def _preview_hits_for(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -
   stop = idx === len;
   match stop:
     case 0:
-      cell = _pos_add(origin, skill_point(skill, rot, idx));
+      local = skill_point(skill, rot, idx);
       rest = _preview_hits_for(skill, rot, origin, actor, idx + 1);
-      inside = _pos_inside(cell);
-      same = _pos_eq(cell, actor);
+      inside = _skill_world_inside(actor, origin, local);
+      same = _pos_eq(local, origin);
       keep = inside & (1 ^ same) & _skill_has_effect(skill, idx);
       match keep:
         case 0:
           rest
         case _:
-          _pos_cons(cell, rest)
+          _pos_cons(_skill_world_pos(actor, origin, local), rest)
     case _:
       _pos_nil()
 
@@ -1061,17 +1066,17 @@ def _effect_tiles_for(skill: U32, rot: U32, origin: Pos, actor: Pos, flag: U32, 
   stop = idx === len;
   match stop:
     case 0:
-      cell = _pos_add(origin, skill_point(skill, rot, idx));
+      local = skill_point(skill, rot, idx);
       rest = _effect_tiles_for(skill, rot, origin, actor, flag, idx + 1);
-      inside = _pos_inside(cell);
-      same = _pos_eq(cell, actor);
+      inside = _skill_world_inside(actor, origin, local);
+      same = _pos_eq(local, origin);
       code = _skill_effect_mask(skill, idx);
       keep = inside & (1 ^ same) & _effect_has(code, flag);
       match keep:
         case 0:
           rest
         case _:
-          _pos_cons(cell, rest)
+          _pos_cons(_skill_world_pos(actor, origin, local), rest)
     case _:
       _pos_nil()
 
@@ -1084,8 +1089,8 @@ def _placement_covers(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -
   stop = idx === len;
   match stop:
     case 0:
-      cell = _pos_add(origin, skill_point(skill, rot, idx));
-      same = _pos_eq(cell, actor);
+      local = skill_point(skill, rot, idx);
+      same = _pos_eq(local, origin);
       match same & _skill_can_anchor_at(skill, idx):
         case 0:
           _placement_covers(skill, rot, origin, actor, idx + 1)
@@ -1099,9 +1104,9 @@ def _placement_has_visible_effect(skill: U32, rot: U32, origin: Pos, actor: Pos,
   stop = idx === len;
   match stop:
     case 0:
-      cell = _pos_add(origin, skill_point(skill, rot, idx));
-      inside = _pos_inside(cell);
-      same = _pos_eq(cell, actor);
+      local = skill_point(skill, rot, idx);
+      inside = _skill_world_inside(actor, origin, local);
+      same = _pos_eq(local, origin);
       useful = inside & (1 ^ same) & _skill_has_effect(skill, idx);
       match useful:
         case 0:
@@ -1116,10 +1121,10 @@ def _preview_hit_contains(skill: U32, rot: U32, origin: Pos, actor: Pos, target:
   stop = idx === len;
   match stop:
     case 0:
-      cell = _pos_add(origin, skill_point(skill, rot, idx));
-      inside = _pos_inside(cell);
-      same_actor = _pos_eq(cell, actor);
-      same_target = _pos_eq(cell, target);
+      local = skill_point(skill, rot, idx);
+      inside = _skill_world_inside(actor, origin, local);
+      same_actor = _pos_eq(local, origin);
+      same_target = _pos_eq(_skill_world_pos(actor, origin, local), target);
       hit = inside & (1 ^ same_actor) & same_target & _skill_has_effect(skill, idx);
       match hit:
         case 0:
@@ -1138,8 +1143,22 @@ def _attack_hits(skill: U32, rot: U32, origin: Pos, actor: Pos, target: Pos) -> 
       _preview_hit_contains(skill, rot, origin, actor, target, 0)
 
 def _default_target_origin(skill: U32, actor: Pos) -> Pos:
-  anchor = _default_anchor_for_skill(skill, 0, 0);
-  _origin_from_anchor(actor, anchor)
+  _default_anchor_for_skill(skill, 0, 0)
+
+def _step_target_origin(origin: Pos, dir: U32) -> Pos:
+  match origin:
+    case pos{x, y}:
+      match dir:
+        case 0:
+          pos{x, y + 1}
+        case 1:
+          pos{x, _sub_floor(y, 1)}
+        case 2:
+          pos{x + 1, y}
+        case 3:
+          pos{_sub_floor(x, 1), y}
+        case _:
+          pos{x, y}
 
 def _origin_from_anchor(actor: Pos, anchor: Pos) -> Pos:
   match actor:
@@ -1147,6 +1166,38 @@ def _origin_from_anchor(actor: Pos, anchor: Pos) -> Pos:
       match anchor:
         case pos{sx, sy}:
           pos{_sub_floor(ax, sx), _sub_floor(ay, sy)}
+
+def _skill_world_inside(actor: Pos, origin: Pos, local: Pos) -> U32:
+  match actor:
+    case pos{ax, ay}:
+      match origin:
+        case pos{ox, oy}:
+          match local:
+            case pos{lx, ly}:
+              _skill_world_axis_inside(ax, ox, lx, 18) & _skill_world_axis_inside(ay, oy, ly, 9)
+
+def _skill_world_axis_inside(actor_axis: U32, origin_axis: U32, local_axis: U32, limit: U32) -> U32:
+  match _u32_gte(local_axis, origin_axis):
+    case 0:
+      _u32_gte(actor_axis, _sub_floor(origin_axis, local_axis))
+    case _:
+      _u32_lt(actor_axis + _sub_floor(local_axis, origin_axis), limit)
+
+def _skill_world_pos(actor: Pos, origin: Pos, local: Pos) -> Pos:
+  match actor:
+    case pos{ax, ay}:
+      match origin:
+        case pos{ox, oy}:
+          match local:
+            case pos{lx, ly}:
+              pos{_skill_world_axis_pos(ax, ox, lx), _skill_world_axis_pos(ay, oy, ly)}
+
+def _skill_world_axis_pos(actor_axis: U32, origin_axis: U32, local_axis: U32) -> U32:
+  match _u32_gte(local_axis, origin_axis):
+    case 0:
+      _sub_floor(actor_axis, _sub_floor(origin_axis, local_axis))
+    case _:
+      actor_axis + _sub_floor(local_axis, origin_axis)
 
 def _anchor_for_origin(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -> Pos:
   len = skill_len(skill);
@@ -1624,8 +1675,7 @@ def _first_valid_attack_anchor(skill: U32, actor: Pos, rot: U32, idx: U32) -> Ac
   match stop:
     case 0:
       anchor = skill_point(skill, rot, idx);
-      origin = _origin_from_anchor(actor, anchor);
-      valid = _placement_valid(skill, rot, origin, actor);
+      valid = _placement_valid(skill, rot, anchor, actor);
       match valid:
         case 0:
           _first_valid_attack_anchor(skill, actor, rot, idx + 1)
@@ -1674,8 +1724,7 @@ def _find_attack_anchor(actor: Pos, target: Pos, skill: U32, rot: U32, idx: U32)
   match stop:
     case 0:
       anchor = skill_point(skill, rot, idx);
-      origin = _origin_from_anchor(actor, anchor);
-      hit = _attack_hits(skill, rot, origin, actor, target);
+      hit = _attack_hits(skill, rot, anchor, actor, target);
       match hit:
         case 0:
           _find_attack_anchor(actor, target, skill, rot, idx + 1)
@@ -1748,11 +1797,10 @@ def _resolve_player_attack_with_runtime(
   player: Pos, bots: List(Bot), queue: List(Action), queue_len: U32, queue_locked: U32,
   runtime: RuntimeData, winner: U32, skill: U32, anchor: Pos, rot: U32,
 ) -> GameState:
-  origin = _origin_from_anchor(player, anchor);
-  hook_tiles = _effect_tiles_for(skill, rot, origin, player, 2, 0);
-  damage_tiles = _effect_tiles_for(skill, rot, origin, player, 1, 0);
-  ice_tiles = _effect_tiles_for(skill, rot, origin, player, 4, 0);
-  fire_tiles = _effect_tiles_for(skill, rot, origin, player, 8, 0);
+  hook_tiles = _effect_tiles_for(skill, rot, anchor, player, 2, 0);
+  damage_tiles = _effect_tiles_for(skill, rot, anchor, player, 1, 0);
+  ice_tiles = _effect_tiles_for(skill, rot, anchor, player, 4, 0);
+  fire_tiles = _effect_tiles_for(skill, rot, anchor, player, 8, 0);
   bots_after_hook = _hook_player_bots(player, bots, hook_tiles, _skill_hook_pull(skill));
   bots_after_damage = _damage_bots_on_tiles(bots_after_hook, damage_tiles, Fight.skill_damage(skill));
   terrain_ice = _terrain_apply_tiles(_runtime_terrain(runtime), 0, 1, 10, ice_tiles);
@@ -1799,11 +1847,10 @@ def _resolve_bot_attack(
   skill = _action_skill(action);
   anchor = _action_anchor(action);
   rot = _action_rot(action);
-  origin = _origin_from_anchor(enemy, anchor);
-  hook_tiles = _effect_tiles_for(skill, rot, origin, enemy, 2, 0);
-  damage_tiles = _effect_tiles_for(skill, rot, origin, enemy, 1, 0);
-  ice_tiles = _effect_tiles_for(skill, rot, origin, enemy, 4, 0);
-  fire_tiles = _effect_tiles_for(skill, rot, origin, enemy, 8, 0);
+  hook_tiles = _effect_tiles_for(skill, rot, anchor, enemy, 2, 0);
+  damage_tiles = _effect_tiles_for(skill, rot, anchor, enemy, 1, 0);
+  ice_tiles = _effect_tiles_for(skill, rot, anchor, enemy, 4, 0);
+  fire_tiles = _effect_tiles_for(skill, rot, anchor, enemy, 8, 0);
   next_player = _hook_bot_player(enemy, player, bots, bot_idx, hook_tiles, _skill_hook_pull(skill));
   hit = _pos_list_has(damage_tiles, next_player);
   next_player_hp = _damage_hp_by(player_hp, _attack_damage_amount(skill, hit));
@@ -1857,8 +1904,7 @@ def _simulate_player_attack(
   skill = _action_skill(action);
   anchor = _action_anchor(action);
   rot = _action_rot(action);
-  origin = _origin_from_anchor(player, anchor);
-  attack_tiles = _preview_hits_for(skill, rot, origin, player, 0);
+  attack_tiles = _preview_hits_for(skill, rot, anchor, player, 0);
   hit = _bots_hit_any_tiles(bots, attack_tiles);
   next_state = _resolve_player_action_state(current_state, attack{skill, anchor, rot});
   bot_died = _bots_any_died_between(bots, _state_bots(next_state));
@@ -1903,9 +1949,8 @@ def _simulate_bot_attack(
   skill = _action_skill(action);
   anchor = _action_anchor(action);
   rot = _action_rot(action);
-  origin = _origin_from_anchor(enemy, anchor);
-  attack_tiles = _preview_hits_for(skill, rot, origin, enemy, 0);
-  hit = _attack_hits(skill, rot, origin, enemy, player);
+  attack_tiles = _preview_hits_for(skill, rot, anchor, enemy, 0);
+  hit = _attack_hits(skill, rot, anchor, enemy, player);
   next_state = _resolve_bot_action_state(current_state, bot_idx, attack{skill, anchor, rot});
   player_died = _died_between(_state_player_hp(current_state), _state_player_hp(next_state));
   _action_sim(enemy, enemy, player, attack_tiles, next_state, hit, player_died, 0)
@@ -2892,18 +2937,26 @@ def _event_kind(evt: FightEvent) -> U32:
       13
     case evt_lobby_player_skill_6{}:
       14
-    case evt_lobby_bot_skill_1{}:
+    case evt_lobby_player_skill_7{}:
       15
-    case evt_lobby_bot_skill_2{}:
+    case evt_lobby_player_skill_8{}:
       16
-    case evt_lobby_bot_skill_3{}:
+    case evt_lobby_bot_skill_1{}:
       17
-    case evt_lobby_bot_skill_4{}:
+    case evt_lobby_bot_skill_2{}:
       18
-    case evt_lobby_bot_skill_5{}:
+    case evt_lobby_bot_skill_3{}:
       19
-    case evt_lobby_bot_skill_6{}:
+    case evt_lobby_bot_skill_4{}:
       20
+    case evt_lobby_bot_skill_5{}:
+      21
+    case evt_lobby_bot_skill_6{}:
+      22
+    case evt_lobby_bot_skill_7{}:
+      23
+    case evt_lobby_bot_skill_8{}:
+      24
     case _:
       0
 
@@ -2946,17 +2999,25 @@ def _on_event_kind_match(kind: U32, evt: FightEvent, app: AppState) -> AppState:
     case 14:
       _app_toggle_player_skill(app, 6)
     case 15:
-      _app_toggle_bot_skill(app, 1)
+      _app_toggle_player_skill(app, 7)
     case 16:
-      _app_toggle_bot_skill(app, 2)
+      _app_toggle_player_skill(app, 8)
     case 17:
-      _app_toggle_bot_skill(app, 3)
+      _app_toggle_bot_skill(app, 1)
     case 18:
-      _app_toggle_bot_skill(app, 4)
+      _app_toggle_bot_skill(app, 2)
     case 19:
-      _app_toggle_bot_skill(app, 5)
+      _app_toggle_bot_skill(app, 3)
     case 20:
+      _app_toggle_bot_skill(app, 4)
+    case 21:
+      _app_toggle_bot_skill(app, 5)
+    case 22:
       _app_toggle_bot_skill(app, 6)
+    case 23:
+      _app_toggle_bot_skill(app, 7)
+    case 24:
+      _app_toggle_bot_skill(app, 8)
     case _:
       _app_match_event(evt, app)
 
@@ -3330,7 +3391,7 @@ def _target_sidebar_text_value(active: U32, state: GameState) -> String:
     case 0:
       ""
     case _:
-      _skill_name(_state_target_skill(state)) ++ ", rotacao " ++ U32.show(_state_target_rot(state)) ++ ", origem " ++ _pos_text(_state_target_origin(state)) ++ ", preview " ++ _target_valid_text(target_valid(state)) ++ "."
+      _skill_name(_state_target_skill(state)) ++ ", rotacao " ++ U32.show(_state_target_rot(state)) ++ ", encaixe " ++ _pos_text(_state_target_origin(state)) ++ ", preview " ++ _target_valid_text(target_valid(state)) ++ "."
 
 def _playback_help_text(state: GameState) -> HTML(FightEvent):
   _playback_help_text_active(_state_playback_active(state), state)
@@ -3611,8 +3672,12 @@ def _lobby_player_skill_evt(skill: U32) -> FightEvent:
       evt_lobby_player_skill_4{}
     case 5:
       evt_lobby_player_skill_5{}
-    case _:
+    case 6:
       evt_lobby_player_skill_6{}
+    case 7:
+      evt_lobby_player_skill_7{}
+    case _:
+      evt_lobby_player_skill_8{}
 
 def _lobby_bot_skill_evt(skill: U32) -> FightEvent:
   match skill:
@@ -3626,8 +3691,12 @@ def _lobby_bot_skill_evt(skill: U32) -> FightEvent:
       evt_lobby_bot_skill_4{}
     case 5:
       evt_lobby_bot_skill_5{}
-    case _:
+    case 6:
       evt_lobby_bot_skill_6{}
+    case 7:
+      evt_lobby_bot_skill_7{}
+    case _:
+      evt_lobby_bot_skill_8{}
 
 def _skill_visual(skill: U32) -> HTML(FightEvent):
   cells = U32.grid(HTML(FightEvent), _skill_preview_width(skill), _skill_preview_height(skill), _skill_preview_cell(skill));
@@ -4311,7 +4380,7 @@ def _mode_text_mode(mode: Mode) -> String:
     case plan{_}:
       "Planejando round"
     case target{skill, rot, origin, _}:
-      "Mira de " ++ _skill_name(skill) ++ " rot " ++ U32.show(rot) ++ " origem " ++ _pos_text(origin)
+      "Mira de " ++ _skill_name(skill) ++ " rot " ++ U32.show(rot) ++ " encaixe " ++ _pos_text(origin)
     case playback{_, _, _, _, _, _, _, _}:
       "Resolvendo round"
 
