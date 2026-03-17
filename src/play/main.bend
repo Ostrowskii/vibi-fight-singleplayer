@@ -3467,7 +3467,7 @@ def _equipped_skill_caption(skill: U32) -> String:
     case 0:
       "Vazio"
     case current_skill:
-      _skill_name(current_skill) ++ " - " ++ _skill_class_label(current_skill)
+      _skill_name(current_skill)
 
 def _equipped_skill_preview_attrs(state: GameState, idx: U32, skill: U32) -> List(Attr(FightEvent)):
   enabled = (1 ^ _state_playback_active(state)) & _loadout_nonzero(skill);
@@ -3499,7 +3499,6 @@ def _equipped_skill_preview_class_active(active: U32) -> String:
 def _lobby_skill_pick_card(side: U32, loadout_value: Loadout, skill: U32) -> HTML(FightEvent):
   <button {..._lobby_skill_pick_attrs(side, loadout_value, skill)}>
     <span class="skill-pool-card__label">{text{_skill_name(skill)}}</span>
-    <span class="skill-pool-card__meta">{text{_skill_class_label(skill)}}</span>
     {_skill_visual(skill)}
   </button>
 
