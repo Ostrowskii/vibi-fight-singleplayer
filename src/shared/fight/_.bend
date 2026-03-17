@@ -68,11 +68,11 @@ def skill_class_short(skill: U32) -> String:
 def skill_class_short_id(class_id: U32) -> String:
   match class_id:
     case 0:
-      "M"
+      "Me"
     case 1:
-      "R"
+      "Ra"
     case 2:
-      "G"
+      "Ma"
     case _:
       "?"
 

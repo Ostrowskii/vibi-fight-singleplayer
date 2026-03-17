@@ -33,10 +33,10 @@ def render(state: StoryState) -> HTML(StoryEvent):
         </div>
       </div>
       <div class="story-skill-row">
-        {_story_skill_card("M1", "Melee")}
-        {_story_skill_card("M2", "Melee")}
-        {_story_skill_card("M3", "Melee")}
-        {_story_skill_card("M4", "Melee")}
+        {_story_skill_card("Me1", "Melee")}
+        {_story_skill_card("Me2", "Melee")}
+        {_story_skill_card("Me3", "Melee")}
+        {_story_skill_card("Me4", "Melee")}
       </div>
       <div class="story-actions">
         <a class="story-link" href="../">{text{"Voltar ao menu"}}</a>

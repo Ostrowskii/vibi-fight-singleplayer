@@ -3481,13 +3481,13 @@ def _skill_button_class_active(active: U32) -> String:
 def _skill_name(skill: U32) -> String:
   match skill:
     case 1:
-      "M1"
+      "Me1"
     case 2:
-      "M2"
+      "Me2"
     case 3:
-      "M3"
+      "Me3"
     case 4:
-      "M4"
+      "Me4"
     case _:
       "?"
 
