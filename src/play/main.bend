@@ -144,6 +144,10 @@ type FightEvent {
   evt_lobby_player_skill_7{}
   evt_lobby_player_skill_8{}
   evt_lobby_player_skill_9{}
+  evt_lobby_player_skill_10{}
+  evt_lobby_player_skill_11{}
+  evt_lobby_player_skill_12{}
+  evt_lobby_player_skill_13{}
   evt_lobby_bot_skill_1{}
   evt_lobby_bot_skill_2{}
   evt_lobby_bot_skill_3{}
@@ -153,6 +157,10 @@ type FightEvent {
   evt_lobby_bot_skill_7{}
   evt_lobby_bot_skill_8{}
   evt_lobby_bot_skill_9{}
+  evt_lobby_bot_skill_10{}
+  evt_lobby_bot_skill_11{}
+  evt_lobby_bot_skill_12{}
+  evt_lobby_bot_skill_13{}
   evt_move_up{}
   evt_move_down{}
   evt_move_left{}
@@ -3053,24 +3061,40 @@ def _event_kind(evt: FightEvent) -> U32:
       16
     case evt_lobby_player_skill_9{}:
       17
-    case evt_lobby_bot_skill_1{}:
+    case evt_lobby_player_skill_10{}:
       18
-    case evt_lobby_bot_skill_2{}:
-      18
-    case evt_lobby_bot_skill_3{}:
+    case evt_lobby_player_skill_11{}:
       19
-    case evt_lobby_bot_skill_4{}:
+    case evt_lobby_player_skill_12{}:
       20
-    case evt_lobby_bot_skill_5{}:
+    case evt_lobby_player_skill_13{}:
       21
-    case evt_lobby_bot_skill_6{}:
+    case evt_lobby_bot_skill_1{}:
       22
-    case evt_lobby_bot_skill_7{}:
+    case evt_lobby_bot_skill_2{}:
       23
-    case evt_lobby_bot_skill_8{}:
+    case evt_lobby_bot_skill_3{}:
       24
-    case evt_lobby_bot_skill_9{}:
+    case evt_lobby_bot_skill_4{}:
       25
+    case evt_lobby_bot_skill_5{}:
+      26
+    case evt_lobby_bot_skill_6{}:
+      27
+    case evt_lobby_bot_skill_7{}:
+      28
+    case evt_lobby_bot_skill_8{}:
+      29
+    case evt_lobby_bot_skill_9{}:
+      30
+    case evt_lobby_bot_skill_10{}:
+      31
+    case evt_lobby_bot_skill_11{}:
+      32
+    case evt_lobby_bot_skill_12{}:
+      33
+    case evt_lobby_bot_skill_13{}:
+      34
     case _:
       0
 
@@ -3119,23 +3143,39 @@ def _on_event_kind_match(kind: U32, evt: FightEvent, app: AppState) -> AppState:
     case 17:
       _app_toggle_player_skill(app, 9)
     case 18:
-      _app_toggle_bot_skill(app, 1)
+      _app_toggle_player_skill(app, 10)
     case 19:
-      _app_toggle_bot_skill(app, 2)
+      _app_toggle_player_skill(app, 11)
     case 20:
-      _app_toggle_bot_skill(app, 3)
+      _app_toggle_player_skill(app, 12)
     case 21:
-      _app_toggle_bot_skill(app, 4)
+      _app_toggle_player_skill(app, 13)
     case 22:
-      _app_toggle_bot_skill(app, 5)
+      _app_toggle_bot_skill(app, 1)
     case 23:
-      _app_toggle_bot_skill(app, 6)
+      _app_toggle_bot_skill(app, 2)
     case 24:
-      _app_toggle_bot_skill(app, 7)
+      _app_toggle_bot_skill(app, 3)
     case 25:
-      _app_toggle_bot_skill(app, 8)
+      _app_toggle_bot_skill(app, 4)
     case 26:
+      _app_toggle_bot_skill(app, 5)
+    case 27:
+      _app_toggle_bot_skill(app, 6)
+    case 28:
+      _app_toggle_bot_skill(app, 7)
+    case 29:
+      _app_toggle_bot_skill(app, 8)
+    case 30:
       _app_toggle_bot_skill(app, 9)
+    case 31:
+      _app_toggle_bot_skill(app, 10)
+    case 32:
+      _app_toggle_bot_skill(app, 11)
+    case 33:
+      _app_toggle_bot_skill(app, 12)
+    case 34:
+      _app_toggle_bot_skill(app, 13)
     case _:
       _app_match_event(evt, app)
 
@@ -3375,6 +3415,13 @@ def _lobby_side_card(side: U32, lobby: LobbyState) -> HTML(FightEvent):
       {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 4)}
       {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 5)}
       {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 6)}
+      {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 7)}
+      {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 8)}
+      {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 9)}
+      {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 10)}
+      {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 11)}
+      {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 12)}
+      {_lobby_skill_pick_card(side, _lobby_side_loadout(side, lobby), 13)}
     </div>
   </section>
 
@@ -3796,8 +3843,16 @@ def _lobby_player_skill_evt(skill: U32) -> FightEvent:
       evt_lobby_player_skill_7{}
     case 8:
       evt_lobby_player_skill_8{}
-    case _:
+    case 9:
       evt_lobby_player_skill_9{}
+    case 10:
+      evt_lobby_player_skill_10{}
+    case 11:
+      evt_lobby_player_skill_11{}
+    case 12:
+      evt_lobby_player_skill_12{}
+    case _:
+      evt_lobby_player_skill_13{}
 
 def _lobby_bot_skill_evt(skill: U32) -> FightEvent:
   match skill:
@@ -3817,8 +3872,16 @@ def _lobby_bot_skill_evt(skill: U32) -> FightEvent:
       evt_lobby_bot_skill_7{}
     case 8:
       evt_lobby_bot_skill_8{}
-    case _:
+    case 9:
       evt_lobby_bot_skill_9{}
+    case 10:
+      evt_lobby_bot_skill_10{}
+    case 11:
+      evt_lobby_bot_skill_11{}
+    case 12:
+      evt_lobby_bot_skill_12{}
+    case _:
+      evt_lobby_bot_skill_13{}
 
 def _skill_visual(skill: U32) -> HTML(FightEvent):
   cells = U32.grid(HTML(FightEvent), _skill_preview_width(skill), _skill_preview_height(skill), _skill_preview_cell(skill));

@@ -60,7 +60,7 @@ Fight Spec
 - ele pode equipar 3 habilidades de qualquer combinacao dessas classes
 - por enquanto:
   - Me1, Me2, Me3, Me4 e Me5 sao melee
-  - Ra1 e ranged
+  - Ra1, Ra2, Ra3, Ra4 e Ra5 sao ranged
   - Ma1, Ma2 e Ma3 sao mage
 - os nomes seguem prefixo da classe + numero:
   - Me = melee
@@ -73,6 +73,10 @@ Fight Spec
   - Me4
   - Me5
   - Ra1
+  - Ra2
+  - Ra3
+  - Ra4
+  - Ra5
   - Ma1
   - Ma2
   - Ma3
@@ -126,6 +130,42 @@ Ra1
   [null, null, "P", null, null, null, "A", null, null]
 ]
 
+Ra2
+[
+  [null, null, "P", null, null, null, "A", null, "A"],
+  [null, "P", null, null, null, null, "A", null, "A"],
+  ["P", null, null, null, null, null, "A", null, "A"],
+  [null, "P", null, null, null, null, "A", null, "A"],
+  [null, null, "P", null, null, null, "A", null, "A"]
+]
+
+Ra3
+[
+  [null, null, "P", null, null, null, null, null, null],
+  [null, "P", null, null, null, null, null, "A", null],
+  ["P", null, null, null, null, "A", "A", "A", "A"],
+  [null, "P", null, null, null, null, null, "A", null],
+  [null, null, "P", null, null, null, null, null, null]
+]
+
+Ra4
+[
+  [null, null, "P", null, null, null, null, "A", null],
+  [null, "P", null, null, null, null, "A", null, null],
+  ["P", null, null, null, null, "A", "A", "A", null],
+  [null, "P", null, null, null, null, "A", null, null],
+  [null, null, "P", null, null, null, null, "A", null]
+]
+
+Ra5
+[
+  [null, null, "P", null, null, null, null, null, "A"],
+  [null, "P", null, null, null, null, null, null, "A"],
+  ["P", null, null, null, null, "A", "A", "A", "A"],
+  [null, "P", null, null, null, null, null, null, "A"],
+  [null, null, "P", null, null, null, null, null, "A"]
+]
+
 - todas as habilidades atuais causam 10 de dano quando aplicam dano
 - o preview visual da habilidade deve ficar em uma area fixa
 - a matriz da habilidade deve ser recortada no menor retangulo possivel
@@ -153,6 +193,7 @@ modelo de tiles:
   - um "<" de P na esquerda
   - um "+" maior de A na direita
   - o "+" fica centralizado na altura e encostado no lado direito da matriz
+- Ra2 ate Ra5 tambem sao ranged com matriz 5x9 e tiles P separados do grupo de dano A
 - se a skill tiver tiles P, o ator precisa encaixar em um dos P
 - se a skill nao tiver tiles P, como nas melee atuais, o ator pode encaixar em qualquer tile ocupado da shape
 - uma mesma casa pode ter mais de uma letra
@@ -389,3 +430,9 @@ preview:
   - plano/UI do round
 - a intencao dessa divisao e diminuir o custo de mexer no estado quando novas regras entrarem
 - o catalogo compartilhado e usado tanto para renderizar nomes/classes quanto para resolver shape e dano da skill
+- as shapes das skills ficam descritas por matriz base no modulo compartilhado
+- rotacao, ordem dos tiles, tiles P e mascaras de efeito passam a ser derivados dessa matriz base
+- a ordem derivada atual e:
+  - primeiro todos os tiles com P, em leitura de cima para baixo e da esquerda para a direita
+  - depois os outros tiles ocupados, na mesma leitura
+- essa regra existe para reduzir a quantidade de case manual sem mudar o comportamento atual de preview, anchor e resolucao
