@@ -2918,12 +2918,33 @@ def _playback_tick_idx(state: GameState, idx: U32, phase: U32, actor: U32, actor
       _playback_advance_state(_action_sim_next_state(sim), idx, bot_plans)
 
 def _playback_start_state(state: GameState, idx: U32, bot_plans: List(List(Action))) -> GameState:
+  match _playback_remaining_all_waits(state, idx, bot_plans):
+    case 0:
+      bot_total = _state_bot_total(state);
+      actor = _playback_actor_of_idx(idx, bot_total);
+      actor_idx = _playback_actor_idx_of_idx(idx, bot_total);
+      action = _playback_action(_state_queue(state), bot_plans, idx, bot_total);
+      sim = simulate_actor_action(state, actor, actor_idx, action);
+      _set_mode_state(state, _playback_mode(idx, 0, actor, actor_idx, action, sim, bot_plans, _state_runtime(state)))
+    case _:
+      _reset_round_planning_state(state)
+
+def _playback_remaining_all_waits(state: GameState, idx: U32, bot_plans: List(List(Action))) -> U32:
   bot_total = _state_bot_total(state);
-  actor = _playback_actor_of_idx(idx, bot_total);
-  actor_idx = _playback_actor_idx_of_idx(idx, bot_total);
-  action = _playback_action(_state_queue(state), bot_plans, idx, bot_total);
-  sim = simulate_actor_action(state, actor, actor_idx, action);
-  _set_mode_state(state, _playback_mode(idx, 0, actor, actor_idx, action, sim, bot_plans, _state_runtime(state)))
+  total_steps = _playback_total_steps(bot_total);
+  _playback_remaining_all_waits_w(state, idx, bot_plans, bot_total, total_steps)
+
+def _playback_remaining_all_waits_w(state: GameState, idx: U32, bot_plans: List(List(Action)), bot_total: U32, total_steps: U32) -> U32:
+  match idx < total_steps:
+    case 0:
+      1
+    case _:
+      action = _playback_action(_state_queue(state), bot_plans, idx, bot_total);
+      match _action_kind(action):
+        case 0:
+          _playback_remaining_all_waits_w(state, idx + 1, bot_plans, bot_total, total_steps)
+        case _:
+          0
 
 def _playback_apply_state(sim: ActionSim, idx: U32, actor: U32, actor_idx: U32, action: Action, bot_plans: List(List(Action))) -> GameState:
   next_state = _action_sim_next_state(sim);
@@ -3180,6 +3201,7 @@ def _render_match_screen(app: AppState) -> HTML(FightEvent):
         <div class="controls controls--actions">
           <button {..._button_attrs("button alt", evt_ready{})}>{text{"Ready"}}</button>
           <button {..._button_attrs("button", evt_reset{})}>{text{"Reset partida"}}</button>
+          <a class="button button--menu button--menu-secondary nav-link" href="https://ostrowskii.github.io/vibi-fight-singleplayer/play/">{text{"Voltar lobby"}}</a>
         </div>
       </section>
 

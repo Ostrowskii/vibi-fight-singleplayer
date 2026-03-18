@@ -203,8 +203,8 @@ function __vibiTurnBandScore(classId, dist, hasAttack, movesUsed) {
       movesUsed >>> 0,
     ];
   }
-  const min = (classId >>> 0) === 1 ? 8 : 6;
-  const max = (classId >>> 0) === 1 ? 9 : 7;
+  const min = (classId >>> 0) === 1 ? 8 : 7;
+  const max = (classId >>> 0) === 1 ? 9 : 8;
   const center = min;
   const inBand = dist >= min && dist <= max;
   const distError = inBand ? 0 : (dist < min ? (min - dist) : (dist - max));
@@ -460,6 +460,9 @@ __VIBI_EXTRA_PATCH__
 
 
 COMMON_EXTRA_PATCH = r"""
+const __VIBI_LOBBY_HREF = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
+const __VIBI_LOBBY_LABEL = "Voltar lobby";
+
 function __vibiLobbyCount(loadout) {
   if (!loadout || loadout.$ !== "loadout") {
     return 0;
@@ -511,6 +514,14 @@ function __vibiLobbyAppWithBattleLoadouts(app) {
   });
 }
 
+const __vibiOrigSkillHookPull = __SKILL_HOOK_PULL_FN__;
+__SKILL_HOOK_PULL_FN__ = function(skill) {
+  if ((skill >>> 0) === 5) {
+    return 2;
+  }
+  return __vibiOrigSkillHookPull(skill >>> 0);
+};
+
 const __vibiOrigFightAppFromSlots = __FIGHT_APP_FROM_SLOTS_FN__;
 __FIGHT_APP_FROM_SLOTS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3) {
   return __vibiLobbyAppWithBattleLoadouts(
@@ -524,6 +535,84 @@ __FIGHT_APP_FROM_SLOTS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3) {
     ),
   );
 };
+
+function __vibiTurnRemainingAllWaits(state, idx, botPlans) {
+  if (!state || state.$ !== "game_state") {
+    return false;
+  }
+  const botTotal = __STATE_BOT_TOTAL_FN__(state) >>> 0;
+  const queue = __STATE_QUEUE_FN__(state);
+  const totalSteps = __PLAYBACK_TOTAL_STEPS_FN__(botTotal) >>> 0;
+  for (let current = idx >>> 0; current < totalSteps; ++current) {
+    const action = __PLAYBACK_ACTION_FN__(queue, botPlans, current >>> 0, botTotal);
+    if ((__ACTION_KIND_FN__(action) >>> 0) !== 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const __vibiOrigPlaybackStartState = __PLAYBACK_START_STATE_FN__;
+__PLAYBACK_START_STATE_FN__ = function(state, idx, botPlans) {
+  if (__vibiTurnRemainingAllWaits(state, idx >>> 0, botPlans)) {
+    return __RESET_ROUND_PLANNING_STATE_FN__(state);
+  }
+  return __vibiOrigPlaybackStartState(state, idx >>> 0, botPlans);
+};
+
+function __vibiPatchBattleLobbyButton() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const actions = document.querySelector(".controls--actions");
+  if (!actions) {
+    return;
+  }
+  const reset = Array.from(actions.children).find((node) => ((node.textContent || "").trim() === "Reset partida"));
+  let link = Array.from(actions.querySelectorAll("a")).find((node) => {
+    const text = (node.textContent || "").trim();
+    const href = node.getAttribute("href") || "";
+    return href === __VIBI_LOBBY_HREF || text === "Voltar lobby" || text === "Voltar para lobby";
+  });
+  if (!link) {
+    link = document.createElement("a");
+  }
+  link.className = "button button--menu button--menu-secondary nav-link";
+  link.href = __VIBI_LOBBY_HREF;
+  link.textContent = __VIBI_LOBBY_LABEL;
+  if (reset && reset.parentNode === actions) {
+    if (reset.nextElementSibling !== link) {
+      reset.insertAdjacentElement("afterend", link);
+    }
+  } else if (link.parentNode !== actions) {
+    actions.appendChild(link);
+  }
+}
+
+function __vibiObserveBattleLobbyButton() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const start = () => {
+    __vibiPatchBattleLobbyButton();
+    if (typeof MutationObserver === "undefined" || !document.body) {
+      return;
+    }
+    const observer = new MutationObserver(() => __vibiPatchBattleLobbyButton());
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, {once: true});
+  } else {
+    start();
+  }
+}
+
+__vibiObserveBattleLobbyButton();
 """
 
 
@@ -633,12 +722,16 @@ def build_extra_patch(bundle_kind: str) -> str:
 
 
 def build_patch(module_path: str, bundle_kind: str) -> str:
+    text = PATCH_TEMPLATE.replace("__VIBI_EXTRA_PATCH__", build_extra_patch(bundle_kind))
     replacements = {
         "__SKILL_CLASS_ID_FN__": encode_symbol("/shared/fight", "skill_class_id"),
+        "__SKILL_HOOK_PULL_FN__": encode_symbol("/shared/fight", "skill_hook_pull"),
         "__ACTION_SET_FN__": encode_symbol(module_path, "_action_set"),
         "__QUEUE3_FN__": encode_symbol(module_path, "_queue3"),
         "__QUEUE_WAITS_FN__": encode_symbol(module_path, "_queue_waits"),
         "__PLAYBACK_TOTAL_STEPS_FN__": encode_symbol(module_path, "_playback_total_steps"),
+        "__PLAYBACK_START_STATE_FN__": encode_symbol(module_path, "_playback_start_state"),
+        "__PLAYBACK_ACTION_FN__": encode_symbol(module_path, "_playback_action"),
         "__START_TARGET_APPLY_FN__": encode_symbol(module_path, "_start_target_apply"),
         "__MOVE_TARGET_STATE_FN__": encode_symbol(module_path, "move_target_state"),
         "__ROTATE_TARGET_STATE_FN__": encode_symbol(module_path, "rotate_target_state"),
@@ -651,6 +744,10 @@ def build_patch(module_path: str, bundle_kind: str) -> str:
         "__PLANNED_POS_FROM_QUEUE_FN__": encode_symbol(module_path, "_planned_pos_from_queue"),
         "__STEP_BLOCKED_PLAYER_FN__": encode_symbol(module_path, "_step_blocked_player"),
         "__STEP_BLOCKED_BOT_FN__": encode_symbol(module_path, "_step_blocked_bot"),
+        "__STATE_BOT_TOTAL_FN__": encode_symbol(module_path, "_state_bot_total"),
+        "__STATE_QUEUE_FN__": encode_symbol(module_path, "_state_queue"),
+        "__ACTION_KIND_FN__": encode_symbol(module_path, "_action_kind"),
+        "__RESET_ROUND_PLANNING_STATE_FN__": encode_symbol(module_path, "_reset_round_planning_state"),
         "__DEFAULT_TARGET_ORIGIN_FN__": encode_symbol(module_path, "_default_target_origin"),
         "__STEP_TARGET_ORIGIN_FN__": encode_symbol(module_path, "_step_target_origin"),
         "__ROTATE_TARGET_ORIGIN_FN__": encode_symbol(module_path, "_rotate_target_origin"),
@@ -668,10 +765,8 @@ def build_patch(module_path: str, bundle_kind: str) -> str:
         "__LOBBY_PLAY_READY_FN__": encode_symbol(module_path, "_lobby_play_ready"),
         "__LOBBY_FILTER_MATCHES_FN__": encode_symbol(module_path, "_lobby_filter_matches"),
         "__GAME_TEST_APP_FROM_SLOTS_ITEMS_FN__": encode_symbol(module_path, "game_test_app_from_slots_items"),
-        "__VIBI_EXTRA_PATCH__": build_extra_patch(bundle_kind),
     }
 
-    text = PATCH_TEMPLATE
     for old, new in replacements.items():
         text = text.replace(old, new)
     return text

@@ -729,5 +729,7 @@ def effect_fire(mask: U32) -> U32:
 
 def skill_hook_pull(skill: U32) -> U32:
   match skill:
+    case 5:
+      2
     case _:
       4

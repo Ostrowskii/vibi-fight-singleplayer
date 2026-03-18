@@ -121741,8 +121741,8 @@ function __vibiTurnBandScore(classId, dist, hasAttack, movesUsed) {
       movesUsed >>> 0,
     ];
   }
-  const min = (classId >>> 0) === 1 ? 8 : 6;
-  const max = (classId >>> 0) === 1 ? 9 : 7;
+  const min = (classId >>> 0) === 1 ? 8 : 7;
+  const max = (classId >>> 0) === 1 ? 9 : 8;
   const center = min;
   const inBand = dist >= min && dist <= max;
   const distError = inBand ? 0 : (dist < min ? (min - dist) : (dist - max));
@@ -121992,6 +121992,9 @@ $n2f67616d652d746573742f6d61696e235f6f6e5f6d617463685f6576656e74 = function(evt,
 $n2f67616d652d746573742f6d61696e235f6275696c645f626f745f706c616e = function(player, enemy, bots, botIdx, round, botLoadout) {
   return __vibiTurnBuildBotPlan(player, enemy, bots, botIdx, round, botLoadout);
 };
+const __VIBI_LOBBY_HREF = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
+const __VIBI_LOBBY_LABEL = "Voltar lobby";
+
 function __vibiLobbyCount(loadout) {
   if (!loadout || loadout.$ !== "loadout") {
     return 0;
@@ -122043,8 +122046,16 @@ function __vibiLobbyAppWithBattleLoadouts(app) {
   });
 }
 
-const __vibiOrigFightAppFromSlots = __FIGHT_APP_FROM_SLOTS_FN__;
-__FIGHT_APP_FROM_SLOTS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3) {
+const __vibiOrigSkillHookPull = $n2f7368617265642f66696768742f736b696c6c5f686f6f6b5f70756c6c;
+$n2f7368617265642f66696768742f736b696c6c5f686f6f6b5f70756c6c = function(skill) {
+  if ((skill >>> 0) === 5) {
+    return 2;
+  }
+  return __vibiOrigSkillHookPull(skill >>> 0);
+};
+
+const __vibiOrigFightAppFromSlots = $n2f67616d652d746573742f6d61696e2f66696768745f6170705f66726f6d5f736c6f7473;
+$n2f67616d652d746573742f6d61696e2f66696768745f6170705f66726f6d5f736c6f7473 = function(ps1, ps2, ps3, bs1, bs2, bs3) {
   return __vibiLobbyAppWithBattleLoadouts(
     __vibiOrigFightAppFromSlots(
       ps1 >>> 0,
@@ -122057,8 +122068,86 @@ __FIGHT_APP_FROM_SLOTS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3) {
   );
 };
 
-const __vibiOrigGameTestAppFromSlotsItems = __GAME_TEST_APP_FROM_SLOTS_ITEMS_FN__;
-__GAME_TEST_APP_FROM_SLOTS_ITEMS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3, pi1, pi2, pi3, bi1, bi2, bi3) {
+function __vibiTurnRemainingAllWaits(state, idx, botPlans) {
+  if (!state || state.$ !== "game_state") {
+    return false;
+  }
+  const botTotal = $n2f67616d652d746573742f6d61696e235f73746174655f626f745f746f74616c(state) >>> 0;
+  const queue = $n2f67616d652d746573742f6d61696e235f73746174655f7175657565(state);
+  const totalSteps = $n2f67616d652d746573742f6d61696e235f706c61796261636b5f746f74616c5f7374657073(botTotal) >>> 0;
+  for (let current = idx >>> 0; current < totalSteps; ++current) {
+    const action = $n2f67616d652d746573742f6d61696e235f706c61796261636b5f616374696f6e(queue, botPlans, current >>> 0, botTotal);
+    if (($n2f67616d652d746573742f6d61696e235f616374696f6e5f6b696e64(action) >>> 0) !== 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const __vibiOrigPlaybackStartState = $n2f67616d652d746573742f6d61696e235f706c61796261636b5f73746172745f7374617465;
+$n2f67616d652d746573742f6d61696e235f706c61796261636b5f73746172745f7374617465 = function(state, idx, botPlans) {
+  if (__vibiTurnRemainingAllWaits(state, idx >>> 0, botPlans)) {
+    return $n2f67616d652d746573742f6d61696e235f72657365745f726f756e645f706c616e6e696e675f7374617465(state);
+  }
+  return __vibiOrigPlaybackStartState(state, idx >>> 0, botPlans);
+};
+
+function __vibiPatchBattleLobbyButton() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const actions = document.querySelector(".controls--actions");
+  if (!actions) {
+    return;
+  }
+  const reset = Array.from(actions.children).find((node) => ((node.textContent || "").trim() === "Reset partida"));
+  let link = Array.from(actions.querySelectorAll("a")).find((node) => {
+    const text = (node.textContent || "").trim();
+    const href = node.getAttribute("href") || "";
+    return href === __VIBI_LOBBY_HREF || text === "Voltar lobby" || text === "Voltar para lobby";
+  });
+  if (!link) {
+    link = document.createElement("a");
+  }
+  link.className = "button button--menu button--menu-secondary nav-link";
+  link.href = __VIBI_LOBBY_HREF;
+  link.textContent = __VIBI_LOBBY_LABEL;
+  if (reset && reset.parentNode === actions) {
+    if (reset.nextElementSibling !== link) {
+      reset.insertAdjacentElement("afterend", link);
+    }
+  } else if (link.parentNode !== actions) {
+    actions.appendChild(link);
+  }
+}
+
+function __vibiObserveBattleLobbyButton() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const start = () => {
+    __vibiPatchBattleLobbyButton();
+    if (typeof MutationObserver === "undefined" || !document.body) {
+      return;
+    }
+    const observer = new MutationObserver(() => __vibiPatchBattleLobbyButton());
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, {once: true});
+  } else {
+    start();
+  }
+}
+
+__vibiObserveBattleLobbyButton();
+
+const __vibiOrigGameTestAppFromSlotsItems = $n2f67616d652d746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74735f6974656d73;
+$n2f67616d652d746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74735f6974656d73 = function(ps1, ps2, ps3, bs1, bs2, bs3, pi1, pi2, pi3, bi1, bi2, bi3) {
   return __vibiLobbyAppWithBattleLoadouts(
     __vibiOrigGameTestAppFromSlotsItems(
       ps1 >>> 0,
@@ -122078,6 +122167,8 @@ __GAME_TEST_APP_FROM_SLOTS_ITEMS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3, p
 };
 
 /* __vibi_turn_patch:end */
+
+
 
 
 

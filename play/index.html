@@ -136565,8 +136565,8 @@ function __vibiTurnBandScore(classId, dist, hasAttack, movesUsed) {
       movesUsed >>> 0,
     ];
   }
-  const min = (classId >>> 0) === 1 ? 8 : 6;
-  const max = (classId >>> 0) === 1 ? 9 : 7;
+  const min = (classId >>> 0) === 1 ? 8 : 7;
+  const max = (classId >>> 0) === 1 ? 9 : 8;
   const center = min;
   const inBand = dist >= min && dist <= max;
   const distError = inBand ? 0 : (dist < min ? (min - dist) : (dist - max));
@@ -136816,6 +136816,9 @@ $n2f706c61792f6d61696e235f6f6e5f6d617463685f6576656e74 = function(evt, state, lo
 $n2f706c61792f6d61696e235f6275696c645f626f745f706c616e = function(player, enemy, bots, botIdx, round, botLoadout) {
   return __vibiTurnBuildBotPlan(player, enemy, bots, botIdx, round, botLoadout);
 };
+const __VIBI_LOBBY_HREF = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
+const __VIBI_LOBBY_LABEL = "Voltar lobby";
+
 function __vibiLobbyCount(loadout) {
   if (!loadout || loadout.$ !== "loadout") {
     return 0;
@@ -136867,8 +136870,16 @@ function __vibiLobbyAppWithBattleLoadouts(app) {
   });
 }
 
-const __vibiOrigFightAppFromSlots = __FIGHT_APP_FROM_SLOTS_FN__;
-__FIGHT_APP_FROM_SLOTS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3) {
+const __vibiOrigSkillHookPull = $n2f7368617265642f66696768742f736b696c6c5f686f6f6b5f70756c6c;
+$n2f7368617265642f66696768742f736b696c6c5f686f6f6b5f70756c6c = function(skill) {
+  if ((skill >>> 0) === 5) {
+    return 2;
+  }
+  return __vibiOrigSkillHookPull(skill >>> 0);
+};
+
+const __vibiOrigFightAppFromSlots = $n2f706c61792f6d61696e2f66696768745f6170705f66726f6d5f736c6f7473;
+$n2f706c61792f6d61696e2f66696768745f6170705f66726f6d5f736c6f7473 = function(ps1, ps2, ps3, bs1, bs2, bs3) {
   return __vibiLobbyAppWithBattleLoadouts(
     __vibiOrigFightAppFromSlots(
       ps1 >>> 0,
@@ -136881,29 +136892,107 @@ __FIGHT_APP_FROM_SLOTS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3) {
   );
 };
 
+function __vibiTurnRemainingAllWaits(state, idx, botPlans) {
+  if (!state || state.$ !== "game_state") {
+    return false;
+  }
+  const botTotal = $n2f706c61792f6d61696e235f73746174655f626f745f746f74616c(state) >>> 0;
+  const queue = $n2f706c61792f6d61696e235f73746174655f7175657565(state);
+  const totalSteps = $n2f706c61792f6d61696e235f706c61796261636b5f746f74616c5f7374657073(botTotal) >>> 0;
+  for (let current = idx >>> 0; current < totalSteps; ++current) {
+    const action = $n2f706c61792f6d61696e235f706c61796261636b5f616374696f6e(queue, botPlans, current >>> 0, botTotal);
+    if (($n2f706c61792f6d61696e235f616374696f6e5f6b696e64(action) >>> 0) !== 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const __vibiOrigPlaybackStartState = $n2f706c61792f6d61696e235f706c61796261636b5f73746172745f7374617465;
+$n2f706c61792f6d61696e235f706c61796261636b5f73746172745f7374617465 = function(state, idx, botPlans) {
+  if (__vibiTurnRemainingAllWaits(state, idx >>> 0, botPlans)) {
+    return $n2f706c61792f6d61696e235f72657365745f726f756e645f706c616e6e696e675f7374617465(state);
+  }
+  return __vibiOrigPlaybackStartState(state, idx >>> 0, botPlans);
+};
+
+function __vibiPatchBattleLobbyButton() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const actions = document.querySelector(".controls--actions");
+  if (!actions) {
+    return;
+  }
+  const reset = Array.from(actions.children).find((node) => ((node.textContent || "").trim() === "Reset partida"));
+  let link = Array.from(actions.querySelectorAll("a")).find((node) => {
+    const text = (node.textContent || "").trim();
+    const href = node.getAttribute("href") || "";
+    return href === __VIBI_LOBBY_HREF || text === "Voltar lobby" || text === "Voltar para lobby";
+  });
+  if (!link) {
+    link = document.createElement("a");
+  }
+  link.className = "button button--menu button--menu-secondary nav-link";
+  link.href = __VIBI_LOBBY_HREF;
+  link.textContent = __VIBI_LOBBY_LABEL;
+  if (reset && reset.parentNode === actions) {
+    if (reset.nextElementSibling !== link) {
+      reset.insertAdjacentElement("afterend", link);
+    }
+  } else if (link.parentNode !== actions) {
+    actions.appendChild(link);
+  }
+}
+
+function __vibiObserveBattleLobbyButton() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const start = () => {
+    __vibiPatchBattleLobbyButton();
+    if (typeof MutationObserver === "undefined" || !document.body) {
+      return;
+    }
+    const observer = new MutationObserver(() => __vibiPatchBattleLobbyButton());
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, {once: true});
+  } else {
+    start();
+  }
+}
+
+__vibiObserveBattleLobbyButton();
+
 const __VIBI_LOBBY_COPY_TEXT = "Selecione ate 3 skills por lado. Se um lado entrar vazio, ele recebe Me1 por padrao na partida.";
 
-__APP_TOGGLE_PLAYER_SKILL_NEXT_FN__ = function(app, lobby, next) {
-  return __APP_WITH_LOBBY_FN__(app, __LOBBY_WITH_PLAYER_LOADOUT_FN__(lobby, next));
+$n2f706c61792f6d61696e235f6170705f746f67676c655f706c617965725f736b696c6c5f6e657874 = function(app, lobby, next) {
+  return $n2f706c61792f6d61696e235f6170705f776974685f6c6f626279(app, $n2f706c61792f6d61696e235f6c6f6262795f776974685f706c617965725f6c6f61646f7574(lobby, next));
 };
 
-__APP_TOGGLE_BOT_SKILL_NEXT_FN__ = function(app, lobby, next) {
-  return __APP_WITH_LOBBY_FN__(app, __LOBBY_WITH_BOT_LOADOUT_FN__(lobby, next));
+$n2f706c61792f6d61696e235f6170705f746f67676c655f626f745f736b696c6c5f6e657874 = function(app, lobby, next) {
+  return $n2f706c61792f6d61696e235f6170705f776974685f6c6f626279(app, $n2f706c61792f6d61696e235f6c6f6262795f776974685f626f745f6c6f61646f7574(lobby, next));
 };
 
-const __vibiOrigAppStartMatch = __APP_START_MATCH_FN__;
-__APP_START_MATCH_FN__ = function(app) {
+const __vibiOrigAppStartMatch = $n2f706c61792f6d61696e235f6170705f73746172745f6d61746368;
+$n2f706c61792f6d61696e235f6170705f73746172745f6d61746368 = function(app) {
   return __vibiOrigAppStartMatch(
-    __APP_WITH_LOBBY_FN__(app, __vibiLobbyBattleLoadouts(__APP_LOBBY_FN__(app))),
+    $n2f706c61792f6d61696e235f6170705f776974685f6c6f626279(app, __vibiLobbyBattleLoadouts($n2f706c61792f6d61696e235f6170705f6c6f626279(app))),
   );
 };
 
-__LOBBY_PLAY_READY_FN__ = function(_lobby) {
+$n2f706c61792f6d61696e235f6c6f6262795f706c61795f7265616479 = function(_lobby) {
   return 1;
 };
 
-const __vibiOrigLobbyFilterMatches = __LOBBY_FILTER_MATCHES_FN__;
-__LOBBY_FILTER_MATCHES_FN__ = function(filter, skill) {
+const __vibiOrigLobbyFilterMatches = $n2f706c61792f6d61696e235f6c6f6262795f66696c7465725f6d617463686573;
+$n2f706c61792f6d61696e235f6c6f6262795f66696c7465725f6d617463686573 = function(filter, skill) {
   if ((skill >>> 0) === 1) {
     return 0;
   }
@@ -136949,6 +137038,8 @@ __vibiObserveLobbyCopy();
 
 
 
+
+
 __run_app(n2f706c61792f6d61696e());
 __app_notify_ready(null);
   </script>
@@ -136972,7 +137063,7 @@ __app_notify_ready(null);
         var link = document.createElement("a");
         link.href = href;
         link.className = "button button--menu button--menu-secondary nav-link";
-        link.textContent = "Voltar para lobby";
+        link.textContent = "Voltar lobby";
         link.setAttribute("data-lobby-link", "1");
         actions.appendChild(link);
       }
