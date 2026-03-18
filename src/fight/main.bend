@@ -1,15 +1,15 @@
 import /App/
 import /HTML/
-import /play/main/ as Play
+import /game_test/main/ as GameTest
 
-init : Play.AppState =
-  Play.fight_app_init()
+init : GameTest.AppState =
+  GameTest.fight_app_init()
 
-def on_event(evt: Play.FightEvent, state: Play.AppState) -> Play.AppState:
-  Play.on_event(evt, state)
+def on_event(evt: GameTest.FightEvent, state: GameTest.AppState) -> GameTest.AppState:
+  GameTest.on_event(evt, state)
 
-def render(state: Play.AppState) -> HTML(Play.FightEvent):
-  Play.fight_render(state)
+def render(state: GameTest.AppState) -> HTML(GameTest.FightEvent):
+  GameTest.fight_render(state)
 
 main : App =
-  app{Play.AppState, Play.FightEvent, init, render, on_event}
+  app{GameTest.AppState, GameTest.FightEvent, init, render, on_event}

@@ -118,17 +118,17 @@ def skill_same_row_right_min_diff(skill: U32) -> U32:
     case 7:
       0
     case 8:
-      4
+      2
     case 9:
       2
     case 10:
       4
     case 11:
-      5
+      3
     case 12:
-      5
+      3
     case 13:
-      5
+      3
     case _:
       0
 
@@ -149,15 +149,15 @@ def skill_same_row_right_min_pos_count(skill: U32) -> U32:
     case 7:
       0
     case 8:
-      3
+      1
     case 9:
       1
     case 10:
-      2
+      5
     case 11:
       1
     case 12:
-      5
+      1
     case 13:
       1
     case _:
@@ -179,30 +179,24 @@ def skill_same_row_right_min_pos_x(skill: U32, idx: U32) -> U32:
       1
     case 8 0:
       2
-    case 8 1:
-      0
-    case 8 2:
-      2
     case 9 0:
       2
     case 10 0:
       2
     case 10 1:
       2
+    case 10 2:
+      2
+    case 10 3:
+      2
+    case 10 4:
+      2
     case 11 0:
-      0
+      2
     case 12 0:
       2
-    case 12 1:
-      1
-    case 12 2:
-      0
-    case 12 3:
-      1
-    case 12 4:
-      2
     case 13 0:
-      0
+      2
     case _ _:
       0
 
@@ -221,29 +215,23 @@ def skill_same_row_right_min_pos_y(skill: U32, idx: U32) -> U32:
     case 6 2:
       2
     case 8 0:
-      0
-    case 8 1:
       2
-    case 8 2:
-      4
     case 9 0:
       2
     case 10 0:
       0
     case 10 1:
+      1
+    case 10 2:
+      2
+    case 10 3:
+      3
+    case 10 4:
       4
     case 11 0:
       2
     case 12 0:
-      0
-    case 12 1:
-      1
-    case 12 2:
       2
-    case 12 3:
-      3
-    case 12 4:
-      4
     case 13 0:
       2
     case _ _:
@@ -301,13 +289,13 @@ def skill_same_row_left_max_pos_count(skill: U32) -> U32:
     case 9:
       3
     case 10:
-      1
+      5
     case 11:
       1
     case 12:
-      1
+      3
     case 13:
-      1
+      5
     case _:
       0
 
@@ -327,11 +315,31 @@ def skill_same_row_left_max_pos_x(skill: U32, idx: U32) -> U32:
       1
     case 10 0:
       0
+    case 10 1:
+      0
+    case 10 2:
+      0
+    case 10 3:
+      0
+    case 10 4:
+      0
     case 11 0:
       0
     case 12 0:
       0
+    case 12 1:
+      0
+    case 12 2:
+      0
     case 13 0:
+      0
+    case 13 1:
+      0
+    case 13 2:
+      0
+    case 13 3:
+      0
+    case 13 4:
       0
     case _ _:
       0
@@ -351,13 +359,33 @@ def skill_same_row_left_max_pos_y(skill: U32, idx: U32) -> U32:
     case 9 2:
       3
     case 10 0:
+      0
+    case 10 1:
+      1
+    case 10 2:
       2
+    case 10 3:
+      3
+    case 10 4:
+      4
     case 11 0:
       2
     case 12 0:
+      0
+    case 12 1:
       2
+    case 12 2:
+      4
     case 13 0:
+      0
+    case 13 1:
+      1
+    case 13 2:
       2
+    case 13 3:
+      3
+    case 13 4:
+      4
     case _ _:
       0
 

@@ -23,7 +23,7 @@ function __fight_parse_slot(name, fallback) {
   return num >>> 0;
 }
 const __fight_app = n2f66696768742f6d61696e();
-__fight_app.init = n2f706c61792f6d61696e2f66696768745f6170705f66726f6d5f736c6f7473()(
+__fight_app.init = n2f67616d655f746573742f6d61696e2f66696768745f6170705f66726f6d5f736c6f7473()(
   __fight_parse_slot("ps1", 1)
 )(
   __fight_parse_slot("ps2", 2)

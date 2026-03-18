@@ -127,48 +127,49 @@ Me5
 
 Ra1
 [
-  [null, null, "P", null, null, null, "D", null, null],
-  [null, "P", null, null, null, null, "D", null, null],
-  ["P", null, null, null, "D", "D", "D", "D", "D"],
-  [null, "P", null, null, null, null, "D", null, null],
-  [null, null, "P", null, null, null, "D", null, null]
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, "D", "D", "D", "D", "D"],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, null, "D", null, null]
 ]
 
 Ra2
 [
-  [null, null, "P", null, null, null, "D", null, "D"],
-  [null, "P", null, null, null, null, "D", null, "D"],
-  ["P", null, null, null, null, null, "D", null, "D"],
-  [null, "P", null, null, null, null, "D", null, "D"],
-  [null, null, "P", null, null, null, "D", null, "D"]
+  ["P", null, "P", null, null, null, "D", null, "D"],
+  ["P", null, "P", null, null, null, "D", null, "D"],
+  ["P", null, "P", null, null, null, "D", null, "D"],
+  ["P", null, "P", null, null, null, "D", null, "D"],
+  ["P", null, "P", null, null, null, "D", null, "D"]
 ]
 
 Ra3
 [
-  [null, null, "P", null, null, null, null, null, null],
-  [null, "P", null, null, null, null, null, "D", null],
-  ["P", null, null, null, null, "D", "D", "D", "D"],
-  [null, "P", null, null, null, null, null, "D", null],
-  [null, null, "P", null, null, null, null, null, null]
+  ["P", null, "P", null, null, null, null, null, null],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, "D", "D", "D", "D"],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, null, null, null]
 ]
 
 Ra4
 [
-  [null, null, "P", null, null, null, null, "D", null],
-  [null, "P", null, null, null, null, "D", null, null],
-  ["P", null, null, null, null, "D", "D", "D", null],
-  [null, "P", null, null, null, null, "D", null, null],
-  [null, null, "P", null, null, null, null, "D", null]
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, "D", "D", "D", null],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, null, null, "D", null]
 ]
 
 Ra5
 [
-  [null, null, "P", null, null, null, null, null, "D"],
-  [null, "P", null, null, null, null, null, null, "D"],
-  ["P", null, null, null, null, "D", "D", "D", "D"],
-  [null, "P", null, null, null, null, null, null, "D"],
-  [null, null, "P", null, null, null, null, null, "D"]
+  ["P", null, "P", null, null, null, null, null, "D"],
+  ["P", null, "P", null, null, null, null, null, "D"],
+  ["P", null, "P", null, null, "D", "D", "D", "D"],
+  ["P", null, "P", null, null, null, null, null, "D"],
+  ["P", null, "P", null, null, null, null, null, "D"]
 ]
+
 
 - todas as habilidades atuais causam 10 de dano quando aplicam dano
 - o preview visual da habilidade deve ficar em uma area fixa
@@ -200,11 +201,10 @@ modelo de tiles:
 - P, A e D nao combinam entre si no mesmo tile
 - I, F e H podem combinar com P ou com A ou com D
 - em skills de mage e ranged, a area de encaixe do ator pode ficar separada da area onde o ataque cai
-- Ra1 usa uma matriz 5x9:
-  - um "<" de P na esquerda
-  - um "+" maior de D na direita
-  - o "+" fica centralizado na altura e encostado no lado direito da matriz
-- Ra2 ate Ra5 tambem sao ranged com matriz 5x9 e tiles P separados do grupo de dano D
+- Ra1 ate Ra5 usam matriz 5x9
+- todas as ranged atuais usam duas colunas de P no lado esquerdo
+- o grupo de dano D fica separado no lado direito
+- cada Ra varia apenas o desenho do grupo de dano D
 - se a skill tiver tiles P, o ator precisa encaixar em um dos P
 - se a skill nao tiver tiles P, como nas melee atuais, o ator pode encaixar em qualquer tile ocupado da shape
 - uma mesma casa pode ter mais de uma letra

@@ -1,0 +1,79 @@
+
+eu montei uma nova logica de script q eu acredito q vai facilitar os calculos q temos atualmente. hoje é tentativa e erro e isso aqui vai filtrar os casos que não são necessarios serem acalculados, preciso q me faça perguntas pertinentes para aprimorar a ideia para o bot do game:
+
+#1 Calculo de diferença de pos.
+o bot calcula a distancia em (x,y) q ele tem do player
+
+(xBot-xPlayer, yBot - yPlayer)
+vai ser usado durante todo o periodo desse script.
+
+vamos chamar de 
+deltaX =xBot-xPlayer
+deltaY =yBot - yPlayer
+diffXdeY =  deltaX-deltaY
+
+
+#2 Calcula o sentido
+e de acordo com se é positivo ou negativo, ele vai determinar qual a direção que ele deve testar as possibilidades de ataque. 
+se o player esta em (-x, +y) significa q ele está na direita inferior, correto?
+então ele vai tentar possibilidades direcionadas para essas duas direções somente.
+
+#3 Calcula a direção
+a segunda parte é de fato definir uma direção mais especifica, com + e - de (x,y) da diferença das posições, podemos ter 3 direções possiveis. 
+- horizontal X 
+- vertical Y
+- diagonal.
+
+se -2 <= diffXmenosY <= 2  e delta >1 e deltaY > 1 então  é tratado como um ataque de diagonal. diagonal 
+se diffXmenosY >2 então é horizontal (X)
+e se diffXmenosY < 2 então é vertical(Y) 
+
+essa é a direção q deve ser considerada.
+
+#4 Definir qual das 3 habilidades serve melhor para nossa situação.  isso vai depender da direção se tem P ou não.
+
+
+para cada habilidade vamos ter um true ou false se o player está dentro de uma area.
+teremos retangulos para cada habilidade que serao aplicados a partir da pos do bot, considerando que dentro dessa nova matriz imaginaria com retangulo teria o bot na primeira coluna da matriz e na linha mais centralizada da matriz (se for par, pode usar o centralizado de cima).
+
+exemplo:
+
+nessa situação:
+[
+  [null,     null,    null,    null,    null],
+  [null,     null,    null,    null,    null],
+  ["bot", null,    null,    null,    null],
+  [null,     null,    null,    null,    null],
+  [null,     null,    null,    null,    "player"]
+]
+
+se 
+
+area_box {
+  x1: 3,
+  y1: 1,
+  x2: 4,
+  y2: 5
+}
+
+então teriamos:
+
+[
+  [null, null, "G", "G", null],
+  [null, null, "G", "G", null],
+  ["bot", null, "G", "G", null],
+  [null, null, "G", "G", null],
+  [null, null, "G", "G", "player"]
+]
+
+oq eu preciso é q ele retorne se player esta em uma das areas de G. ok?
+eu acho q vc é capaz de desenvolver uma formula q verifique isso usando valores delta e função. sem precisar da matriz em si. de forma otimizada.
+
+para ranged e mage, teremos P, e o retangulo vai ser como eu mencionei.
+para melee, eu gostaria q fosse usado o tamanho da matriz da propria habilidade como referencia.
+
+#5 das habilidades q retornarem TRUE, vai ser sorteado qual das com true sera usada, por enquanto, se a habilidade for melee, ele vai se aproximar do player, se a habilidade for de mage, ele vai tentar estar a  6 a 7 blocos de distancia do player horizontalmente falando, mas se não der para ser horizontalmente, verticalmente tambem serve.  se for ranged, ele vai tentar ficar a 8 a 10 blocos longe do player, e se ele ja tiver nessa distancia, ele vai se movimentar paralelo a onde esta o player, não se aproximando e nem se afastando. sobre ataque, ele vai pegar a direção determinada no nosso calculo anterior (horizontal, vertical, diagonal), sentido (+ou-,+ou-) e vai determinar qual dos P vai ser utilizado com base nessas informações.  eu organizei os dados de cada habiliadde para englobar dados uteis para decisão de como vai ser encaixado a habilidade. eu gostaria q a primeira forma q se encaixar no uso da habiliade, ja pode ser usada. e de preferencia a primeira forma seja algo q use ela com o encaixe de P na linha mais central da habilidade. se for diagonal vai sair desse padrão é claro. 
+
+se a habilidade for melee, ele simplesmente vai atacar na direção do alvo. a primeira q se encaixar ja vai ser utilizada. se for necessario girar (mantendo um dos exios escolhidos la no sentido) pode ser feito.
+
+oq acha?
