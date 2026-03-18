@@ -13,8 +13,12 @@ TARGETS = [
 
 PATCH_START = "/* __vibi_perf_patch:start */"
 PATCH_END = "/* __vibi_perf_patch:end */"
+GAME_MAIN_PREFIXES = (
+    "n2f67616d655f746573742f6d61696e",
+    "n2f67616d652d746573742f6d61696e",
+)
 
-PATCH = r"""
+PATCH_TEMPLATE = r"""
 /* __vibi_perf_patch:start */
 // Performance priority order:
 // 1. preprocess and cache skill matrices/visuals on load
@@ -223,13 +227,13 @@ const __vibiOrigSkillPointX = $n2f7368617265642f66696768742f736b696c6c5f706f696e
 const __vibiOrigSkillPointY = $n2f7368617265642f66696768742f736b696c6c5f706f696e745f79;
 const __vibiOrigSkillPlayerMask = $n2f7368617265642f66696768742f736b696c6c5f706c617965725f6d61736b;
 const __vibiOrigSkillEffectMask = $n2f7368617265642f66696768742f736b696c6c5f6566666563745f6d61736b;
-const __vibiOrigPreviewTilesFor = $n2f67616d655f746573742f6d61696e2f5f707265766965775f74696c65735f666f72;
-const __vibiOrigPreviewAnchorTilesFor = $n2f67616d655f746573742f6d61696e2f5f707265766965775f616e63686f725f74696c65735f666f72;
-const __vibiOrigPreviewHitsFor = $n2f67616d655f746573742f6d61696e2f5f707265766965775f686974735f666f72;
-const __vibiOrigEffectTilesFor = $n2f67616d655f746573742f6d61696e2f5f6566666563745f74696c65735f666f72;
-const __vibiOrigPlacementValid = $n2f67616d655f746573742f6d61696e2f5f706c6163656d656e745f76616c6964;
-const __vibiOrigPreviewHitContains = $n2f67616d655f746573742f6d61696e2f5f707265766965775f6869745f636f6e7461696e73;
-const __vibiOrigPosListHas = $n2f67616d655f746573742f6d61696e2f5f706f735f6c6973745f686173;
+const __vibiOrigPreviewTilesFor = __GAME_PRIVATE__707265766965775f74696c65735f666f72;
+const __vibiOrigPreviewAnchorTilesFor = __GAME_PRIVATE__707265766965775f616e63686f725f74696c65735f666f72;
+const __vibiOrigPreviewHitsFor = __GAME_PRIVATE__707265766965775f686974735f666f72;
+const __vibiOrigEffectTilesFor = __GAME_PRIVATE__6566666563745f74696c65735f666f72;
+const __vibiOrigPlacementValid = __GAME_PRIVATE__706c6163656d656e745f76616c6964;
+const __vibiOrigPreviewHitContains = __GAME_PRIVATE__707265766965775f6869745f636f6e7461696e73;
+const __vibiOrigPosListHas = __GAME_PRIVATE__706f735f6c6973745f686173;
 
 $n2f7368617265642f66696768742f736b696c6c5f6c656e = function(skill) {
   const cached = __vibiSkillCache[skill >>> 0];
@@ -260,22 +264,22 @@ $n2f7368617265642f66696768742f736b696c6c5f6566666563745f6d61736b = function(skil
   return value === undefined ? __vibiOrigSkillEffectMask(skill, idx) : (value >>> 0);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f707265766965775f74696c65735f666f72 = function(skill, rot, origin, actor, idx) {
+__GAME_PRIVATE__707265766965775f74696c65735f666f72 = function(skill, rot, origin, actor, idx) {
   const frame = __vibiFrame(skill, rot);
   return frame ? __vibiCachedWorldList(frame.all, actor, origin, false) : __vibiOrigPreviewTilesFor(skill, rot, origin, actor, idx);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f707265766965775f616e63686f725f74696c65735f666f72 = function(skill, rot, origin, actor, idx) {
+__GAME_PRIVATE__707265766965775f616e63686f725f74696c65735f666f72 = function(skill, rot, origin, actor, idx) {
   const frame = __vibiFrame(skill, rot);
   return frame ? __vibiCachedWorldList(frame.previewAnchor, actor, origin, false) : __vibiOrigPreviewAnchorTilesFor(skill, rot, origin, actor, idx);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f707265766965775f686974735f666f72 = function(skill, rot, origin, actor, idx) {
+__GAME_PRIVATE__707265766965775f686974735f666f72 = function(skill, rot, origin, actor, idx) {
   const frame = __vibiFrame(skill, rot);
   return frame ? __vibiCachedWorldList(frame.effectAll, actor, origin, true) : __vibiOrigPreviewHitsFor(skill, rot, origin, actor, idx);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f6566666563745f74696c65735f666f72 = function(skill, rot, origin, actor, flag, idx) {
+__GAME_PRIVATE__6566666563745f74696c65735f666f72 = function(skill, rot, origin, actor, flag, idx) {
   const frame = __vibiFrame(skill, rot);
   if (!frame) {
     return __vibiOrigEffectTilesFor(skill, rot, origin, actor, flag, idx);
@@ -284,7 +288,7 @@ $n2f67616d655f746573742f6d61696e2f5f6566666563745f74696c65735f666f72 = function(
   return __vibiCachedWorldList(points, actor, origin, true);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f706c6163656d656e745f76616c6964 = function(skill, rot, origin, actor) {
+__GAME_PRIVATE__706c6163656d656e745f76616c6964 = function(skill, rot, origin, actor) {
   const frame = __vibiFrame(skill, rot);
   if (!frame) {
     return __vibiOrigPlacementValid(skill, rot, origin, actor);
@@ -295,7 +299,7 @@ $n2f67616d655f746573742f6d61696e2f5f706c6163656d656e745f76616c6964 = function(sk
   return __vibiHasVisibleEffect(frame.effectAll, actor, origin);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f707265766965775f6869745f636f6e7461696e73 = function(skill, rot, origin, actor, target, idx) {
+__GAME_PRIVATE__707265766965775f6869745f636f6e7461696e73 = function(skill, rot, origin, actor, target, idx) {
   const frame = __vibiFrame(skill, rot);
   if (!frame) {
     return __vibiOrigPreviewHitContains(skill, rot, origin, actor, target, idx);
@@ -312,7 +316,7 @@ $n2f67616d655f746573742f6d61696e2f5f707265766965775f6869745f636f6e7461696e73 = f
   return 0;
 };
 
-$n2f67616d655f746573742f6d61696e2f5f706f735f6c6973745f686173 = function(items, target) {
+__GAME_PRIVATE__706f735f6c6973745f686173 = function(items, target) {
   const rows = items && items.__grid_rows;
   if (rows) {
     return __vibiGridHas(rows, target) ? 1 : 0;
@@ -374,6 +378,17 @@ __run_app = function(app) {
 /* __vibi_perf_patch:end */
 """
 
+def detect_game_main_prefix(text: str) -> str:
+    for prefix in GAME_MAIN_PREFIXES:
+        if prefix + "235f72756e74696d655f656d707479" in text:
+            return prefix
+    raise SystemExit("game main prefix not found")
+
+
+def build_patch(text: str) -> str:
+    private_prefix = "$" + detect_game_main_prefix(text) + "235f"
+    return PATCH_TEMPLATE.replace("__GAME_PRIVATE__", private_prefix)
+
 
 def patch_text(text: str) -> str:
     marker = "const __fight_params ="
@@ -382,12 +397,14 @@ def patch_text(text: str) -> str:
     if marker not in text:
         raise SystemExit("bootstrap marker not found")
 
+    patch = build_patch(text)
+
     if PATCH_START in text and PATCH_END in text:
         start = text.index(PATCH_START)
         end = text.index(PATCH_END) + len(PATCH_END)
-        return text[:start] + PATCH.strip() + "\n\n" + text[end:]
+        return text[:start] + patch.strip() + "\n\n" + text[end:]
 
-    return text.replace(marker, PATCH.strip() + "\n\n" + marker, 1)
+    return text.replace(marker, patch.strip() + "\n\n" + marker, 1)
 
 
 def main() -> None:

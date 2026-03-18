@@ -121464,13 +121464,13 @@ const __vibiOrigSkillPointX = $n2f7368617265642f66696768742f736b696c6c5f706f696e
 const __vibiOrigSkillPointY = $n2f7368617265642f66696768742f736b696c6c5f706f696e745f79;
 const __vibiOrigSkillPlayerMask = $n2f7368617265642f66696768742f736b696c6c5f706c617965725f6d61736b;
 const __vibiOrigSkillEffectMask = $n2f7368617265642f66696768742f736b696c6c5f6566666563745f6d61736b;
-const __vibiOrigPreviewTilesFor = $n2f67616d655f746573742f6d61696e2f5f707265766965775f74696c65735f666f72;
-const __vibiOrigPreviewAnchorTilesFor = $n2f67616d655f746573742f6d61696e2f5f707265766965775f616e63686f725f74696c65735f666f72;
-const __vibiOrigPreviewHitsFor = $n2f67616d655f746573742f6d61696e2f5f707265766965775f686974735f666f72;
-const __vibiOrigEffectTilesFor = $n2f67616d655f746573742f6d61696e2f5f6566666563745f74696c65735f666f72;
-const __vibiOrigPlacementValid = $n2f67616d655f746573742f6d61696e2f5f706c6163656d656e745f76616c6964;
-const __vibiOrigPreviewHitContains = $n2f67616d655f746573742f6d61696e2f5f707265766965775f6869745f636f6e7461696e73;
-const __vibiOrigPosListHas = $n2f67616d655f746573742f6d61696e2f5f706f735f6c6973745f686173;
+const __vibiOrigPreviewTilesFor = $n2f67616d655f746573742f6d61696e235f707265766965775f74696c65735f666f72;
+const __vibiOrigPreviewAnchorTilesFor = $n2f67616d655f746573742f6d61696e235f707265766965775f616e63686f725f74696c65735f666f72;
+const __vibiOrigPreviewHitsFor = $n2f67616d655f746573742f6d61696e235f707265766965775f686974735f666f72;
+const __vibiOrigEffectTilesFor = $n2f67616d655f746573742f6d61696e235f6566666563745f74696c65735f666f72;
+const __vibiOrigPlacementValid = $n2f67616d655f746573742f6d61696e235f706c6163656d656e745f76616c6964;
+const __vibiOrigPreviewHitContains = $n2f67616d655f746573742f6d61696e235f707265766965775f6869745f636f6e7461696e73;
+const __vibiOrigPosListHas = $n2f67616d655f746573742f6d61696e235f706f735f6c6973745f686173;
 
 $n2f7368617265642f66696768742f736b696c6c5f6c656e = function(skill) {
   const cached = __vibiSkillCache[skill >>> 0];
@@ -121501,22 +121501,22 @@ $n2f7368617265642f66696768742f736b696c6c5f6566666563745f6d61736b = function(skil
   return value === undefined ? __vibiOrigSkillEffectMask(skill, idx) : (value >>> 0);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f707265766965775f74696c65735f666f72 = function(skill, rot, origin, actor, idx) {
+$n2f67616d655f746573742f6d61696e235f707265766965775f74696c65735f666f72 = function(skill, rot, origin, actor, idx) {
   const frame = __vibiFrame(skill, rot);
   return frame ? __vibiCachedWorldList(frame.all, actor, origin, false) : __vibiOrigPreviewTilesFor(skill, rot, origin, actor, idx);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f707265766965775f616e63686f725f74696c65735f666f72 = function(skill, rot, origin, actor, idx) {
+$n2f67616d655f746573742f6d61696e235f707265766965775f616e63686f725f74696c65735f666f72 = function(skill, rot, origin, actor, idx) {
   const frame = __vibiFrame(skill, rot);
   return frame ? __vibiCachedWorldList(frame.previewAnchor, actor, origin, false) : __vibiOrigPreviewAnchorTilesFor(skill, rot, origin, actor, idx);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f707265766965775f686974735f666f72 = function(skill, rot, origin, actor, idx) {
+$n2f67616d655f746573742f6d61696e235f707265766965775f686974735f666f72 = function(skill, rot, origin, actor, idx) {
   const frame = __vibiFrame(skill, rot);
   return frame ? __vibiCachedWorldList(frame.effectAll, actor, origin, true) : __vibiOrigPreviewHitsFor(skill, rot, origin, actor, idx);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f6566666563745f74696c65735f666f72 = function(skill, rot, origin, actor, flag, idx) {
+$n2f67616d655f746573742f6d61696e235f6566666563745f74696c65735f666f72 = function(skill, rot, origin, actor, flag, idx) {
   const frame = __vibiFrame(skill, rot);
   if (!frame) {
     return __vibiOrigEffectTilesFor(skill, rot, origin, actor, flag, idx);
@@ -121525,7 +121525,7 @@ $n2f67616d655f746573742f6d61696e2f5f6566666563745f74696c65735f666f72 = function(
   return __vibiCachedWorldList(points, actor, origin, true);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f706c6163656d656e745f76616c6964 = function(skill, rot, origin, actor) {
+$n2f67616d655f746573742f6d61696e235f706c6163656d656e745f76616c6964 = function(skill, rot, origin, actor) {
   const frame = __vibiFrame(skill, rot);
   if (!frame) {
     return __vibiOrigPlacementValid(skill, rot, origin, actor);
@@ -121536,7 +121536,7 @@ $n2f67616d655f746573742f6d61696e2f5f706c6163656d656e745f76616c6964 = function(sk
   return __vibiHasVisibleEffect(frame.effectAll, actor, origin);
 };
 
-$n2f67616d655f746573742f6d61696e2f5f707265766965775f6869745f636f6e7461696e73 = function(skill, rot, origin, actor, target, idx) {
+$n2f67616d655f746573742f6d61696e235f707265766965775f6869745f636f6e7461696e73 = function(skill, rot, origin, actor, target, idx) {
   const frame = __vibiFrame(skill, rot);
   if (!frame) {
     return __vibiOrigPreviewHitContains(skill, rot, origin, actor, target, idx);
@@ -121553,7 +121553,7 @@ $n2f67616d655f746573742f6d61696e2f5f707265766965775f6869745f636f6e7461696e73 = f
   return 0;
 };
 
-$n2f67616d655f746573742f6d61696e2f5f706f735f6c6973745f686173 = function(items, target) {
+$n2f67616d655f746573742f6d61696e235f706f735f6c6973745f686173 = function(items, target) {
   const rows = items && items.__grid_rows;
   if (rows) {
     return __vibiGridHas(rows, target) ? 1 : 0;
@@ -121613,6 +121613,8 @@ __run_app = function(app) {
   root.replaceChildren(dom);
 };
 /* __vibi_perf_patch:end */
+
+
 
 
 
