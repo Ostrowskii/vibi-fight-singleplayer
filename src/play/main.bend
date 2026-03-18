@@ -199,7 +199,7 @@ def fight_app_init() -> AppState:
 def fight_app_from_slots(ps1: U32, ps2: U32, ps3: U32, bs1: U32, bs2: U32, bs3: U32) -> AppState:
   player_loadout = _loadout_from_slots(ps1, ps2, ps3);
   bot_loadout = _loadout_from_slots(bs1, bs2, bs3);
-  lobby = _lobby_from_loadouts(player_loadout, bot_loadout);
+  lobby = _lobby_battle_loadouts(_lobby_from_loadouts(player_loadout, bot_loadout));
   app_state{battle{}, lobby, _game_from_lobby(lobby)}
 
 def fight_render(app: AppState) -> HTML(FightEvent):
@@ -225,6 +225,18 @@ def _loadout_from_slots(s1: U32, s2: U32, s3: U32) -> Loadout:
 
 def _lobby_from_loadouts(player_loadout: Loadout, bot_loadout: Loadout) -> LobbyState:
   lobby_state{Fight.default_hp(), Fight.default_hp(), player_loadout, bot_loadout, 0, 0}
+
+def _loadout_with_me1_fallback(loadout_value: Loadout) -> Loadout:
+  match _loadout_count(loadout_value):
+    case 0:
+      loadout{1, 0, 0}
+    case _:
+      loadout_value
+
+def _lobby_battle_loadouts(lobby: LobbyState) -> LobbyState:
+  player_loadout = _loadout_with_me1_fallback(_lobby_player_loadout(lobby));
+  bot_loadout = _loadout_with_me1_fallback(_lobby_bot_loadout(lobby));
+  _lobby_with_bot_loadout(_lobby_with_player_loadout(lobby, player_loadout), bot_loadout)
 
 def state_init() -> GameState:
   state_init_count(1)
@@ -3159,7 +3171,7 @@ def _app_match_event(evt: FightEvent, app: AppState) -> AppState:
       _app_with_game(app, _on_match_event(evt, _app_game(app), _app_lobby(app)))
 
 def _app_start_match(app: AppState) -> AppState:
-  lobby = _app_lobby(app);
+  lobby = _lobby_battle_loadouts(_app_lobby(app));
   app_state{battle{}, lobby, _game_from_lobby(lobby)}
 
 def _app_update_lobby_player_hp(app: AppState, add: U32) -> AppState:
@@ -3210,11 +3222,7 @@ def _app_toggle_player_skill(app: AppState, skill: U32) -> AppState:
   _app_toggle_player_skill_next(app, lobby, next)
 
 def _app_toggle_player_skill_next(app: AppState, lobby: LobbyState, next: Loadout) -> AppState:
-  match _loadout_count(next):
-    case 0:
-      app
-    case _:
-      _app_with_lobby(app, _lobby_with_player_loadout(lobby, next))
+  _app_with_lobby(app, _lobby_with_player_loadout(lobby, next))
 
 def _app_toggle_bot_skill(app: AppState, skill: U32) -> AppState:
   lobby = _app_lobby(app);
@@ -3223,11 +3231,7 @@ def _app_toggle_bot_skill(app: AppState, skill: U32) -> AppState:
   _app_toggle_bot_skill_next(app, lobby, next)
 
 def _app_toggle_bot_skill_next(app: AppState, lobby: LobbyState, next: Loadout) -> AppState:
-  match _loadout_count(next):
-    case 0:
-      app
-    case _:
-      _app_with_lobby(app, _lobby_with_bot_loadout(lobby, next))
+  _app_with_lobby(app, _lobby_with_bot_loadout(lobby, next))
 
 def _app_toggle_lobby_skill(app: AppState, side: U32, skill: U32) -> AppState:
   match side:
@@ -3399,7 +3403,7 @@ def _render_lobby_screen(app: AppState, active: U32) -> HTML(FightEvent):
       </div>
 
       <div class="lobby-footer">
-        <p class="menu-copy menu-copy--compact">{text{"Selecione de 1 a 3 skills por lado. Os slots vazios continuam vazios na partida."}}</p>
+        <p class="menu-copy menu-copy--compact">{text{"Selecione ate 3 skills por lado. Se um lado entrar vazio, ele recebe Me1 por padrao na partida."}}</p>
         <a class={_lobby_play_class(lobby)} href={_lobby_play_href(lobby)}>{text{"Play"}}</a>
       </div>
     </section>
@@ -3436,7 +3440,6 @@ def _lobby_side_card(side: U32, lobby: LobbyState) -> HTML(FightEvent):
     </div>
     <div class="skill-pool-wrap">
       <div class="skill-pool-grid">
-        {_lobby_skill_pick_card_filtered(side, lobby, 1)}
         {_lobby_skill_pick_card_filtered(side, lobby, 2)}
         {_lobby_skill_pick_card_filtered(side, lobby, 3)}
         {_lobby_skill_pick_card_filtered(side, lobby, 4)}
@@ -3579,7 +3582,7 @@ def _lobby_play_href_w(player: Loadout, bot: Loadout, ready: U32) -> String:
       ++ "&bs3=" ++ U32.show(_loadout_slot(bot, 2))
 
 def _lobby_play_ready(lobby: LobbyState) -> U32:
-  _u32_lt(0, _loadout_count(_lobby_player_loadout(lobby))) & _u32_lt(0, _loadout_count(_lobby_bot_loadout(lobby)))
+  1
 
 def _winner_sidebar_text(state: GameState) -> HTML(FightEvent):
   _winner_sidebar_text_w(_state_winner(state))
@@ -3911,15 +3914,19 @@ def _lobby_skill_pick_card_filtered(side: U32, lobby: LobbyState, skill: U32) ->
   </button>
 
 def _lobby_filter_matches(filter: U32, skill: U32) -> U32:
-  match filter:
-    case 0:
-      1
+  match skill:
     case 1:
-      Fight.skill_class_id(skill) === 1
-    case 2:
-      Fight.skill_class_id(skill) === 2
+      0
     case _:
-      Fight.skill_class_id(skill) === 0
+      match filter:
+        case 0:
+          1
+        case 1:
+          Fight.skill_class_id(skill) === 1
+        case 2:
+          Fight.skill_class_id(skill) === 2
+        case _:
+          Fight.skill_class_id(skill) === 0
 
 def _lobby_skill_pick_attrs(side: U32, loadout_value: Loadout, skill: U32) -> List(Attr(FightEvent)):
   _button_attrs(_lobby_skill_pick_class(loadout_value, skill), _lobby_skill_pick_evt(side, skill))

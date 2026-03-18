@@ -205,7 +205,7 @@ def game_test_app_init() -> AppState:
 def game_test_app_from_slots_items(ps1: U32, ps2: U32, ps3: U32, bs1: U32, bs2: U32, bs3: U32, pi1: U32, pi2: U32, pi3: U32, bi1: U32, bi2: U32, bi3: U32) -> AppState:
   player_loadout = _loadout_from_slots(ps1, ps2, ps3);
   bot_loadout = _loadout_from_slots(bs1, bs2, bs3);
-  lobby = _lobby_from_loadouts(player_loadout, bot_loadout);
+  lobby = _lobby_battle_loadouts(_lobby_from_loadouts(player_loadout, bot_loadout));
   app_state{battle{}, lobby, _game_from_lobby(lobby)}
 
 def fight_app_init() -> AppState:
@@ -230,6 +230,18 @@ def _loadout_from_slots(s1: U32, s2: U32, s3: U32) -> Loadout:
 
 def _lobby_from_loadouts(player_loadout: Loadout, bot_loadout: Loadout) -> LobbyState:
   lobby_state{Fight.default_hp(), Fight.default_hp(), player_loadout, bot_loadout, 0, 0}
+
+def _loadout_with_me1_fallback(loadout_value: Loadout) -> Loadout:
+  match _loadout_count(loadout_value):
+    case 0:
+      loadout{1, 0, 0}
+    case _:
+      loadout_value
+
+def _lobby_battle_loadouts(lobby: LobbyState) -> LobbyState:
+  player_loadout = _loadout_with_me1_fallback(_lobby_player_loadout(lobby));
+  bot_loadout = _loadout_with_me1_fallback(_lobby_bot_loadout(lobby));
+  _lobby_with_bot_loadout(_lobby_with_player_loadout(lobby, player_loadout), bot_loadout)
 
 def state_init() -> GameState:
   state_init_count(1)

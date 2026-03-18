@@ -14,16 +14,19 @@ TARGETS = [
         "path": ROOT / "play" / "index.html",
         "module_path": "/play/main",
         "marker": "__run_app(n2f706c61792f6d61696e());",
+        "bundle_kind": "play",
     },
     {
         "path": ROOT / "game-test" / "index.html",
         "module_path": "/game-test/main",
         "marker": "const __game_test_params =",
+        "bundle_kind": "game_test",
     },
     {
         "path": ROOT / "fight" / "index.html",
         "module_path": "/game_test/main",
         "marker": "const __fight_params =",
+        "bundle_kind": "game_test",
     },
 ]
 
@@ -451,7 +454,166 @@ __ON_MATCH_EVENT_FN__ = function(evt, state, lobby) {
 __BUILD_BOT_PLAN_FN__ = function(player, enemy, bots, botIdx, round, botLoadout) {
   return __vibiTurnBuildBotPlan(player, enemy, bots, botIdx, round, botLoadout);
 };
+__VIBI_EXTRA_PATCH__
 /* __vibi_turn_patch:end */
+"""
+
+
+COMMON_EXTRA_PATCH = r"""
+function __vibiLobbyCount(loadout) {
+  if (!loadout || loadout.$ !== "loadout") {
+    return 0;
+  }
+  let count = 0;
+  if ((loadout.s1 >>> 0) !== 0) {
+    count += 1;
+  }
+  if ((loadout.s2 >>> 0) !== 0) {
+    count += 1;
+  }
+  if ((loadout.s3 >>> 0) !== 0) {
+    count += 1;
+  }
+  return count >>> 0;
+}
+
+function __vibiLobbyFallbackLoadout(loadout) {
+  if (__vibiLobbyCount(loadout) !== 0) {
+    return loadout;
+  }
+  return ({$: "loadout", s1: 1, s2: 0, s3: 0});
+}
+
+function __vibiLobbyBattleLoadouts(lobby) {
+  if (!lobby || lobby.$ !== "lobby_state") {
+    return lobby;
+  }
+  return ({
+    $: "lobby_state",
+    player_hp: lobby.player_hp >>> 0,
+    bot_hp: lobby.bot_hp >>> 0,
+    player_loadout: __vibiLobbyFallbackLoadout(lobby.player_loadout),
+    bot_loadout: __vibiLobbyFallbackLoadout(lobby.bot_loadout),
+    player_filter: lobby.player_filter >>> 0,
+    bot_filter: lobby.bot_filter >>> 0,
+  });
+}
+
+function __vibiLobbyAppWithBattleLoadouts(app) {
+  if (!app || app.$ !== "app_state") {
+    return app;
+  }
+  return ({
+    $: "app_state",
+    screen: app.screen,
+    lobby: __vibiLobbyBattleLoadouts(app.lobby),
+    game: app.game,
+  });
+}
+
+const __vibiOrigFightAppFromSlots = __FIGHT_APP_FROM_SLOTS_FN__;
+__FIGHT_APP_FROM_SLOTS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3) {
+  return __vibiLobbyAppWithBattleLoadouts(
+    __vibiOrigFightAppFromSlots(
+      ps1 >>> 0,
+      ps2 >>> 0,
+      ps3 >>> 0,
+      bs1 >>> 0,
+      bs2 >>> 0,
+      bs3 >>> 0,
+    ),
+  );
+};
+"""
+
+
+PLAY_EXTRA_PATCH = r"""
+const __VIBI_LOBBY_COPY_TEXT = "Selecione ate 3 skills por lado. Se um lado entrar vazio, ele recebe Me1 por padrao na partida.";
+
+__APP_TOGGLE_PLAYER_SKILL_NEXT_FN__ = function(app, lobby, next) {
+  return __APP_WITH_LOBBY_FN__(app, __LOBBY_WITH_PLAYER_LOADOUT_FN__(lobby, next));
+};
+
+__APP_TOGGLE_BOT_SKILL_NEXT_FN__ = function(app, lobby, next) {
+  return __APP_WITH_LOBBY_FN__(app, __LOBBY_WITH_BOT_LOADOUT_FN__(lobby, next));
+};
+
+const __vibiOrigAppStartMatch = __APP_START_MATCH_FN__;
+__APP_START_MATCH_FN__ = function(app) {
+  return __vibiOrigAppStartMatch(
+    __APP_WITH_LOBBY_FN__(app, __vibiLobbyBattleLoadouts(__APP_LOBBY_FN__(app))),
+  );
+};
+
+__LOBBY_PLAY_READY_FN__ = function(_lobby) {
+  return 1;
+};
+
+const __vibiOrigLobbyFilterMatches = __LOBBY_FILTER_MATCHES_FN__;
+__LOBBY_FILTER_MATCHES_FN__ = function(filter, skill) {
+  if ((skill >>> 0) === 1) {
+    return 0;
+  }
+  return __vibiOrigLobbyFilterMatches(filter >>> 0, skill >>> 0);
+};
+
+function __vibiPatchLobbyCopy() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const node = document.querySelector(".lobby-footer .menu-copy");
+  if (node && node.textContent !== __VIBI_LOBBY_COPY_TEXT) {
+    node.textContent = __VIBI_LOBBY_COPY_TEXT;
+  }
+}
+
+function __vibiObserveLobbyCopy() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const start = () => {
+    __vibiPatchLobbyCopy();
+    if (typeof MutationObserver === "undefined" || !document.body) {
+      return;
+    }
+    const observer = new MutationObserver(() => __vibiPatchLobbyCopy());
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, {once: true});
+  } else {
+    start();
+  }
+}
+
+__vibiObserveLobbyCopy();
+"""
+
+
+GAME_TEST_EXTRA_PATCH = r"""
+const __vibiOrigGameTestAppFromSlotsItems = __GAME_TEST_APP_FROM_SLOTS_ITEMS_FN__;
+__GAME_TEST_APP_FROM_SLOTS_ITEMS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3, pi1, pi2, pi3, bi1, bi2, bi3) {
+  return __vibiLobbyAppWithBattleLoadouts(
+    __vibiOrigGameTestAppFromSlotsItems(
+      ps1 >>> 0,
+      ps2 >>> 0,
+      ps3 >>> 0,
+      bs1 >>> 0,
+      bs2 >>> 0,
+      bs3 >>> 0,
+      pi1 >>> 0,
+      pi2 >>> 0,
+      pi3 >>> 0,
+      bi1 >>> 0,
+      bi2 >>> 0,
+      bi3 >>> 0,
+    ),
+  );
+};
 """
 
 
@@ -461,7 +623,16 @@ def encode_symbol(module_path: str, name: str, with_dollar: bool = True) -> str:
     return f"${encoded}" if with_dollar else encoded
 
 
-def build_patch(module_path: str) -> str:
+def build_extra_patch(bundle_kind: str) -> str:
+    parts = [COMMON_EXTRA_PATCH.strip()]
+    if bundle_kind == "play":
+        parts.append(PLAY_EXTRA_PATCH.strip())
+    elif bundle_kind == "game_test":
+        parts.append(GAME_TEST_EXTRA_PATCH.strip())
+    return "\n\n".join(part for part in parts if part) + "\n"
+
+
+def build_patch(module_path: str, bundle_kind: str) -> str:
     replacements = {
         "__SKILL_CLASS_ID_FN__": encode_symbol("/shared/fight", "skill_class_id"),
         "__ACTION_SET_FN__": encode_symbol(module_path, "_action_set"),
@@ -486,6 +657,18 @@ def build_patch(module_path: str) -> str:
         "__ROUND_SKILL_FN__": encode_symbol(module_path, "_round_skill"),
         "__FIND_ATTACK_FN__": encode_symbol(module_path, "_find_attack"),
         "__FIRST_VALID_ATTACK_FN__": encode_symbol(module_path, "_first_valid_attack"),
+        "__FIGHT_APP_FROM_SLOTS_FN__": encode_symbol(module_path, "fight_app_from_slots"),
+        "__APP_START_MATCH_FN__": encode_symbol(module_path, "_app_start_match"),
+        "__APP_LOBBY_FN__": encode_symbol(module_path, "_app_lobby"),
+        "__APP_WITH_LOBBY_FN__": encode_symbol(module_path, "_app_with_lobby"),
+        "__APP_TOGGLE_PLAYER_SKILL_NEXT_FN__": encode_symbol(module_path, "_app_toggle_player_skill_next"),
+        "__APP_TOGGLE_BOT_SKILL_NEXT_FN__": encode_symbol(module_path, "_app_toggle_bot_skill_next"),
+        "__LOBBY_WITH_PLAYER_LOADOUT_FN__": encode_symbol(module_path, "_lobby_with_player_loadout"),
+        "__LOBBY_WITH_BOT_LOADOUT_FN__": encode_symbol(module_path, "_lobby_with_bot_loadout"),
+        "__LOBBY_PLAY_READY_FN__": encode_symbol(module_path, "_lobby_play_ready"),
+        "__LOBBY_FILTER_MATCHES_FN__": encode_symbol(module_path, "_lobby_filter_matches"),
+        "__GAME_TEST_APP_FROM_SLOTS_ITEMS_FN__": encode_symbol(module_path, "game_test_app_from_slots_items"),
+        "__VIBI_EXTRA_PATCH__": build_extra_patch(bundle_kind),
     }
 
     text = PATCH_TEMPLATE
@@ -494,11 +677,11 @@ def build_patch(module_path: str) -> str:
     return text
 
 
-def patch_text(text: str, module_path: str, marker: str) -> str:
+def patch_text(text: str, module_path: str, marker: str, bundle_kind: str) -> str:
     if marker not in text:
         raise SystemExit(f"marker not found for {module_path}")
 
-    patch = build_patch(module_path)
+    patch = build_patch(module_path, bundle_kind)
 
     if PATCH_START in text and PATCH_END in text:
         start = text.index(PATCH_START)
@@ -513,7 +696,8 @@ def main() -> None:
         path = target["path"]
         module_path = target["module_path"]
         marker = target["marker"]
-        path.write_text(patch_text(path.read_text(), module_path, marker))
+        bundle_kind = target["bundle_kind"]
+        path.write_text(patch_text(path.read_text(), module_path, marker, bundle_kind))
 
 
 if __name__ == "__main__":
