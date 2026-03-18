@@ -1,0 +1,520 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PATCH_START = "/* __vibi_turn_patch:start */"
+PATCH_END = "/* __vibi_turn_patch:end */"
+
+TARGETS = [
+    {
+        "path": ROOT / "play" / "index.html",
+        "module_path": "/play/main",
+        "marker": "__run_app(n2f706c61792f6d61696e());",
+    },
+    {
+        "path": ROOT / "game-test" / "index.html",
+        "module_path": "/game-test/main",
+        "marker": "const __game_test_params =",
+    },
+    {
+        "path": ROOT / "fight" / "index.html",
+        "module_path": "/game_test/main",
+        "marker": "const __fight_params =",
+    },
+]
+
+
+PATCH_TEMPLATE = r"""
+/* __vibi_turn_patch:start */
+const __vibiTurnWait = () => ({$: "wait"});
+
+function __vibiTurnList4(a, b, c, d) {
+  return ({
+    $: "cons",
+    head: a,
+    tail: ({
+      $: "cons",
+      head: b,
+      tail: ({
+        $: "cons",
+        head: c,
+        tail: ({
+          $: "cons",
+          head: d,
+          tail: ({$: "nil"}),
+        }),
+      }),
+    }),
+  });
+}
+
+function __vibiTurnPlan(queue, queueLen, queueLocked, mode) {
+  return ({
+    $: "game_plan",
+    queue,
+    queue_len: queueLen >>> 0,
+    queue_locked: queueLocked >>> 0,
+    mode,
+  });
+}
+
+function __vibiTurnState(state, queue, queueLen, queueLocked, mode) {
+  return ({
+    $: "game_state",
+    meta: state.meta,
+    arena: state.arena,
+    plan: __vibiTurnPlan(queue, queueLen, queueLocked, mode),
+  });
+}
+
+function __vibiTurnPlanMode(runtime) {
+  return ({$: "plan", runtime});
+}
+
+function __vibiTurnTargetMode(skill, rot, origin, runtime, baseLen) {
+  return ({
+    $: "target",
+    skill: skill >>> 0,
+    rot: rot >>> 0,
+    origin,
+    runtime,
+    base_len: baseLen >>> 0,
+  });
+}
+
+function __vibiTurnIsAttack(action) {
+  return !!action && action.$ === "attack";
+}
+
+function __vibiTurnSkillClass(skill) {
+  return __SKILL_CLASS_ID_FN__(skill >>> 0) >>> 0;
+}
+
+function __vibiTurnBaseLen(mode, queueLen) {
+  if (mode && typeof mode.base_len === "number") {
+    return mode.base_len >>> 0;
+  }
+  return queueLen >>> 0;
+}
+
+function __vibiTurnPosEq(a, b) {
+  return ((a.x >>> 0) === (b.x >>> 0)) && ((a.y >>> 0) === (b.y >>> 0));
+}
+
+function __vibiTurnAbsDiff(a, b) {
+  a >>>= 0;
+  b >>>= 0;
+  return a >= b ? ((a - b) >>> 0) : ((b - a) >>> 0);
+}
+
+function __vibiTurnDist(a, b) {
+  return Math.max(
+    __vibiTurnAbsDiff(a.x >>> 0, b.x >>> 0),
+    __vibiTurnAbsDiff(a.y >>> 0, b.y >>> 0),
+  ) >>> 0;
+}
+
+function __vibiTurnTrimQueue(queue, queueLen, baseLen) {
+  let next = queue;
+  for (let idx = queueLen >>> 0; idx > (baseLen >>> 0); --idx) {
+    next = __ACTION_SET_FN__(next, (idx - 1) >>> 0, __vibiTurnWait());
+  }
+  return next;
+}
+
+function __vibiTurnBonusReady(state) {
+  if (!state || state.$ !== "game_state") {
+    return false;
+  }
+  const plan = state.plan;
+  const mode = plan && plan.mode;
+  if (!plan || !mode || mode.$ !== "target") {
+    return false;
+  }
+  const baseLen = __vibiTurnBaseLen(mode, plan.queue_len);
+  return __vibiTurnSkillClass(mode.skill) === 1
+    && (plan.queue_len >>> 0) === (baseLen >>> 0)
+    && (plan.queue_locked >>> 0) === 0
+    && (plan.queue_len >>> 0) < 3;
+}
+
+function __vibiTurnPreviewInputState(state, dir) {
+  if (!state || state.$ !== "game_state") {
+    return state;
+  }
+  const mode = state.plan && state.plan.mode;
+  if (mode && mode.$ === "playback") {
+    return state;
+  }
+  if (mode && mode.$ === "target") {
+    return __MOVE_TARGET_STATE_FN__(state, dir >>> 0);
+  }
+  return __QUEUE_MOVE_STATE_FN__(state, dir >>> 0);
+}
+
+function __vibiTurnMoveTargetBonusState(state, dir) {
+  if (!state || state.$ !== "game_state") {
+    return state;
+  }
+  const plan = state.plan;
+  const mode = plan && plan.mode;
+  if (!plan || !mode || mode.$ !== "target" || !__vibiTurnBonusReady(state)) {
+    return state;
+  }
+  const baseLen = __vibiTurnBaseLen(mode, plan.queue_len);
+  const planned = __PLANNED_POS_FROM_QUEUE_FN__(state.arena.player, plan.queue);
+  const next = __STEP_BLOCKED_PLAYER_FN__(planned, dir >>> 0, state.arena.bots);
+  if (__vibiTurnPosEq(planned, next)) {
+    return state;
+  }
+  const queue = __ACTION_SET_FN__(
+    plan.queue,
+    plan.queue_len >>> 0,
+    ({$: "move", dir: dir >>> 0}),
+  );
+  const nextMode = __vibiTurnTargetMode(
+    mode.skill,
+    mode.rot,
+    mode.origin,
+    mode.runtime,
+    baseLen,
+  );
+  return __vibiTurnState(
+    state,
+    queue,
+    ((plan.queue_len >>> 0) + 1) >>> 0,
+    plan.queue_locked >>> 0,
+    nextMode,
+  );
+}
+
+function __vibiTurnBandScore(classId, dist, hasAttack, movesUsed) {
+  if ((classId >>> 0) === 0) {
+    return [
+      hasAttack ? 0 : 1,
+      dist >>> 0,
+      movesUsed >>> 0,
+    ];
+  }
+  const min = (classId >>> 0) === 1 ? 8 : 6;
+  const max = (classId >>> 0) === 1 ? 9 : 7;
+  const center = min;
+  const inBand = dist >= min && dist <= max;
+  const distError = inBand ? 0 : (dist < min ? (min - dist) : (dist - max));
+  const centerError = __vibiTurnAbsDiff(dist >>> 0, center >>> 0);
+  return [
+    inBand ? 0 : 1,
+    hasAttack ? 0 : 1,
+    distError >>> 0,
+    centerError >>> 0,
+    movesUsed >>> 0,
+  ];
+}
+
+function __vibiTurnBetterCandidate(next, best) {
+  if (best === null) {
+    return true;
+  }
+  for (let idx = 0; idx < next.score.length; ++idx) {
+    const a = next.score[idx] >>> 0;
+    const b = best.score[idx] >>> 0;
+    if (a < b) {
+      return true;
+    }
+    if (a > b) {
+      return false;
+    }
+  }
+  return false;
+}
+
+function __vibiTurnQueueFromMoves(moves, attack) {
+  const slots = [__vibiTurnWait(), __vibiTurnWait(), __vibiTurnWait(), __vibiTurnWait()];
+  for (let idx = 0; idx < moves.length && idx < 4; ++idx) {
+    slots[idx] = ({$: "move", dir: moves[idx] >>> 0});
+  }
+  if (moves.length < 4) {
+    slots[moves.length] = attack;
+  }
+  return __vibiTurnList4(slots[0], slots[1], slots[2], slots[3]);
+}
+
+function __vibiTurnBuildBotPlan(player, enemy, bots, botIdx, round, botLoadout) {
+  const fallbackSkill = __ROUND_SKILL_FN__(round >>> 0, botLoadout) >>> 0;
+  let best = null;
+
+  const consider = (moves) => {
+    let pos = enemy;
+    for (const dir of moves) {
+      const next = __STEP_BLOCKED_BOT_FN__(pos, dir >>> 0, player, bots, botIdx >>> 0);
+      if (__vibiTurnPosEq(pos, next)) {
+        return;
+      }
+      pos = next;
+    }
+
+    const hitAttack = __FIND_ATTACK_FN__(pos, player, botLoadout);
+    const hasAttack = __vibiTurnIsAttack(hitAttack);
+    const planSkill = hasAttack ? (hitAttack.skill >>> 0) : fallbackSkill;
+    const classId = __vibiTurnSkillClass(planSkill);
+    if (moves.length > 2 && classId !== 1) {
+      return;
+    }
+
+    const attack = hasAttack ? hitAttack : __FIRST_VALID_ATTACK_FN__(planSkill, pos);
+    const dist = __vibiTurnDist(pos, player);
+    const candidate = {
+      score: __vibiTurnBandScore(classId, dist, hasAttack, moves.length),
+      queue: __vibiTurnQueueFromMoves(moves, attack),
+    };
+    if (__vibiTurnBetterCandidate(candidate, best)) {
+      best = candidate;
+    }
+  };
+
+  consider([]);
+
+  for (let dir1 = 0; dir1 < 4; ++dir1) {
+    consider([dir1]);
+    for (let dir2 = 0; dir2 < 4; ++dir2) {
+      consider([dir1, dir2]);
+      for (let dir3 = 0; dir3 < 4; ++dir3) {
+        consider([dir1, dir2, dir3]);
+      }
+    }
+  }
+
+  return best === null ? __QUEUE_WAITS_FN__() : best.queue;
+}
+
+__QUEUE3_FN__ = function(a, b, c) {
+  return __vibiTurnList4(a, b, c, __vibiTurnWait());
+};
+
+__QUEUE_WAITS_FN__ = function() {
+  return __vibiTurnList4(__vibiTurnWait(), __vibiTurnWait(), __vibiTurnWait(), __vibiTurnWait());
+};
+
+__PLAYBACK_TOTAL_STEPS_FN__ = function(botTotal) {
+  return Math.imul(4, (((botTotal >>> 0) + 1) >>> 0)) >>> 0;
+};
+
+__START_TARGET_APPLY_FN__ = function(
+  round,
+  level,
+  botTotal,
+  playerHp,
+  player,
+  bots,
+  queue,
+  queueLen,
+  queueLocked,
+  runtime,
+  skill,
+) {
+  const origin = __DEFAULT_TARGET_ORIGIN_FN__(
+    skill >>> 0,
+    __PLANNED_POS_FROM_QUEUE_FN__(player, queue),
+  );
+  return ({
+    $: "game_state",
+    meta: ({$: "game_meta", round: round >>> 0, level: level >>> 0, bot_total: botTotal >>> 0}),
+    arena: ({$: "game_arena", player_hp: playerHp >>> 0, player, bots, winner: 0}),
+    plan: __vibiTurnPlan(
+      queue,
+      queueLen >>> 0,
+      queueLocked >>> 0,
+      __vibiTurnTargetMode(skill >>> 0, 0, origin, runtime, queueLen >>> 0),
+    ),
+  });
+};
+
+__MOVE_TARGET_STATE_FN__ = function(state, dir) {
+  if (!state || state.$ !== "game_state") {
+    return state;
+  }
+  const plan = state.plan;
+  const mode = plan && plan.mode;
+  if (!plan || !mode || mode.$ !== "target") {
+    return state;
+  }
+  const baseLen = __vibiTurnBaseLen(mode, plan.queue_len);
+  const nextMode = __vibiTurnTargetMode(
+    mode.skill,
+    mode.rot,
+    __STEP_TARGET_ORIGIN_FN__(mode.origin, dir >>> 0),
+    mode.runtime,
+    baseLen,
+  );
+  return __vibiTurnState(
+    state,
+    plan.queue,
+    plan.queue_len >>> 0,
+    plan.queue_locked >>> 0,
+    nextMode,
+  );
+};
+
+__ROTATE_TARGET_STATE_FN__ = function(state, clockwise) {
+  if (!state || state.$ !== "game_state") {
+    return state;
+  }
+  const plan = state.plan;
+  const mode = plan && plan.mode;
+  if (!plan || !mode || mode.$ !== "target") {
+    return state;
+  }
+  const add = (clockwise >>> 0) === 0 ? 3 : 1;
+  const rot = ((mode.rot >>> 0) + add) % 4;
+  const baseLen = __vibiTurnBaseLen(mode, plan.queue_len);
+  const nextMode = __vibiTurnTargetMode(
+    mode.skill,
+    rot >>> 0,
+    __ROTATE_TARGET_ORIGIN_FN__(mode.skill, mode.rot, rot >>> 0, mode.origin),
+    mode.runtime,
+    baseLen,
+  );
+  return __vibiTurnState(
+    state,
+    plan.queue,
+    plan.queue_len >>> 0,
+    plan.queue_locked >>> 0,
+    nextMode,
+  );
+};
+
+__CANCEL_TARGET_STATE_FN__ = function(state) {
+  if (!state || state.$ !== "game_state") {
+    return state;
+  }
+  const plan = state.plan;
+  const mode = plan && plan.mode;
+  if (!plan || !mode || mode.$ !== "target") {
+    return state;
+  }
+  const baseLen = __vibiTurnBaseLen(mode, plan.queue_len);
+  const queue = __vibiTurnTrimQueue(plan.queue, plan.queue_len >>> 0, baseLen);
+  return __vibiTurnState(
+    state,
+    queue,
+    baseLen,
+    0,
+    __vibiTurnPlanMode(mode.runtime),
+  );
+};
+
+__MOVE_INPUT_TARGET_FN__ = function(state, dir, active) {
+  if ((active >>> 0) === 0) {
+    return __QUEUE_MOVE_STATE_FN__(state, dir >>> 0);
+  }
+  return __vibiTurnBonusReady(state)
+    ? __vibiTurnMoveTargetBonusState(state, dir >>> 0)
+    : __MOVE_TARGET_STATE_FN__(state, dir >>> 0);
+};
+
+const __vibiOrigKeyEvent = __KEY_EVENT_FN__;
+__KEY_EVENT_FN__ = function(key) {
+  switch (key >>> 0) {
+    case 37:
+      return ({$: "evt_preview_left"});
+    case 38:
+      return ({$: "evt_preview_up"});
+    case 39:
+      return ({$: "evt_preview_right"});
+    case 40:
+      return ({$: "evt_preview_down"});
+    default:
+      return __vibiOrigKeyEvent(key >>> 0);
+  }
+};
+
+const __vibiOrigOnMatchEvent = __ON_MATCH_EVENT_FN__;
+__ON_MATCH_EVENT_FN__ = function(evt, state, lobby) {
+  switch (evt && evt.$) {
+    case "evt_preview_up":
+      return __vibiTurnPreviewInputState(state, 0);
+    case "evt_preview_down":
+      return __vibiTurnPreviewInputState(state, 1);
+    case "evt_preview_left":
+      return __vibiTurnPreviewInputState(state, 2);
+    case "evt_preview_right":
+      return __vibiTurnPreviewInputState(state, 3);
+    default:
+      return __vibiOrigOnMatchEvent(evt, state, lobby);
+  }
+};
+
+__BUILD_BOT_PLAN_FN__ = function(player, enemy, bots, botIdx, round, botLoadout) {
+  return __vibiTurnBuildBotPlan(player, enemy, bots, botIdx, round, botLoadout);
+};
+/* __vibi_turn_patch:end */
+"""
+
+
+def encode_symbol(module_path: str, name: str, with_dollar: bool = True) -> str:
+    separator = "#" if name.startswith("_") else "/"
+    encoded = ("n" + (module_path + separator + name).encode().hex())
+    return f"${encoded}" if with_dollar else encoded
+
+
+def build_patch(module_path: str) -> str:
+    replacements = {
+        "__SKILL_CLASS_ID_FN__": encode_symbol("/shared/fight", "skill_class_id"),
+        "__ACTION_SET_FN__": encode_symbol(module_path, "_action_set"),
+        "__QUEUE3_FN__": encode_symbol(module_path, "_queue3"),
+        "__QUEUE_WAITS_FN__": encode_symbol(module_path, "_queue_waits"),
+        "__PLAYBACK_TOTAL_STEPS_FN__": encode_symbol(module_path, "_playback_total_steps"),
+        "__START_TARGET_APPLY_FN__": encode_symbol(module_path, "_start_target_apply"),
+        "__MOVE_TARGET_STATE_FN__": encode_symbol(module_path, "move_target_state"),
+        "__ROTATE_TARGET_STATE_FN__": encode_symbol(module_path, "rotate_target_state"),
+        "__CANCEL_TARGET_STATE_FN__": encode_symbol(module_path, "cancel_target_state"),
+        "__MOVE_INPUT_TARGET_FN__": encode_symbol(module_path, "_move_input_target"),
+        "__KEY_EVENT_FN__": encode_symbol(module_path, "key_event"),
+        "__ON_MATCH_EVENT_FN__": encode_symbol(module_path, "_on_match_event"),
+        "__BUILD_BOT_PLAN_FN__": encode_symbol(module_path, "_build_bot_plan"),
+        "__QUEUE_MOVE_STATE_FN__": encode_symbol(module_path, "queue_move_state"),
+        "__PLANNED_POS_FROM_QUEUE_FN__": encode_symbol(module_path, "_planned_pos_from_queue"),
+        "__STEP_BLOCKED_PLAYER_FN__": encode_symbol(module_path, "_step_blocked_player"),
+        "__STEP_BLOCKED_BOT_FN__": encode_symbol(module_path, "_step_blocked_bot"),
+        "__DEFAULT_TARGET_ORIGIN_FN__": encode_symbol(module_path, "_default_target_origin"),
+        "__STEP_TARGET_ORIGIN_FN__": encode_symbol(module_path, "_step_target_origin"),
+        "__ROTATE_TARGET_ORIGIN_FN__": encode_symbol(module_path, "_rotate_target_origin"),
+        "__ROUND_SKILL_FN__": encode_symbol(module_path, "_round_skill"),
+        "__FIND_ATTACK_FN__": encode_symbol(module_path, "_find_attack"),
+        "__FIRST_VALID_ATTACK_FN__": encode_symbol(module_path, "_first_valid_attack"),
+    }
+
+    text = PATCH_TEMPLATE
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text
+
+
+def patch_text(text: str, module_path: str, marker: str) -> str:
+    if marker not in text:
+        raise SystemExit(f"marker not found for {module_path}")
+
+    patch = build_patch(module_path)
+
+    if PATCH_START in text and PATCH_END in text:
+        start = text.index(PATCH_START)
+        end = text.index(PATCH_END) + len(PATCH_END)
+        return text[:start] + patch.strip() + "\n\n" + text[end:]
+
+    return text.replace(marker, patch.strip() + "\n\n" + marker, 1)
+
+
+def main() -> None:
+    for target in TARGETS:
+        path = target["path"]
+        module_path = target["module_path"]
+        marker = target["marker"]
+        path.write_text(patch_text(path.read_text(), module_path, marker))
+
+
+if __name__ == "__main__":
+    main()
