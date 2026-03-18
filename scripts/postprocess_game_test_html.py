@@ -35,13 +35,13 @@ function __game_test_parse_item(name, fallback) {
 }
 const __game_test_app = n2f67616d652d746573742f6d61696e();
 __game_test_app.init = n2f67616d652d746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74735f6974656d73()(
-  __game_test_parse_skill("ps1", 1)
+  __game_test_parse_skill("ps1", 4)
 )(
   __game_test_parse_skill("ps2", 2)
 )(
   __game_test_parse_skill("ps3", 3)
 )(
-  __game_test_parse_skill("bs1", 1)
+  __game_test_parse_skill("bs1", 4)
 )(
   __game_test_parse_skill("bs2", 2)
 )(

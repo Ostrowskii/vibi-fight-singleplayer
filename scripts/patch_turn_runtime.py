@@ -484,7 +484,7 @@ function __vibiLobbyFallbackLoadout(loadout) {
   if (__vibiLobbyCount(loadout) !== 0) {
     return loadout;
   }
-  return ({$: "loadout", s1: 1, s2: 0, s3: 0});
+  return ({$: "loadout", s1: 4, s2: 0, s3: 0});
 }
 
 function __vibiLobbyBattleLoadouts(lobby) {

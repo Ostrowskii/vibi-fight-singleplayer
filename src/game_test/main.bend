@@ -231,16 +231,16 @@ def _loadout_from_slots(s1: U32, s2: U32, s3: U32) -> Loadout:
 def _lobby_from_loadouts(player_loadout: Loadout, bot_loadout: Loadout) -> LobbyState:
   lobby_state{Fight.default_hp(), Fight.default_hp(), player_loadout, bot_loadout, 0, 0}
 
-def _loadout_with_me1_fallback(loadout_value: Loadout) -> Loadout:
+def _loadout_with_default_fallback(loadout_value: Loadout) -> Loadout:
   match _loadout_count(loadout_value):
     case 0:
-      loadout{1, 0, 0}
+      loadout{4, 0, 0}
     case _:
       loadout_value
 
 def _lobby_battle_loadouts(lobby: LobbyState) -> LobbyState:
-  player_loadout = _loadout_with_me1_fallback(_lobby_player_loadout(lobby));
-  bot_loadout = _loadout_with_me1_fallback(_lobby_bot_loadout(lobby));
+  player_loadout = _loadout_with_default_fallback(_lobby_player_loadout(lobby));
+  bot_loadout = _loadout_with_default_fallback(_lobby_bot_loadout(lobby));
   _lobby_with_bot_loadout(_lobby_with_player_loadout(lobby, player_loadout), bot_loadout)
 
 def state_init() -> GameState:
