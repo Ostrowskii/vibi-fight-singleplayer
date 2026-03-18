@@ -577,9 +577,16 @@ function __vibiPatchBattleLobbyButton() {
   if (!link) {
     link = document.createElement("a");
   }
-  link.className = "button button--menu button--menu-secondary nav-link";
-  link.href = __VIBI_LOBBY_HREF;
-  link.textContent = __VIBI_LOBBY_LABEL;
+  const className = "button button--menu button--menu-secondary nav-link";
+  if (link.className !== className) {
+    link.className = className;
+  }
+  if ((link.getAttribute("href") || "") != __VIBI_LOBBY_HREF) {
+    link.href = __VIBI_LOBBY_HREF;
+  }
+  if ((link.textContent || "") !== __VIBI_LOBBY_LABEL) {
+    link.textContent = __VIBI_LOBBY_LABEL;
+  }
   if (reset && reset.parentNode === actions) {
     if (reset.nextElementSibling !== link) {
       reset.insertAdjacentElement("afterend", link);
@@ -602,7 +609,6 @@ function __vibiObserveBattleLobbyButton() {
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      characterData: true,
     });
   };
   if (document.readyState === "loading") {
