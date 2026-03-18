@@ -136397,5 +136397,31 @@ function __run_app(app) {
 __run_app(n2f706c61792f6d61696e());
 __app_notify_ready(null);
   </script>
+  <script>
+    (function () {
+      var href = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
+      function ensureLobbyButton() {
+        var actions = document.querySelector(".sidebar .controls.controls--actions");
+        if (!actions || actions.querySelector('[data-lobby-link="1"], a[href="' + href + '"]')) {
+          return;
+        }
+        var link = document.createElement("a");
+        link.href = href;
+        link.className = "button button--menu button--menu-secondary nav-link";
+        link.textContent = "Voltar para lobby";
+        link.setAttribute("data-lobby-link", "1");
+        actions.appendChild(link);
+      }
+      new MutationObserver(ensureLobbyButton).observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", ensureLobbyButton, { once: true });
+      } else {
+        ensureLobbyButton();
+      }
+    })();
+  </script>
 </body>
 </html>

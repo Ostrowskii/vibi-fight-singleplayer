@@ -137,40 +137,8 @@ type FightEvent {
   evt_lobby_player_hp_inc{}
   evt_lobby_bot_hp_dec{}
   evt_lobby_bot_hp_inc{}
-  evt_lobby_player_skill_1{}
-  evt_lobby_player_skill_2{}
-  evt_lobby_player_skill_3{}
-  evt_lobby_player_skill_4{}
-  evt_lobby_player_skill_5{}
-  evt_lobby_player_skill_6{}
-  evt_lobby_player_skill_7{}
-  evt_lobby_player_skill_8{}
-  evt_lobby_player_skill_9{}
-  evt_lobby_player_skill_10{}
-  evt_lobby_player_skill_11{}
-  evt_lobby_player_skill_12{}
-  evt_lobby_player_skill_13{}
-  evt_lobby_bot_skill_1{}
-  evt_lobby_bot_skill_2{}
-  evt_lobby_bot_skill_3{}
-  evt_lobby_bot_skill_4{}
-  evt_lobby_bot_skill_5{}
-  evt_lobby_bot_skill_6{}
-  evt_lobby_bot_skill_7{}
-  evt_lobby_bot_skill_8{}
-  evt_lobby_bot_skill_9{}
-  evt_lobby_bot_skill_10{}
-  evt_lobby_bot_skill_11{}
-  evt_lobby_bot_skill_12{}
-  evt_lobby_bot_skill_13{}
-  evt_lobby_player_filter_all{}
-  evt_lobby_player_filter_ranged{}
-  evt_lobby_player_filter_mage{}
-  evt_lobby_player_filter_melee{}
-  evt_lobby_bot_filter_all{}
-  evt_lobby_bot_filter_ranged{}
-  evt_lobby_bot_filter_mage{}
-  evt_lobby_bot_filter_melee{}
+  evt_lobby_skill{side: U32, skill: U32}
+  evt_lobby_filter{side: U32, filter: U32}
   evt_move_up{}
   evt_move_down{}
   evt_move_left{}
@@ -3116,74 +3084,10 @@ def _event_kind(evt: FightEvent) -> U32:
       7
     case evt_lobby_bot_hp_inc{}:
       8
-    case evt_lobby_player_skill_1{}:
+    case evt_lobby_skill{}:
       9
-    case evt_lobby_player_skill_2{}:
-      10
-    case evt_lobby_player_skill_3{}:
-      11
-    case evt_lobby_player_skill_4{}:
-      12
-    case evt_lobby_player_skill_5{}:
-      13
-    case evt_lobby_player_skill_6{}:
-      14
-    case evt_lobby_player_skill_7{}:
-      15
-    case evt_lobby_player_skill_8{}:
-      16
-    case evt_lobby_player_skill_9{}:
-      17
-    case evt_lobby_player_skill_10{}:
-      18
-    case evt_lobby_player_skill_11{}:
-      19
-    case evt_lobby_player_skill_12{}:
-      20
-    case evt_lobby_player_skill_13{}:
-      21
-    case evt_lobby_bot_skill_1{}:
-      22
-    case evt_lobby_bot_skill_2{}:
-      23
-    case evt_lobby_bot_skill_3{}:
-      24
-    case evt_lobby_bot_skill_4{}:
-      25
-    case evt_lobby_bot_skill_5{}:
-      26
-    case evt_lobby_bot_skill_6{}:
-      27
-    case evt_lobby_bot_skill_7{}:
-      28
-    case evt_lobby_bot_skill_8{}:
-      29
-    case evt_lobby_bot_skill_9{}:
-      30
-    case evt_lobby_bot_skill_10{}:
-      31
-    case evt_lobby_bot_skill_11{}:
-      32
-    case evt_lobby_bot_skill_12{}:
-      33
-    case evt_lobby_bot_skill_13{}:
-      34
-    case evt_lobby_player_filter_all{}:
+    case evt_lobby_filter{}:
       35
-    case evt_lobby_player_filter_ranged{}:
-      36
-    case evt_lobby_player_filter_mage{}:
-      37
-    case evt_lobby_player_filter_melee{}:
-      38
-    case evt_lobby_bot_filter_all{}:
-      39
-    case evt_lobby_bot_filter_ranged{}:
-      40
-    case evt_lobby_bot_filter_mage{}:
-      41
-    case evt_lobby_bot_filter_melee{}:
-      42
     case _:
       0
 

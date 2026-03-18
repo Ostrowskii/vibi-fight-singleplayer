@@ -137,40 +137,8 @@ type FightEvent {
   evt_lobby_player_hp_inc{}
   evt_lobby_bot_hp_dec{}
   evt_lobby_bot_hp_inc{}
-  evt_lobby_player_skill_1{}
-  evt_lobby_player_skill_2{}
-  evt_lobby_player_skill_3{}
-  evt_lobby_player_skill_4{}
-  evt_lobby_player_skill_5{}
-  evt_lobby_player_skill_6{}
-  evt_lobby_player_skill_7{}
-  evt_lobby_player_skill_8{}
-  evt_lobby_player_skill_9{}
-  evt_lobby_player_skill_10{}
-  evt_lobby_player_skill_11{}
-  evt_lobby_player_skill_12{}
-  evt_lobby_player_skill_13{}
-  evt_lobby_bot_skill_1{}
-  evt_lobby_bot_skill_2{}
-  evt_lobby_bot_skill_3{}
-  evt_lobby_bot_skill_4{}
-  evt_lobby_bot_skill_5{}
-  evt_lobby_bot_skill_6{}
-  evt_lobby_bot_skill_7{}
-  evt_lobby_bot_skill_8{}
-  evt_lobby_bot_skill_9{}
-  evt_lobby_bot_skill_10{}
-  evt_lobby_bot_skill_11{}
-  evt_lobby_bot_skill_12{}
-  evt_lobby_bot_skill_13{}
-  evt_lobby_player_filter_all{}
-  evt_lobby_player_filter_ranged{}
-  evt_lobby_player_filter_mage{}
-  evt_lobby_player_filter_melee{}
-  evt_lobby_bot_filter_all{}
-  evt_lobby_bot_filter_ranged{}
-  evt_lobby_bot_filter_mage{}
-  evt_lobby_bot_filter_melee{}
+  evt_lobby_skill{side: U32, skill: U32}
+  evt_lobby_filter{side: U32, filter: U32}
   evt_move_up{}
   evt_move_down{}
   evt_move_left{}
@@ -1091,7 +1059,31 @@ def _movement_trail_from_queue(pos: Pos, queue: List(Action), step: U32) -> List
           nxt = _step_free(pos, _action_dir(hd));
           _trail_cons(_trail_step_of_pos(nxt, step), _movement_trail_from_queue(nxt, tl, step + 1))
         case _:
-          _movement_trail_from_queue(pos, tl, step)
+      _movement_trail_from_queue(pos, tl, step)
+
+def _player_path_has_ice(terrain: List(Terrain), pos: Pos, queue: List(Action)) -> U32:
+  match queue:
+    case []:
+      0
+    case hd<>tl:
+      kind = _action_kind(hd);
+      match kind:
+        case 1:
+          next_pos = _step_free(pos, _action_dir(hd));
+          match _terrain_has_ice_at(terrain, next_pos):
+            case 1:
+              1
+            case _:
+              _player_path_has_ice(terrain, next_pos, tl)
+        case _:
+          _player_path_has_ice(terrain, pos, tl)
+
+def _player_touched_ice(terrain: List(Terrain), start: Pos, queue: List(Action)) -> U32:
+  match _terrain_has_ice_at(terrain, start):
+    case 1:
+      1
+    case _:
+      _player_path_has_ice(terrain, start, queue)
 
 def _preview_tiles_for(skill: U32, rot: U32, origin: Pos, actor: Pos, idx: U32) -> List(Pos):
   len = skill_len(skill);
@@ -1700,10 +1692,10 @@ def _hook_bot_player(actor: Pos, player: Pos, bots: List(Bot), bot_idx: U32, til
     case _:
       _hook_pull_target(player, actor, actor, bots, bot_idx, pull)
 
-def _apply_player_fire_and_ice(player_hp: U32, player: Pos, runtime: RuntimeData) -> RuntimeData:
+def _apply_player_fire_and_ice(player_hp: U32, player: Pos, runtime: RuntimeData, touched_ice: U32) -> RuntimeData:
   terrain = _runtime_terrain(runtime);
   fire_now = _fire_refresh_ticks(_runtime_player_fire(runtime), _terrain_has_fire_at(terrain, player));
-  ice_now = _ice_after_round(_runtime_player_ice(runtime), _terrain_has_ice_at(terrain, player));
+  ice_now = _ice_after_round(_runtime_player_ice(runtime), touched_ice);
   _runtime_with_player_ice(_runtime_with_player_fire(runtime, _fire_store_after_tick(fire_now)), ice_now)
 
 def _player_fire_damage(runtime: RuntimeData, player: Pos) -> U32:
@@ -2180,21 +2172,23 @@ def _reset_round_planning_state(state: GameState) -> GameState:
         _arena_player(arena),
         _arena_bots(arena),
         _plan_mode_value(plan_value),
-        _arena_winner(arena)
+        _arena_winner(arena),
+        _plan_queue(plan_value)
       )
 
 def _reset_round_planning_mode(
   round: U32, level: U32, bot_total: U32, player_hp: U32,
-  player: Pos, bots: List(Bot), mode: Mode, winner: U32,
+  player: Pos, bots: List(Bot), mode: Mode, winner: U32, queue: List(Action),
 ) -> GameState:
-  _reset_round_planning_w(round, level, bot_total, player_hp, player, bots, _mode_runtime(mode), winner)
+  _reset_round_planning_w(round, level, bot_total, player_hp, player, bots, _mode_runtime(mode), winner, queue)
 
 def _reset_round_planning_w(
   round: U32, level: U32, bot_total: U32, player_hp: U32,
-  player: Pos, bots: List(Bot), runtime: RuntimeData, winner: U32,
+  player: Pos, bots: List(Bot), runtime: RuntimeData, winner: U32, queue: List(Action),
 ) -> GameState:
   current_terrain = _runtime_terrain(runtime);
-  next_runtime_status = _apply_player_fire_and_ice(player_hp, player, runtime);
+  touched_ice = _player_touched_ice(current_terrain, player, queue);
+  next_runtime_status = _apply_player_fire_and_ice(player_hp, player, runtime, touched_ice);
   next_player_hp = _damage_hp_by(player_hp, _player_fire_damage(runtime, player));
   next_bots = _apply_bots_status_round(bots, current_terrain);
   next_runtime = _runtime_with_terrain(next_runtime_status, _terrain_tick(current_terrain));
@@ -2654,12 +2648,8 @@ def _fire_store_after_tick(ticks: U32) -> U32:
     case value:
       value - 1
 
-def _ice_after_round(current: U32, on_ice: U32) -> U32:
-  match on_ice:
-    case 0:
-      0
-    case _:
-      current + 1
+def _ice_after_round(current: U32, touched_ice: U32) -> U32:
+  touched_ice
 
 def _damage_hp_by(hp: U32, amount: U32) -> U32:
   _sub_floor(hp, amount)
@@ -3113,74 +3103,10 @@ def _event_kind(evt: FightEvent) -> U32:
       7
     case evt_lobby_bot_hp_inc{}:
       8
-    case evt_lobby_player_skill_1{}:
+    case evt_lobby_skill{}:
       9
-    case evt_lobby_player_skill_2{}:
-      10
-    case evt_lobby_player_skill_3{}:
-      11
-    case evt_lobby_player_skill_4{}:
-      12
-    case evt_lobby_player_skill_5{}:
-      13
-    case evt_lobby_player_skill_6{}:
-      14
-    case evt_lobby_player_skill_7{}:
-      15
-    case evt_lobby_player_skill_8{}:
-      16
-    case evt_lobby_player_skill_9{}:
-      17
-    case evt_lobby_player_skill_10{}:
-      18
-    case evt_lobby_player_skill_11{}:
-      19
-    case evt_lobby_player_skill_12{}:
-      20
-    case evt_lobby_player_skill_13{}:
-      21
-    case evt_lobby_bot_skill_1{}:
-      22
-    case evt_lobby_bot_skill_2{}:
-      23
-    case evt_lobby_bot_skill_3{}:
-      24
-    case evt_lobby_bot_skill_4{}:
-      25
-    case evt_lobby_bot_skill_5{}:
-      26
-    case evt_lobby_bot_skill_6{}:
-      27
-    case evt_lobby_bot_skill_7{}:
-      28
-    case evt_lobby_bot_skill_8{}:
-      29
-    case evt_lobby_bot_skill_9{}:
-      30
-    case evt_lobby_bot_skill_10{}:
-      31
-    case evt_lobby_bot_skill_11{}:
-      32
-    case evt_lobby_bot_skill_12{}:
-      33
-    case evt_lobby_bot_skill_13{}:
-      34
-    case evt_lobby_player_filter_all{}:
+    case evt_lobby_filter{}:
       35
-    case evt_lobby_player_filter_ranged{}:
-      36
-    case evt_lobby_player_filter_mage{}:
-      37
-    case evt_lobby_player_filter_melee{}:
-      38
-    case evt_lobby_bot_filter_all{}:
-      39
-    case evt_lobby_bot_filter_ranged{}:
-      40
-    case evt_lobby_bot_filter_mage{}:
-      41
-    case evt_lobby_bot_filter_melee{}:
-      42
     case _:
       0
 
@@ -3211,73 +3137,17 @@ def _on_event_kind_match(kind: U32, evt: FightEvent, app: AppState) -> AppState:
     case 8:
       _app_update_lobby_bot_hp(app, 1)
     case 9:
-      _app_toggle_player_skill(app, 1)
-    case 10:
-      _app_toggle_player_skill(app, 2)
-    case 11:
-      _app_toggle_player_skill(app, 3)
-    case 12:
-      _app_toggle_player_skill(app, 4)
-    case 13:
-      _app_toggle_player_skill(app, 5)
-    case 14:
-      _app_toggle_player_skill(app, 6)
-    case 15:
-      _app_toggle_player_skill(app, 7)
-    case 16:
-      _app_toggle_player_skill(app, 8)
-    case 17:
-      _app_toggle_player_skill(app, 9)
-    case 18:
-      _app_toggle_player_skill(app, 10)
-    case 19:
-      _app_toggle_player_skill(app, 11)
-    case 20:
-      _app_toggle_player_skill(app, 12)
-    case 21:
-      _app_toggle_player_skill(app, 13)
-    case 22:
-      _app_toggle_bot_skill(app, 1)
-    case 23:
-      _app_toggle_bot_skill(app, 2)
-    case 24:
-      _app_toggle_bot_skill(app, 3)
-    case 25:
-      _app_toggle_bot_skill(app, 4)
-    case 26:
-      _app_toggle_bot_skill(app, 5)
-    case 27:
-      _app_toggle_bot_skill(app, 6)
-    case 28:
-      _app_toggle_bot_skill(app, 7)
-    case 29:
-      _app_toggle_bot_skill(app, 8)
-    case 30:
-      _app_toggle_bot_skill(app, 9)
-    case 31:
-      _app_toggle_bot_skill(app, 10)
-    case 32:
-      _app_toggle_bot_skill(app, 11)
-    case 33:
-      _app_toggle_bot_skill(app, 12)
-    case 34:
-      _app_toggle_bot_skill(app, 13)
+      match evt:
+        case evt_lobby_skill{side, skill}:
+          _app_toggle_lobby_skill(app, side, skill)
+        case _:
+          app
     case 35:
-      _app_set_lobby_filter(app, 0, 0)
-    case 36:
-      _app_set_lobby_filter(app, 0, 1)
-    case 37:
-      _app_set_lobby_filter(app, 0, 2)
-    case 38:
-      _app_set_lobby_filter(app, 0, 3)
-    case 39:
-      _app_set_lobby_filter(app, 1, 0)
-    case 40:
-      _app_set_lobby_filter(app, 1, 1)
-    case 41:
-      _app_set_lobby_filter(app, 1, 2)
-    case 42:
-      _app_set_lobby_filter(app, 1, 3)
+      match evt:
+        case evt_lobby_filter{side, filter}:
+          _app_set_lobby_filter(app, side, filter)
+        case _:
+          app
     case _:
       _app_match_event(evt, app)
 
@@ -3358,6 +3228,13 @@ def _app_toggle_bot_skill_next(app: AppState, lobby: LobbyState, next: Loadout) 
       app
     case _:
       _app_with_lobby(app, _lobby_with_bot_loadout(lobby, next))
+
+def _app_toggle_lobby_skill(app: AppState, side: U32, skill: U32) -> AppState:
+  match side:
+    case 0:
+      _app_toggle_player_skill(app, skill)
+    case _:
+      _app_toggle_bot_skill(app, skill)
 
 # Rendering helpers
 
@@ -3461,6 +3338,7 @@ def _render_match_screen(app: AppState, active: U32) -> HTML(FightEvent):
         <div class="controls controls--actions">
           <button {..._button_attrs("button alt", evt_ready{})}>{text{"Ready"}}</button>
           <button {..._button_attrs("button", evt_reset{})}>{text{"Reset partida"}}</button>
+          <a class="button button--menu button--menu-secondary nav-link" href="https://ostrowskii.github.io/vibi-fight-singleplayer/play/">{text{"Voltar para lobby"}}</a>
         </div>
       </section>
 
@@ -3619,11 +3497,7 @@ def _lobby_filter_button_class_selected(selected: U32) -> String:
       "skill-filter-button skill-filter-button--active"
 
 def _lobby_filter_evt(side: U32, filter: U32) -> FightEvent:
-  match side:
-    case 0:
-      _lobby_player_filter_evt(filter)
-    case _:
-      _lobby_bot_filter_evt(filter)
+  evt_lobby_filter{side, filter}
 
 def _lobby_filter_label(filter: U32) -> String:
   match filter:
@@ -3636,27 +3510,6 @@ def _lobby_filter_label(filter: U32) -> String:
     case _:
       "Melee"
 
-def _lobby_player_filter_evt(filter: U32) -> FightEvent:
-  match filter:
-    case 0:
-      evt_lobby_player_filter_all{}
-    case 1:
-      evt_lobby_player_filter_ranged{}
-    case 2:
-      evt_lobby_player_filter_mage{}
-    case _:
-      evt_lobby_player_filter_melee{}
-
-def _lobby_bot_filter_evt(filter: U32) -> FightEvent:
-  match filter:
-    case 0:
-      evt_lobby_bot_filter_all{}
-    case 1:
-      evt_lobby_bot_filter_ranged{}
-    case 2:
-      evt_lobby_bot_filter_mage{}
-    case _:
-      evt_lobby_bot_filter_melee{}
 
 def _lobby_hp_dec_attrs(side: U32, lobby: LobbyState) -> List(Attr(FightEvent)):
   _button_attrs_enabled("button button--stepper", _lobby_hp_dec_evt(side), _u32_lt(10, _lobby_side_hp(side, lobby)))
@@ -4095,69 +3948,8 @@ def _lobby_skill_pick_class_selected(selected: U32) -> String:
       "skill-pool-card skill-pool-card--selected"
 
 def _lobby_skill_pick_evt(side: U32, skill: U32) -> FightEvent:
-  match side:
-    case 0:
-      _lobby_player_skill_evt(skill)
-    case _:
-      _lobby_bot_skill_evt(skill)
+  evt_lobby_skill{side, skill}
 
-def _lobby_player_skill_evt(skill: U32) -> FightEvent:
-  match skill:
-    case 1:
-      evt_lobby_player_skill_1{}
-    case 2:
-      evt_lobby_player_skill_2{}
-    case 3:
-      evt_lobby_player_skill_3{}
-    case 4:
-      evt_lobby_player_skill_4{}
-    case 5:
-      evt_lobby_player_skill_5{}
-    case 6:
-      evt_lobby_player_skill_6{}
-    case 7:
-      evt_lobby_player_skill_7{}
-    case 8:
-      evt_lobby_player_skill_8{}
-    case 9:
-      evt_lobby_player_skill_9{}
-    case 10:
-      evt_lobby_player_skill_10{}
-    case 11:
-      evt_lobby_player_skill_11{}
-    case 12:
-      evt_lobby_player_skill_12{}
-    case _:
-      evt_lobby_player_skill_13{}
-
-def _lobby_bot_skill_evt(skill: U32) -> FightEvent:
-  match skill:
-    case 1:
-      evt_lobby_bot_skill_1{}
-    case 2:
-      evt_lobby_bot_skill_2{}
-    case 3:
-      evt_lobby_bot_skill_3{}
-    case 4:
-      evt_lobby_bot_skill_4{}
-    case 5:
-      evt_lobby_bot_skill_5{}
-    case 6:
-      evt_lobby_bot_skill_6{}
-    case 7:
-      evt_lobby_bot_skill_7{}
-    case 8:
-      evt_lobby_bot_skill_8{}
-    case 9:
-      evt_lobby_bot_skill_9{}
-    case 10:
-      evt_lobby_bot_skill_10{}
-    case 11:
-      evt_lobby_bot_skill_11{}
-    case 12:
-      evt_lobby_bot_skill_12{}
-    case _:
-      evt_lobby_bot_skill_13{}
 
 def _skill_visual(skill: U32) -> HTML(FightEvent):
   match skill:

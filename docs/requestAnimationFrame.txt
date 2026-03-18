@@ -1,0 +1,43 @@
+requestAnimationFrame
+
+Prioridade atual de performance enquanto esse hook nao entra no Bend
+
+1. pre-processar e cachear as matrizes/visualizacoes das skills assim que o jogo carrega
+2. carregar e guardar os assets das skills no startup
+3. pre-alocar buffers reutilizaveis para o estado do grid
+4. usar um scheduler leve com `setTimeout` debounce ate termos `requestAnimationFrame`
+5. cachear previews por `skill + rotacao`
+
+Objetivo atual
+
+- tirar o travamento das skills pre-processando e cacheando tudo logo no load
+- incluir shape, visualizacao, assets e buffers nesse preload
+- bater as atualizacoes pesadas num scheduler leve enquanto o runtime oficial com `requestAnimationFrame` nao existe
+
+O Bend não expõe `requestAnimationFrame` diretamente porque é uma API do navegador/JavaScript, mas jogos web dependem dela para sincronizar updates de estado com o ciclo de tela. 
+Para usar esse recurso no Bend é necessário:
+
+1. Permitir que o código Bend dispare eventos customizados que o bundle JS pode interceptar.
+2. Que o JS gerado instale um loop `requestAnimationFrame` (ou use `window.requestAnimationFrame`) e mande esses eventos de volta na hora certa.
+3. No Bend, consumir esse evento para recalcular previews pesados apenas dentro do frame solicitado e manter um cache até o próximo `requestAnimationFrame`.
+
+Esse padrão é importante para jogos porque:
+
+- evita recomputar lógica custosa mais de uma vez por frame, eliminando travadas perceptíveis ao girar/mover.
+- garante que o trabalho gráfico acontece justo antes do repaint, mantendo o FPS estável.
+- abre espaço para animações sincronizadas (transições, flashes de ataque) sem depender de polls com `setTimeout`.
+
+Ter esse mecanismo oficial no Bend reduziria a necessidade de inserções manuais no JS pós-compilado e permitiria states reativos que se alinham melhor 
+ao ciclo de renderização do navegador.
+
+Hoje o que fazemos é adicionar o hook manualmente no JS final:
+
+```js
+function frame() {
+  window.dispatchEvent(new CustomEvent("raf-frame"));
+  window.requestAnimationFrame(frame);
+}
+window.requestAnimationFrame(frame);
+```
+
+O `CustomEvent` é o hook: o Bend precisa expor um evento (por exemplo `evt_frame{}`) que escute `"raf-frame"`. Assim, o loop JS aciona o hook e o Bend responde com o recálculo apenas quando o frame começa. Isso mantém o cache válido até o próximo `requestAnimationFrame` e evita recalcular previews “sujos” mais de uma vez por input.
