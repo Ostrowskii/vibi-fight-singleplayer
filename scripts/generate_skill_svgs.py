@@ -12,6 +12,7 @@ OUT_DIR = ROOT / "assets" / "skills"
 
 CELL_BITS = {
     "cell_attack": 1,
+    "cell_dist_attack": 1,
     "cell_hook": 2,
     "cell_ice": 4,
     "cell_fire": 8,

@@ -1,0 +1,115 @@
+Todo atual sobre D e constantes fixas de skill
+
+Objetivo
+
+- criar um script externo ao jogo para calcular informacoes fixas das skills
+- esse script faz parte do processo de build, nao do runtime do combate
+- a intencao e reduzir processamento da IA em informacoes que podem ser
+  precomputadas
+
+Regra nova de simbolos
+
+- skills que possuem `P` nao usam `A`
+- nessas skills, o dano direto passa a usar `D`
+- `A` fica reservado para skills sem `P`
+- `A` e `P` nao coexistem na mesma skill
+- `P`, `A` e `D` nao combinam entre si no mesmo tile
+- `I`, `F` e `H` podem combinar com `P` ou `A` ou `D`
+
+Leitura de efeitos para este gerador
+
+- para este script, o conjunto remoto analisado e `D`, `I` e `F`
+- `H` nao entra nessas contas
+- linhas que tenham `P` mas nao tenham `D/I/F` naquela mesma linha nao entram no
+  calculo das metricas de linha
+
+Constantes a calcular
+
+const1
+
+- pegar o `P` mais para cima de todos
+- se houver empate, pegar o mais a direita
+- pegar o `D/I/F` mais para baixo de todos
+- se houver empate, pegar o mais a esquerda
+- guardar o delta:
+  - `(xP - xDIF, yP - yDIF)`
+- nome conceitual:
+  - `deltaDiagonalTopLeft-downRight`
+
+const2
+
+- pegar o `P` mais para baixo de todos
+- se houver empate, pegar o mais a direita
+- pegar o `D/I/F` mais para cima de todos
+- se houver empate, pegar o mais a esquerda
+- guardar o delta:
+  - `(xP - xDIF, yP - yDIF)`
+- nome conceitual:
+  - `deltaDiagonalDownLeft-topRight`
+
+const3 e const4
+
+- para cada linha da matriz:
+  - pegar o `P` mais a direita daquela linha
+  - pegar o primeiro `D/I/F` da mesma linha
+- calcular a diferenca em `x` entre eles
+- linhas sem `D/I/F` nao entram no calculo
+- entre as linhas validas:
+  - guardar o menor valor encontrado
+  - guardar todas as posicoes de `P` que atingem esse menor valor
+
+Observacao para implementacao:
+
+- "primeiro DIF da mesma linha" deve ser lido como o `D/I/F` mais a esquerda da
+  linha
+
+const5 e const6
+
+- para cada linha da matriz:
+  - pegar o `P` mais a esquerda daquela linha
+  - pegar o ultimo `D/I/F` da mesma linha
+- calcular a diferenca em `x` entre eles
+- linhas sem `D/I/F` nao entram no calculo
+- entre as linhas validas:
+  - guardar o maior valor encontrado
+  - guardar todas as posicoes de `P` que atingem esse maior valor
+
+Observacao para implementacao:
+
+- "ultimo DIF da mesma linha" deve ser lido como o `D/I/F` mais a direita da
+  linha
+- quando houver varias posicoes equivalentes na const5/const6, pode usar a
+  primeira da lista para derivacoes posteriores
+
+const-area-util
+
+- para cada skill, guardar uma area retangular util com:
+  - pos inicial `(x1, y1)`
+  - pos final `(x2, y2)`
+- essa area serve para a IA decidir se vale a pena considerar a habilidade
+- se o inimigo estiver dentro dessa area, a skill e considerada interessante
+
+Regras da area util para skills com P
+
+- `x2`:
+  - usar uma das posicoes vindas da const5/const6
+  - como elas ja estao empatadas pela mesma diferenca, a primeira da lista pode
+    ser usada
+  - o `x2` final e o `x` do `D/I/F` mais a frente possivel daquela linha
+- `y1` e `y2`:
+  - sao derivados de const1 e const2
+  - um define o limite superior e o outro o limite inferior
+- `x1`:
+  - usar o menor `x` entre os pontos extremos usados em const1 e const2
+
+Regras da area util para skills sem P
+
+- a area util vira o bounding box da shape ocupada
+
+Formato esperado do artefato
+
+- o gerador deve produzir um modulo Bend
+- essas informacoes nao serao visualizadas no jogo
+- elas sao constantes numericas/fixas para a IA
+- se for necessario guardar deltas com sinal, o artefato pode serializar sinal e
+  magnitude separadamente, porque o motor atual usa muito `U32`

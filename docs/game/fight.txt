@@ -127,47 +127,47 @@ Me5
 
 Ra1
 [
-  [null, null, "P", null, null, null, "A", null, null],
-  [null, "P", null, null, null, null, "A", null, null],
-  ["P", null, null, null, "A", "A", "A", "A", "A"],
-  [null, "P", null, null, null, null, "A", null, null],
-  [null, null, "P", null, null, null, "A", null, null]
+  [null, null, "P", null, null, null, "D", null, null],
+  [null, "P", null, null, null, null, "D", null, null],
+  ["P", null, null, null, "D", "D", "D", "D", "D"],
+  [null, "P", null, null, null, null, "D", null, null],
+  [null, null, "P", null, null, null, "D", null, null]
 ]
 
 Ra2
 [
-  [null, null, "P", null, null, null, "A", null, "A"],
-  [null, "P", null, null, null, null, "A", null, "A"],
-  ["P", null, null, null, null, null, "A", null, "A"],
-  [null, "P", null, null, null, null, "A", null, "A"],
-  [null, null, "P", null, null, null, "A", null, "A"]
+  [null, null, "P", null, null, null, "D", null, "D"],
+  [null, "P", null, null, null, null, "D", null, "D"],
+  ["P", null, null, null, null, null, "D", null, "D"],
+  [null, "P", null, null, null, null, "D", null, "D"],
+  [null, null, "P", null, null, null, "D", null, "D"]
 ]
 
 Ra3
 [
   [null, null, "P", null, null, null, null, null, null],
-  [null, "P", null, null, null, null, null, "A", null],
-  ["P", null, null, null, null, "A", "A", "A", "A"],
-  [null, "P", null, null, null, null, null, "A", null],
+  [null, "P", null, null, null, null, null, "D", null],
+  ["P", null, null, null, null, "D", "D", "D", "D"],
+  [null, "P", null, null, null, null, null, "D", null],
   [null, null, "P", null, null, null, null, null, null]
 ]
 
 Ra4
 [
-  [null, null, "P", null, null, null, null, "A", null],
-  [null, "P", null, null, null, null, "A", null, null],
-  ["P", null, null, null, null, "A", "A", "A", null],
-  [null, "P", null, null, null, null, "A", null, null],
-  [null, null, "P", null, null, null, null, "A", null]
+  [null, null, "P", null, null, null, null, "D", null],
+  [null, "P", null, null, null, null, "D", null, null],
+  ["P", null, null, null, null, "D", "D", "D", null],
+  [null, "P", null, null, null, null, "D", null, null],
+  [null, null, "P", null, null, null, null, "D", null]
 ]
 
 Ra5
 [
-  [null, null, "P", null, null, null, null, null, "A"],
-  [null, "P", null, null, null, null, null, null, "A"],
-  ["P", null, null, null, null, "A", "A", "A", "A"],
-  [null, "P", null, null, null, null, null, null, "A"],
-  [null, null, "P", null, null, null, null, null, "A"]
+  [null, null, "P", null, null, null, null, null, "D"],
+  [null, "P", null, null, null, null, null, null, "D"],
+  ["P", null, null, null, null, "D", "D", "D", "D"],
+  [null, "P", null, null, null, null, null, null, "D"],
+  [null, null, "P", null, null, null, null, null, "D"]
 ]
 
 - todas as habilidades atuais causam 10 de dano quando aplicam dano
@@ -189,17 +189,22 @@ Ra5
 modelo de tiles:
 
 - P = tile de encaixe do player/ator
-- A = ataque com dano
+- A = dano de skill sem P
+- D = dano de skill com P
 - H = hook
 - I = ice
 - F = fire
 - P nao aplica efeito por si so; ele so marca onde o ator pode encaixar para usar a skill
+- skills com P nao usam A; usam D, I, F e H
+- A e P nunca coexistem na mesma skill
+- P, A e D nao combinam entre si no mesmo tile
+- I, F e H podem combinar com P ou com A ou com D
 - em skills de mage e ranged, a area de encaixe do ator pode ficar separada da area onde o ataque cai
 - Ra1 usa uma matriz 5x9:
   - um "<" de P na esquerda
-  - um "+" maior de A na direita
+  - um "+" maior de D na direita
   - o "+" fica centralizado na altura e encostado no lado direito da matriz
-- Ra2 ate Ra5 tambem sao ranged com matriz 5x9 e tiles P separados do grupo de dano A
+- Ra2 ate Ra5 tambem sao ranged com matriz 5x9 e tiles P separados do grupo de dano D
 - se a skill tiver tiles P, o ator precisa encaixar em um dos P
 - se a skill nao tiver tiles P, como nas melee atuais, o ator pode encaixar em qualquer tile ocupado da shape
 - uma mesma casa pode ter mais de uma letra
@@ -309,7 +314,7 @@ regras do H:
 - a shape pode ultrapassar a borda do mapa
 - nao e mais obrigatorio que a habilidade fique 100% dentro do board
 - isso vale em todos os sentidos: cima, baixo, esquerda e direita
-- isso vale para todos os tiles da skill: P, A, H, I e F
+- isso vale para todos os tiles da skill: P, A, D, H, I e F
 - a confirmacao so e valida se:
   - o ator continuar encaixado em algum tile da shape
   - existir pelo menos 1 tile util da habilidade dentro do mapa alem do proprio tile do ator
@@ -414,6 +419,13 @@ preview:
 - a tabela de habilidades fica centralizada em modulo compartilhado
 - nome, classe, dano, shape e mascaras de efeito devem sair dessa tabela compartilhada
 - existe um gerador de previews de skill que le o catalogo compartilhado e cria SVGs estaticos em assets/skills
+- existe um gerador externo de constantes fixas de IA por skill
+- esse gerador calcula metadados geometricos fora do runtime do combate
+- para skills com P, ele usa o conjunto D/I/F para derivar:
+  - duas diagonais extremas em delta
+  - metricas de linha
+  - uma area util retangular para decisao da IA
+- para skills sem P, a area util vira o bounding box da shape ocupada
 - o estado do combate no Play fica dividido em blocos menores:
   - meta do round
   - arena/runtime

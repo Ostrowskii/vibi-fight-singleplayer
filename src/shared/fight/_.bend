@@ -178,6 +178,9 @@ def skill_name(skill: U32) -> String:
 def cell_attack() -> U32:
   1
 
+def cell_dist_attack() -> U32:
+  1
+
 def cell_hook() -> U32:
   2
 
@@ -346,31 +349,31 @@ def skill_base_cell(skill: U32, x: U32, y: U32) -> U32:
     case 8 0 2:
       cell_player()
     case 8 0 6:
-      cell_attack()
+      cell_dist_attack()
     case 8 1 1:
       cell_player()
     case 8 1 6:
-      cell_attack()
+      cell_dist_attack()
     case 8 2 0:
       cell_player()
     case 8 2 4:
-      cell_attack()
+      cell_dist_attack()
     case 8 2 5:
-      cell_attack()
+      cell_dist_attack()
     case 8 2 6:
-      cell_attack()
+      cell_dist_attack()
     case 8 2 7:
-      cell_attack()
+      cell_dist_attack()
     case 8 2 8:
-      cell_attack()
+      cell_dist_attack()
     case 8 3 1:
       cell_player()
     case 8 3 6:
-      cell_attack()
+      cell_dist_attack()
     case 8 4 2:
       cell_player()
     case 8 4 6:
-      cell_attack()
+      cell_dist_attack()
 
     case 9 0 6:
       cell_ice()
@@ -396,108 +399,108 @@ def skill_base_cell(skill: U32, x: U32, y: U32) -> U32:
     case 10 0 2:
       cell_player()
     case 10 0 6:
-      cell_attack()
+      cell_dist_attack()
     case 10 0 8:
-      cell_attack()
+      cell_dist_attack()
     case 10 1 1:
       cell_player()
     case 10 1 6:
-      cell_attack()
+      cell_dist_attack()
     case 10 1 8:
-      cell_attack()
+      cell_dist_attack()
     case 10 2 0:
       cell_player()
     case 10 2 6:
-      cell_attack()
+      cell_dist_attack()
     case 10 2 8:
-      cell_attack()
+      cell_dist_attack()
     case 10 3 1:
       cell_player()
     case 10 3 6:
-      cell_attack()
+      cell_dist_attack()
     case 10 3 8:
-      cell_attack()
+      cell_dist_attack()
     case 10 4 2:
       cell_player()
     case 10 4 6:
-      cell_attack()
+      cell_dist_attack()
     case 10 4 8:
-      cell_attack()
+      cell_dist_attack()
 
     case 11 0 2:
       cell_player()
     case 11 1 1:
       cell_player()
     case 11 1 7:
-      cell_attack()
+      cell_dist_attack()
     case 11 2 0:
       cell_player()
     case 11 2 5:
-      cell_attack()
+      cell_dist_attack()
     case 11 2 6:
-      cell_attack()
+      cell_dist_attack()
     case 11 2 7:
-      cell_attack()
+      cell_dist_attack()
     case 11 2 8:
-      cell_attack()
+      cell_dist_attack()
     case 11 3 1:
       cell_player()
     case 11 3 7:
-      cell_attack()
+      cell_dist_attack()
     case 11 4 2:
       cell_player()
 
     case 12 0 2:
       cell_player()
     case 12 0 7:
-      cell_attack()
+      cell_dist_attack()
     case 12 1 1:
       cell_player()
     case 12 1 6:
-      cell_attack()
+      cell_dist_attack()
     case 12 2 0:
       cell_player()
     case 12 2 5:
-      cell_attack()
+      cell_dist_attack()
     case 12 2 6:
-      cell_attack()
+      cell_dist_attack()
     case 12 2 7:
-      cell_attack()
+      cell_dist_attack()
     case 12 3 1:
       cell_player()
     case 12 3 6:
-      cell_attack()
+      cell_dist_attack()
     case 12 4 2:
       cell_player()
     case 12 4 7:
-      cell_attack()
+      cell_dist_attack()
 
     case 13 0 2:
       cell_player()
     case 13 0 8:
-      cell_attack()
+      cell_dist_attack()
     case 13 1 1:
       cell_player()
     case 13 1 8:
-      cell_attack()
+      cell_dist_attack()
     case 13 2 0:
       cell_player()
     case 13 2 5:
-      cell_attack()
+      cell_dist_attack()
     case 13 2 6:
-      cell_attack()
+      cell_dist_attack()
     case 13 2 7:
-      cell_attack()
+      cell_dist_attack()
     case 13 2 8:
-      cell_attack()
+      cell_dist_attack()
     case 13 3 1:
       cell_player()
     case 13 3 8:
-      cell_attack()
+      cell_dist_attack()
     case 13 4 2:
       cell_player()
     case 13 4 8:
-      cell_attack()
+      cell_dist_attack()
 
     case _ _ _:
       0

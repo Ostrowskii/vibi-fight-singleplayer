@@ -23,6 +23,10 @@ jobs:
       - name: Checkout app
         uses: actions/checkout@v4
 
+      - name: Rebuild skill artifacts
+        run: |
+          bash scripts/build_skill_artifacts.sh
+
       - name: Prepare site artifact
         run: |
           test -f index.html
