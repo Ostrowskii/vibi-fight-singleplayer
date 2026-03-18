@@ -136400,6 +136400,15 @@ __app_notify_ready(null);
   <script>
     (function () {
       var href = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
+      function ensureLobbyLayoutPatch() {
+        if (document.head.querySelector('[data-lobby-layout-patch="1"]')) {
+          return;
+        }
+        var style = document.createElement("style");
+        style.setAttribute("data-lobby-layout-patch", "1");
+        style.textContent = "@media (min-width:981px){.lobby-grid{align-items:stretch!important;}.lobby-card{height:100%!important;overflow:hidden!important;}.skill-pool-wrap{min-height:0!important;overflow:auto!important;}}";
+        document.head.appendChild(style);
+      }
       function ensureLobbyButton() {
         var actions = document.querySelector(".sidebar .controls.controls--actions");
         if (!actions || actions.querySelector('[data-lobby-link="1"], a[href="' + href + '"]')) {
@@ -136412,6 +136421,7 @@ __app_notify_ready(null);
         link.setAttribute("data-lobby-link", "1");
         actions.appendChild(link);
       }
+      ensureLobbyLayoutPatch();
       new MutationObserver(ensureLobbyButton).observe(document.body, {
         childList: true,
         subtree: true,
