@@ -113,3 +113,15 @@ Formato esperado do artefato
 - elas sao constantes numericas/fixas para a IA
 - se for necessario guardar deltas com sinal, o artefato pode serializar sinal e
   magnitude separadamente, porque o motor atual usa muito `U32`
+
+
+Todo futuro da IA
+
+- a IA basica atual deve continuar simples, barata e agressiva
+- no futuro, e interessante ter variacoes de bot que:
+  - desviam
+  - recuam
+  - flanqueiam
+  - evitam linhas obvias
+- essas variacoes ficam fora da IA basica atual
+- a primeira versao deve continuar focada em sempre tentar atacar
