@@ -1,0 +1,97 @@
+Arrays, matrizes e catalogos de skill em Bend
+
+Inicio
+
+Ao modelar habilidades de um jogo de tabuleiro, a expectativa natural e poder
+escrever a forma da habilidade como dado. Para uma skill, o formato mais
+legivel costuma ser uma matriz, por exemplo `List(List(U32))` ou
+`List(List(Cell))`, porque ele se parece diretamente com o desenho mental da
+skill. Quando se olha para uma forma como:
+
+[
+  [null, null, "P", null, null, null, "A", null, "A"],
+  [null, "P", null, null, null, null, "A", null, "A"],
+  ["P", null, null, null, null, null, "A", null, "A"],
+  [null, "P", null, null, null, null, "A", null, "A"],
+  [null, null, "P", null, null, null, "A", null, "A"]
+]
+
+o leitor entende rapidamente o comportamento da habilidade. Esse tipo de dado
+combina melhor com design de jogo, com documentacao e com manutencao futura do
+que uma grande tabela de `case`.
+
+No Bend atual, no entanto, a forma mais comum de representar esse tipo de
+catalogo acaba virando funcao de lookup por `match/case`, porque ela entrega um
+acesso direto no formato `skill, x, y -> celula`. Isso resolve o acesso rapido,
+mas afasta o codigo da forma original da skill.
+
+Meio
+
+O ponto central aqui nao e que Bend nao consiga representar matrizes como dado.
+Consegue. E possivel escrever listas de listas normalmente. O problema aparece
+quando esse dado precisa ser lido muitas vezes em caminhos quentes do runtime.
+
+Neste jogo em especifico, o motor consulta a shape da skill repetidamente para:
+
+- preview da mira
+- validacao de conjuracao
+- calculo dos tiles de efeito
+- rotacao
+- procura de anchors validos
+- teste de hit
+- busca da IA
+
+Nesse tipo de motor, a pergunta frequente nao e "me de a skill inteira", e sim
+"qual e a celula em `x,y` desta skill?" ou "este indice e `P`?" ou "esta
+rotacao contem efeito neste ponto?". Quando a representacao disponivel e uma
+lista encadeada, esse acesso tende a ser feito com varias passagens recursivas,
+como `nth` da linha e depois `nth` da coluna. Isso costuma ficar menos
+ergonomico e potencialmente mais caro do que um lookup mais direto.
+
+Por isso, neste projeto, acabou fazendo sentido usar funcoes como lookup e nao
+acesso puro a dado no runtime quente. O ganho foi:
+
+- leitura direta por coordenada
+- integracao simples com a logica de preview e IA
+- menos conversao em caminhos de execucao sensiveis
+
+Mas o custo foi alto:
+
+- as skills ficaram descritas de forma menos humana
+- o catalogo cresceu em `case`
+- editar ou revisar uma shape ficou pior
+- o codigo se distanciou da forma visual que o designer imagina
+
+Entao, para este motor, a escolha por lookup em funcao faz sentido tecnico, mas
+nao e uma forma ideal de autoria de dado. Ela resolve o runtime, mas nao resolve
+bem a manutencao do catalogo.
+
+Fim
+
+A melhoria mais importante que o Bend poderia oferecer aqui e suporte melhor a
+dados indexaveis e constantes estruturadas. Em especial, ajudariam muito:
+
+- arrays ou vetores constantes com acesso por indice
+- arrays de arrays constantes
+- records ou tabelas constantes mais confortaveis
+- alguma forma simples de manter um catalogo estruturado sem cair em `case`
+
+Com isso, a skill poderia existir primeiro como dado legivel, e o motor poderia
+ler esse dado sem precisar transformar tudo em uma arvore de `match`.
+
+Para este jogo, a melhor direcao seria um modelo hibrido:
+
+- a matriz da skill como fonte de verdade, no formato mais legivel possivel
+- uma camada derivada para lookup rapido no runtime
+
+Isso preserva o melhor dos dois lados:
+
+- o design da skill fica facil de escrever, revisar e discutir
+- o motor continua com acesso eficiente onde realmente importa
+
+Em resumo: o uso de `case` neste projeto nao aconteceu porque matriz como dado
+seria conceitualmente errada. Aconteceu porque o motor faz consultas muito
+frequentes e a ergonomia atual de dados indexaveis no Bend ainda nao atende bem
+esse tipo de catalogo. Para um sistema de skills em grade, arrays de arrays
+constantes seriam uma melhoria muito natural da linguagem e reduziriam tanto o
+hard code quanto o atrito de manutencao.
