@@ -3940,6 +3940,8 @@ def _playback_turn_of_idx(idx: U32, bot_total: U32) -> U32:
 def _playback_actor_of_idx(idx: U32, bot_total: U32) -> U32:
   match _playback_turn_of_idx(idx, bot_total):
     case 0:
+      1
+    case 1:
       0
     case _:
       1
@@ -3947,6 +3949,8 @@ def _playback_actor_of_idx(idx: U32, bot_total: U32) -> U32:
 def _playback_actor_idx_of_idx(idx: U32, bot_total: U32) -> U32:
   match _playback_turn_of_idx(idx, bot_total):
     case 0:
+      0
+    case 1:
       0
     case step:
       step - 1

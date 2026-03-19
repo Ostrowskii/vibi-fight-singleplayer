@@ -306,6 +306,22 @@ __PLAYBACK_TOTAL_STEPS_FN__ = function(botTotal) {
   return Math.imul(4, (((botTotal >>> 0) + 1) >>> 0)) >>> 0;
 };
 
+__PLAYBACK_ACTOR_OF_IDX_FN__ = function(idx, botTotal) {
+  const turn = (idx >>> 0) % (((botTotal >>> 0) + 1) >>> 0);
+  if ((turn >>> 0) === 1) {
+    return 0;
+  }
+  return 1;
+};
+
+__PLAYBACK_ACTOR_IDX_OF_IDX_FN__ = function(idx, botTotal) {
+  const turn = (idx >>> 0) % (((botTotal >>> 0) + 1) >>> 0);
+  if ((turn >>> 0) <= 1) {
+    return 0;
+  }
+  return ((turn >>> 0) - 1) >>> 0;
+};
+
 __START_TARGET_APPLY_FN__ = function(
   round,
   level,
@@ -1419,6 +1435,8 @@ def build_patch(module_path: str, bundle_kind: str) -> str:
         "__QUEUE3_FN__": encode_symbol(module_path, "_queue3"),
         "__QUEUE_WAITS_FN__": encode_symbol(module_path, "_queue_waits"),
         "__PLAYBACK_TOTAL_STEPS_FN__": encode_symbol(module_path, "_playback_total_steps"),
+        "__PLAYBACK_ACTOR_OF_IDX_FN__": encode_symbol(module_path, "_playback_actor_of_idx"),
+        "__PLAYBACK_ACTOR_IDX_OF_IDX_FN__": encode_symbol(module_path, "_playback_actor_idx_of_idx"),
         "__PLAYBACK_START_STATE_FN__": encode_symbol(module_path, "_playback_start_state"),
         "__PLAYBACK_ACTION_FN__": encode_symbol(module_path, "_playback_action"),
         "__START_TARGET_APPLY_FN__": encode_symbol(module_path, "_start_target_apply"),

@@ -121844,6 +121844,22 @@ $n2f67616d652d746573742f6d61696e235f706c61796261636b5f746f74616c5f7374657073 = f
   return Math.imul(4, (((botTotal >>> 0) + 1) >>> 0)) >>> 0;
 };
 
+$n2f67616d652d746573742f6d61696e235f706c61796261636b5f6163746f725f6f665f696478 = function(idx, botTotal) {
+  const turn = (idx >>> 0) % (((botTotal >>> 0) + 1) >>> 0);
+  if ((turn >>> 0) === 1) {
+    return 0;
+  }
+  return 1;
+};
+
+$n2f67616d652d746573742f6d61696e235f706c61796261636b5f6163746f725f6964785f6f665f696478 = function(idx, botTotal) {
+  const turn = (idx >>> 0) % (((botTotal >>> 0) + 1) >>> 0);
+  if ((turn >>> 0) <= 1) {
+    return 0;
+  }
+  return ((turn >>> 0) - 1) >>> 0;
+};
+
 $n2f67616d652d746573742f6d61696e235f73746172745f7461726765745f6170706c79 = function(
   round,
   level,
@@ -122201,6 +122217,8 @@ $n2f67616d652d746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74
 };
 
 /* __vibi_turn_patch:end */
+
+
 
 
 
