@@ -138,6 +138,8 @@ function __story_parse_state() {
       __story_parse_flag("ah"),
     ],
     openShop: __story_parse_open_shop(),
+    pendingPurchase: null,
+    warningOpen: 0,
   };
 }
 
@@ -237,24 +239,21 @@ function __story_ensure_style() {
 .story-city__cell--bowyer{align-content:end;justify-items:start;}
 .story-city__cell--forge{align-content:end;justify-items:end;}
 .story-shop-button{cursor:pointer;}
-.story-shop-panel{width:min(100%,700px);display:grid;gap:14px;padding:22px;background:rgba(104,61,28,.94);border:2px solid #4b2d14;box-shadow:0 22px 60px rgba(17,10,4,.34);}
+.story-city__cell--shop-open{padding:0;align-content:stretch;justify-items:stretch;}
+.story-shop-panel{width:100%;height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:14px;padding:24px;background:rgba(104,61,28,.94);border:2px solid #4b2d14;box-shadow:none;justify-self:stretch;align-self:stretch;}
 .story-shop-panel__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;}
 .story-shop-panel__eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#e0c28d;font-weight:900;}
 .story-shop-panel__title{font-size:28px;font-weight:900;line-height:1;color:#fff4dd;}
-.story-shop-panel__meta{margin-top:6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e0c28d;}
 .story-shop-panel__close{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(255,235,201,.72);border-radius:12px;background:rgba(62,35,12,.8);color:#fff2da;font-size:18px;font-weight:900;cursor:pointer;}
-.story-shop-panel__body,.story-shop-panel__section{display:grid;gap:12px;min-width:0;}
+.story-shop-panel__body{display:grid;gap:14px;min-width:0;min-height:0;overflow:auto;align-content:start;}
+.story-shop-panel__section{display:grid;gap:12px;min-width:0;align-content:start;}
 .story-shop-panel__section-title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}
-.story-shop-panel__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-width:0;}
-.story-shop-card{padding:10px;display:grid;justify-items:center;align-content:start;gap:6px;border:1px solid #c6a26a;border-radius:14px;background:rgba(255,244,221,.94);color:#24190f;text-align:center;cursor:pointer;}
-.story-shop-card--disabled{opacity:.56;cursor:default;}
-.story-shop-card__eyebrow{font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#6d5438;}
-.story-shop-card__art{width:64px;height:64px;display:grid;place-items:center;padding:4px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}
+.story-shop-panel__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:14px;min-width:0;align-content:start;}
+.story-shop-card{aspect-ratio:1/1;padding:10px;display:grid;place-items:center;border:1px solid #c6a26a;border-radius:16px;background:rgba(255,244,221,.94);color:#24190f;text-align:center;cursor:pointer;}
+.story-shop-card__art{width:100%;height:100%;display:grid;place-items:center;padding:8px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}
 .story-shop-card__art--armor{background:#d4bc95;color:#654523;}
 .story-shop-card__image{display:block;width:100%;height:100%;object-fit:contain;}
-.story-shop-card__armor-bonus{font-size:12px;font-weight:900;letter-spacing:.06em;}
-.story-shop-card__name{font-size:12px;font-weight:800;color:#24190f;line-height:1.2;}
-.story-shop-card__price{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8c6006;font-weight:900;}
+.story-shop-card__armor-bonus{font-size:14px;font-weight:900;letter-spacing:.06em;}
 .story-shop-empty{padding:14px;border:1px dashed rgba(233,208,163,.36);color:#e2cfb1;font-size:13px;}
 .story-armor__grid{grid-template-columns:repeat(2,32px);gap:8px 10px;}
 .story-armor__item{gap:4px;}
@@ -266,14 +265,45 @@ function __story_ensure_style() {
 .story-owned__skill-art{width:40px;height:40px;display:grid;place-items:center;padding:3px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}
 .story-owned__skill-image{display:block;width:100%;height:100%;object-fit:contain;}
 .story-owned__skill-name{font-size:10px;font-weight:800;color:#24190f;line-height:1.2;}
+.story-modal-host{position:absolute;inset:0;z-index:20;pointer-events:none;}
+.story-modal-layer{position:absolute;inset:0;display:grid;place-items:center;padding:24px;background:rgba(20,12,6,.58);pointer-events:auto;}
+.story-purchase-modal{position:relative;z-index:1;width:min(100%,760px);display:grid;gap:18px;padding:24px;background:rgba(104,61,28,.98);border:2px solid #4b2d14;box-shadow:0 24px 60px rgba(8,4,1,.45);}
+.story-purchase-modal__title{margin:0;font-size:32px;line-height:1;color:#fff4dd;}
+.story-purchase-modal__hero{display:grid;place-items:center;}
+.story-purchase-modal__art{width:min(220px,100%);aspect-ratio:1/1;display:grid;place-items:center;padding:14px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}
+.story-purchase-modal__art--armor{background:#d4bc95;color:#654523;}
+.story-purchase-modal__image{display:block;width:100%;height:100%;object-fit:contain;}
+.story-purchase-modal__armor-bonus{font-size:26px;font-weight:900;letter-spacing:.06em;}
+.story-purchase-modal__details{display:grid;grid-template-columns:180px minmax(0,1fr);gap:14px;}
+.story-purchase-modal__cost{min-height:120px;padding:16px;display:grid;align-content:start;gap:8px;border:1px solid #7b5a32;background:rgba(82,49,25,.9);color:#fff4dd;}
+.story-purchase-modal__cost-label,.story-purchase-modal__description-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}
+.story-purchase-modal__cost-value{font-size:28px;line-height:1;font-weight:900;}
+.story-purchase-modal__description{min-height:120px;padding:16px;border:1px dashed rgba(233,208,163,.36);background:rgba(82,49,25,.48);}
+.story-purchase-modal__confirm{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;color:#fff4dd;}
+.story-purchase-modal__confirm-copy{font-size:18px;font-weight:800;}
+.story-purchase-modal__actions{display:flex;gap:10px;flex-wrap:wrap;}
+.story-purchase-modal__button{display:inline-flex;align-items:center;justify-content:center;min-width:120px;padding:12px 18px;border:1px solid rgba(255,235,201,.72);border-radius:12px;background:rgba(62,35,12,.88);color:#fff2da;font-weight:900;cursor:pointer;}
+.story-purchase-modal__button--confirm{background:#f1c54a;color:#8c6006;border-color:#d8a326;}
+.story-warning-modal{position:absolute;z-index:2;width:min(100%,340px);display:grid;gap:14px;padding:20px;background:rgba(104,61,28,.99);border:2px solid #4b2d14;box-shadow:0 24px 60px rgba(8,4,1,.5);}
+.story-warning-modal__title{margin:0;font-size:24px;line-height:1;color:#fff4dd;}
+.story-warning-modal__copy{margin:0;color:#f0ddbc;line-height:1.5;}
+.story-warning-modal__actions{display:flex;justify-content:flex-end;}
 @media (max-width:900px){
   .story-city__cell--inventory,.story-city__cell--wizard,.story-city__cell--bowyer,.story-city__cell--forge{justify-items:stretch;align-content:start;}
-  .story-shop-panel{width:100%;}
+  .story-city__cell--shop-open{padding:0 18px;}
+  .story-shop-panel{height:auto;min-height:0;}
   .story-shop-panel__grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .story-purchase-modal{width:100%;}
 }
 @media (max-width:640px){
   .story-shop-panel__head{flex-direction:column;align-items:stretch;}
   .story-shop-panel__grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .story-purchase-modal{padding:20px;}
+  .story-purchase-modal__title{font-size:28px;}
+  .story-purchase-modal__details{grid-template-columns:1fr;}
+  .story-purchase-modal__confirm{align-items:stretch;}
+  .story-purchase-modal__actions{width:100%;}
+  .story-purchase-modal__button{flex:1 1 0;}
 }
 `;
   document.head.appendChild(style);
@@ -304,26 +334,76 @@ function __story_render_owned_row(state) {
   }).join("");
 }
 
+function __story_purchase_name(kind, value) {
+  if (kind === "armor") {
+    return (__STORY_ARMORS[value] && __STORY_ARMORS[value].name) || "Armadura";
+  }
+  return __story_skill_name(value >>> 0);
+}
+
+function __story_purchase_cost(_kind, _value) {
+  return 100;
+}
+
+function __story_render_purchase_art(kind, value, large) {
+  if (kind === "armor") {
+    const armor = __STORY_ARMORS[value];
+    const className = large
+      ? "story-purchase-modal__art story-purchase-modal__art--armor"
+      : "story-shop-card__art story-shop-card__art--armor";
+    const bonusClass = large
+      ? "story-purchase-modal__armor-bonus"
+      : "story-shop-card__armor-bonus";
+    return '<span class="' + className + '"><span class="' + bonusClass + '">HP +' + armor.hp + '</span></span>';
+  }
+  const name = __story_skill_name(value >>> 0);
+  if (large) {
+    return '<span class="story-purchase-modal__art"><img class="story-purchase-modal__image" src="' + __story_skill_image(value >>> 0) + '" alt="' + name + '" /></span>';
+  }
+  return '<span class="story-shop-card__art"><img class="story-shop-card__image" src="' + __story_skill_image(value >>> 0) + '" alt="' + name + '" /></span>';
+}
+
+function __story_open_purchase(state, kind, value) {
+  state.pendingPurchase = {kind, value: value >>> 0};
+  state.warningOpen = 0;
+}
+
+function __story_close_purchase(state) {
+  state.pendingPurchase = null;
+  state.warningOpen = 0;
+}
+
+function __story_confirm_purchase(state) {
+  const pending = state.pendingPurchase;
+  if (!pending) {
+    return;
+  }
+  const cost = __story_purchase_cost(pending.kind, pending.value);
+  if ((state.gold >>> 0) < (cost >>> 0)) {
+    state.warningOpen = 1;
+    return;
+  }
+  state.gold = ((state.gold >>> 0) - (cost >>> 0)) >>> 0;
+  if (pending.kind === "armor") {
+    state.armor[pending.value >>> 0] = 1;
+  } else if (!__story_item_owned(state, pending.value >>> 0)) {
+    state.items = state.items.concat([pending.value >>> 0]);
+  }
+  __story_close_purchase(state);
+}
+
 function __story_render_shop_skill_card(state, skill) {
   if (__story_item_owned(state, skill)) {
     return "";
   }
-  const disabled = (state.gold >>> 0) < 100;
-  const name = __story_skill_name(skill);
-  const disabledAttrs = disabled ? ' disabled="disabled"' : "";
-  const disabledClass = disabled ? " story-shop-card--disabled" : "";
-  return '<button type="button" class="story-shop-card' + disabledClass + '" data-buy-skill="' + skill + '"' + disabledAttrs + '><span class="story-shop-card__eyebrow">' + __story_skill_class_label(skill) + '</span><span class="story-shop-card__art"><img class="story-shop-card__image" src="' + __story_skill_image(skill) + '" alt="' + name + '" /></span><span class="story-shop-card__name">' + name + '</span><span class="story-shop-card__price">100 gold</span></button>';
+  return '<button type="button" class="story-shop-card" data-purchase-open="skill:' + (skill >>> 0) + '">' + __story_render_purchase_art("skill", skill >>> 0, 0) + '</button>';
 }
 
 function __story_render_shop_armor_card(state, idx) {
   if (__story_armor_owned(state, idx)) {
     return "";
   }
-  const armor = __STORY_ARMORS[idx];
-  const disabled = (state.gold >>> 0) < 100;
-  const disabledAttrs = disabled ? ' disabled="disabled"' : "";
-  const disabledClass = disabled ? " story-shop-card--disabled" : "";
-  return '<button type="button" class="story-shop-card' + disabledClass + '" data-buy-armor="' + idx + '"' + disabledAttrs + '><span class="story-shop-card__eyebrow">Armadura</span><span class="story-shop-card__art story-shop-card__art--armor"><span class="story-shop-card__armor-bonus">HP +' + armor.hp + '</span></span><span class="story-shop-card__name">' + armor.name + '</span><span class="story-shop-card__price">100 gold</span></button>';
+  return '<button type="button" class="story-shop-card" data-purchase-open="armor:' + (idx >>> 0) + '">' + __story_render_purchase_art("armor", idx >>> 0, 0) + '</button>';
 }
 
 function __story_render_shop_panel(state, shopId) {
@@ -336,7 +416,7 @@ function __story_render_shop_panel(state, shopId) {
   let body = "";
   if ((shopId >>> 0) === 3) {
     body += '<div class="story-shop-panel__body">';
-    body += '<div class="story-shop-panel__section"><div class="story-shop-panel__section-title">Skills de Melee</div><div class="story-shop-panel__grid">' + skillCards + '</div></div>';
+    body += '<div class="story-shop-panel__section"><div class="story-shop-panel__section-title">Habilidades</div><div class="story-shop-panel__grid">' + skillCards + '</div></div>';
     body += '<div class="story-shop-panel__section"><div class="story-shop-panel__section-title">Armaduras</div><div class="story-shop-panel__grid">' + armorCards + '</div></div>';
     if (!skillCards && !armorCards) {
       body += '<div class="story-shop-empty">Tudo comprado nesta loja.</div>';
@@ -349,45 +429,76 @@ function __story_render_shop_panel(state, shopId) {
     }
     body += '</div>';
   }
-  return '<div class="story-shop-panel"><div class="story-shop-panel__head"><div><div class="story-shop-panel__eyebrow">' + shop.eyebrow + '</div><div class="story-shop-panel__title">' + shop.title + '</div><div class="story-shop-panel__meta">Gold disponivel: ' + (state.gold >>> 0) + '</div></div><button type="button" class="story-shop-panel__close" data-shop-close="1">X</button></div>' + body + '</div>';
+  return '<div class="story-shop-panel"><div class="story-shop-panel__head"><div><div class="story-shop-panel__eyebrow">' + shop.eyebrow + '</div><div class="story-shop-panel__title">' + shop.title + '</div></div><button type="button" class="story-shop-panel__close" data-shop-close="1">X</button></div>' + body + '</div>';
 }
 
 function __story_render_shop_button(shopId) {
   return '<button type="button" class="story-shop-button" data-shop-open="' + shopId + '">' + __STORY_SHOPS[shopId].title + '</button>';
 }
 
+function __story_render_purchase_modal(state) {
+  const pending = state.pendingPurchase;
+  if (!pending) {
+    return "";
+  }
+  const name = __story_purchase_name(pending.kind, pending.value);
+  const cost = __story_purchase_cost(pending.kind, pending.value);
+  let warning = "";
+  if ((state.warningOpen >>> 0) !== 0) {
+    warning = '<div class="story-warning-modal"><h3 class="story-warning-modal__title">Gold insuficiente</h3><p class="story-warning-modal__copy">Voce nao tem gold suficiente para essa compra.</p><div class="story-warning-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-warning-ok="1">OK</button></div></div>';
+  }
+  return '<div class="story-modal-layer"><div class="story-purchase-modal"><h2 class="story-purchase-modal__title">' + name + '</h2><div class="story-purchase-modal__hero">' + __story_render_purchase_art(pending.kind, pending.value, 1) + '</div><div class="story-purchase-modal__details"><div class="story-purchase-modal__cost"><div class="story-purchase-modal__cost-label">Custo</div><div class="story-purchase-modal__cost-value">' + cost + ' gold</div></div><div class="story-purchase-modal__description"><div class="story-purchase-modal__description-label">Descricao</div></div></div><div class="story-purchase-modal__confirm"><div class="story-purchase-modal__confirm-copy">Confirmar compra?</div><div class="story-purchase-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-purchase-confirm="1">Sim</button><button type="button" class="story-purchase-modal__button" data-purchase-cancel="1">Nao</button></div></div></div>' + warning + '</div>';
+}
+
 function __story_bind_shop_events(root, state, render) {
   root.city.querySelectorAll("[data-shop-open]").forEach((node) => {
     node.addEventListener("click", () => {
       state.openShop = Number.parseInt(node.getAttribute("data-shop-open") || "0", 10) >>> 0;
+      __story_close_purchase(state);
       render();
     });
   });
   root.city.querySelectorAll("[data-shop-close]").forEach((node) => {
     node.addEventListener("click", () => {
       state.openShop = 0;
+      __story_close_purchase(state);
       render();
     });
   });
-  root.city.querySelectorAll("[data-buy-skill]").forEach((node) => {
+  root.city.querySelectorAll("[data-purchase-open]").forEach((node) => {
     node.addEventListener("click", () => {
-      const skill = Number.parseInt(node.getAttribute("data-buy-skill") || "0", 10) >>> 0;
-      if ((state.gold >>> 0) < 100 || __story_item_owned(state, skill)) {
+      const raw = node.getAttribute("data-purchase-open") || "";
+      const parts = raw.split(":");
+      if (parts.length !== 2) {
         return;
       }
-      state.gold = ((state.gold >>> 0) - 100) >>> 0;
-      state.items = state.items.concat([skill >>> 0]);
+      const kind = parts[0];
+      const value = Number.parseInt(parts[1] || "0", 10);
+      if (!Number.isFinite(value) || value < 0) {
+        return;
+      }
+      __story_open_purchase(state, kind, value >>> 0);
       render();
     });
   });
-  root.city.querySelectorAll("[data-buy-armor]").forEach((node) => {
+  if (!root.modalHost) {
+    return;
+  }
+  root.modalHost.querySelectorAll("[data-purchase-cancel]").forEach((node) => {
     node.addEventListener("click", () => {
-      const slot = Number.parseInt(node.getAttribute("data-buy-armor") || "0", 10) >>> 0;
-      if ((state.gold >>> 0) < 100 || __story_armor_owned(state, slot)) {
-        return;
-      }
-      state.gold = ((state.gold >>> 0) - 100) >>> 0;
-      state.armor[slot] = 1;
+      __story_close_purchase(state);
+      render();
+    });
+  });
+  root.modalHost.querySelectorAll("[data-purchase-confirm]").forEach((node) => {
+    node.addEventListener("click", () => {
+      __story_confirm_purchase(state);
+      render();
+    });
+  });
+  root.modalHost.querySelectorAll("[data-warning-ok]").forEach((node) => {
+    node.addEventListener("click", () => {
+      state.warningOpen = 0;
       render();
     });
   });
@@ -423,12 +534,19 @@ function __story_render_inventory(root, state) {
   }
 }
 
+function __story_render_modals(root, state) {
+  if (root.modalHost) {
+    root.modalHost.innerHTML = __story_render_purchase_modal(state);
+  }
+}
+
 function __story_render_shops(root, state, render) {
   for (const shopId of [1, 2, 3]) {
     const cell = root.shopCells[shopId];
     if (!cell) {
       continue;
     }
+    cell.classList.toggle("story-city__cell--shop-open", (state.openShop >>> 0) === shopId);
     cell.innerHTML = (state.openShop >>> 0) === shopId
       ? __story_render_shop_panel(state, shopId)
       : __story_render_shop_button(shopId);
@@ -443,8 +561,15 @@ function __story_patch_city() {
   }
   __story_ensure_style();
   const state = __story_parse_state();
+  let modalHost = city.querySelector(".story-modal-host");
+  if (!modalHost) {
+    modalHost = document.createElement("div");
+    modalHost.className = "story-modal-host";
+    city.appendChild(modalHost);
+  }
   const root = {
     city,
+    modalHost,
     meta: document.querySelector(".story-inventory__meta"),
     duel: document.querySelector(".story-duel"),
     hpValue: document.querySelector(".story-hp-card__value"),
@@ -460,6 +585,7 @@ function __story_patch_city() {
   const render = () => {
     __story_render_inventory(root, state);
     __story_render_shops(root, state, render);
+    __story_render_modals(root, state);
     __story_sync_url(state);
   };
   render();
