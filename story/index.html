@@ -58330,19 +58330,19 @@ function __story_ensure_style() {
 .story-armor__item{gap:4px;}
 .story-armor__slot{width:32px;}
 .story-armor__slot-label{font-size:9px;letter-spacing:.05em;}
-.story-inventory{gap:12px;padding:18px;}
-.story-equipped-row{--story-slot-size:clamp(66px,6vw,72px);display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px;align-items:center;padding:6px 8px;background:rgba(79,48,23,.92);border:1px solid #7b5a32;}
+.story-inventory{gap:10px;padding:16px;}
+.story-equipped-row{--story-slot-size:clamp(58px,5vw,64px);display:grid;grid-template-columns:104px minmax(0,1fr);gap:8px;align-items:center;}
 .story-owned-row{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start;}
-.story-hp-card{height:var(--story-slot-size);min-height:0;padding:8px 10px;display:grid;align-content:center;gap:2px;background:#6f4720;border:1px solid rgba(233,208,163,.28);color:#fff4dd;box-sizing:border-box;}
+.story-hp-card{height:var(--story-slot-size);min-height:0;padding:6px 8px;display:grid;align-content:center;gap:1px;background:rgba(82,49,25,.9);border:1px solid #7b5a32;color:#fff4dd;box-sizing:border-box;}
 .story-hp-card__label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#e0c28d;}
-.story-hp-card__value{font-size:26px;line-height:1;}
-.story-slot-row{display:grid;grid-template-columns:repeat(3,var(--story-slot-size));gap:8px;justify-self:start;align-self:start;width:max-content;}
-.story-slot{width:var(--story-slot-size);height:var(--story-slot-size);padding:0;display:grid;place-items:center;border-radius:12px;background:#6f4720;text-align:center;font:inherit;-webkit-appearance:none;-moz-appearance:none;appearance:none;box-sizing:border-box;box-shadow:none;outline:none;overflow:hidden;align-self:start;}
+.story-hp-card__value{font-size:24px;line-height:1;}
+.story-slot-row{display:grid;grid-template-columns:repeat(3,var(--story-slot-size));gap:6px;justify-self:start;align-self:start;width:max-content;}
+.story-slot{width:var(--story-slot-size);height:var(--story-slot-size);padding:0;display:grid;place-items:center;border-radius:12px;background:transparent;text-align:center;font:inherit;-webkit-appearance:none;-moz-appearance:none;appearance:none;box-sizing:border-box;box-shadow:none;outline:none;overflow:hidden;align-self:start;}
 .story-slot--equipped{cursor:pointer;}
-.story-slot--filled{border:1px solid rgba(233,208,163,.42);}
-.story-slot--empty{border:1px dashed rgba(233,208,163,.36);}
+.story-slot--filled{border:1px solid rgba(233,208,163,.32);}
+.story-slot--empty{background:#6f4720;border:1px dashed rgba(233,208,163,.36);}
 .story-slot__placeholder{display:block;width:100%;height:100%;}
-.story-slot__image{display:block;width:86%;height:86%;object-fit:contain;background:transparent;border:none;box-shadow:none;pointer-events:none;}
+.story-slot__image{display:block;width:88%;height:88%;object-fit:contain;background:transparent;border:none;box-shadow:none;pointer-events:none;}
 .story-owned__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:84px;}
 .story-owned__empty{min-width:200px;padding:10px 12px;display:grid;place-items:center;border:1px dashed rgba(233,208,163,.36);color:#d8bea0;font-size:12px;}
 .story-owned__skill{width:84px;aspect-ratio:1/1;padding:8px;display:grid;place-items:center;border:1px solid #7b5a32;border-radius:12px;background:#6f4720;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none;}
@@ -58388,8 +58388,8 @@ function __story_ensure_style() {
   .story-shop-panel__grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .story-purchase-modal{width:100%;}
   .story-equipped-row,.story-owned-row{grid-template-columns:1fr;}
-  .story-equipped-row{--story-slot-size:clamp(60px,19vw,64px);gap:8px;padding:6px;}
-  .story-slot-row{gap:6px;}
+  .story-equipped-row{--story-slot-size:clamp(54px,18vw,58px);gap:6px;}
+  .story-slot-row{gap:5px;}
   .story-owned__track{width:100%;min-width:0;}
   .story-owned__row{min-height:76px;}
   .story-owned__skill{width:76px;}
@@ -58855,6 +58855,8 @@ function __story_start_patch() {
 
 __story_start_patch();
 /* __vibi_story_patch:end */
+
+
 
 
 
