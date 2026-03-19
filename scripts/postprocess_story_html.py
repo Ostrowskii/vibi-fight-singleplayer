@@ -112,7 +112,7 @@ function __story_parse_loadout() {
     s2: __story_parse_u32("ps2", 0),
     s3: __story_parse_u32("ps3", 0),
   };
-  if ((loadout.s1 >>> 0) === 0 && (loadout.s2 >>> 0) === 0 && (loadout.s3 >>> 0) === 0) {
+  if ((loadout.s1 >>> 0) === 0) {
     loadout.s1 = 1;
   }
   return loadout;
