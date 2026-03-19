@@ -1,6 +1,0 @@
-Fight Spec
-
-Este documento foi movido.
-
-- regras gerais de combate: `docs/game/fight.txt`
-- regras e fluxo da IA: `docs/game/ia.txt`
