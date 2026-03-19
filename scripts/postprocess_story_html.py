@@ -365,12 +365,12 @@ function __story_ensure_style() {
 .story-armor__item{gap:4px;}
 .story-armor__slot{width:32px;}
 .story-armor__slot-label{font-size:9px;letter-spacing:.05em;}
-.story-slot-row{display:grid;grid-template-columns:repeat(3,72px);gap:8px;justify-self:start;width:max-content;padding:8px 10px;border:1px solid #7b5a32;border-radius:16px;background:rgba(88,53,28,.9);box-shadow:inset 0 0 0 1px rgba(255,236,209,.05);}
-.story-slot{width:72px;aspect-ratio:1/1;min-height:0;padding:0;display:block;border:none;border-radius:12px;background:transparent;text-align:center;font:inherit;-webkit-appearance:none;-moz-appearance:none;appearance:none;box-shadow:none;outline:none;overflow:visible;}
+.story-slot-row{display:grid;grid-template-columns:repeat(3,72px);gap:8px;justify-self:start;width:max-content;}
+.story-slot{width:72px;aspect-ratio:1/1;min-height:0;padding:0;display:grid;place-items:center;border-radius:12px;background:transparent;text-align:center;font:inherit;-webkit-appearance:none;-moz-appearance:none;appearance:none;box-sizing:border-box;box-shadow:none;outline:none;overflow:hidden;}
 .story-slot--equipped{cursor:pointer;}
-.story-slot--filled{background:transparent;}
-.story-slot--empty{background:transparent;}
-.story-slot__placeholder{display:block;width:100%;height:100%;box-sizing:border-box;border:2px dashed rgba(255,236,209,.42);border-radius:12px;background:rgba(69,41,21,.72);}
+.story-slot--filled{border:1px solid rgba(233,208,163,.36);}
+.story-slot--empty{border:1px dashed rgba(233,208,163,.36);}
+.story-slot__placeholder{display:block;width:100%;height:100%;}
 .story-slot__image{display:block;width:100%;height:100%;object-fit:contain;background:transparent;border:none;box-shadow:none;pointer-events:none;}
 .story-owned__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:64px;}
 .story-owned__empty{min-width:200px;padding:10px 12px;display:grid;place-items:center;border:1px dashed rgba(233,208,163,.36);color:#d8bea0;font-size:12px;}
@@ -418,7 +418,7 @@ function __story_ensure_style() {
   .story-shop-panel{height:auto;min-height:0;}
   .story-shop-panel__grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .story-purchase-modal{width:100%;}
-  .story-slot-row{grid-template-columns:repeat(3,68px);gap:6px;padding:6px 8px;}
+  .story-slot-row{grid-template-columns:repeat(3,68px);gap:6px;}
   .story-slot{width:68px;}
   .story-owned__track{width:100%;min-width:0;}
 }
