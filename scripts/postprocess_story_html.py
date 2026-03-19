@@ -22,6 +22,7 @@ PATCH = r"""
 const __story_params = new URLSearchParams(window.location.search);
 
 const __STORY_SKILLS = {
+  1: {name: "Me1", classLabel: "Melee"},
   2: {name: "Me2", classLabel: "Melee"},
   3: {name: "Me3", classLabel: "Melee"},
   4: {name: "Me4", classLabel: "Melee"},
@@ -97,7 +98,7 @@ function __story_parse_items() {
   const items = [];
   for (const chunk of raw.split(",")) {
     const value = Number.parseInt(chunk, 10);
-    if (!Number.isFinite(value) || value <= 1 || value > 13 || seen.has(value)) {
+    if (!Number.isFinite(value) || value < 1 || value > 13 || seen.has(value)) {
       continue;
     }
     seen.add(value);
