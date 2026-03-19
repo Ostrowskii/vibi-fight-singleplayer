@@ -22,10 +22,10 @@ CELL_BITS = {
 COLORS = {
     "anchor": ("#58d8e8", None),
     "attack": ("#ddb151", None),
-    "hook": ("#e2bf48", None),
+    "hook": ("#9ff25e", None),
     "ice": ("#70aee4", None),
     "fire": ("#df8d39", None),
-    "attack_hook": ("#d94933", "#e2bf48"),
+    "attack_hook": ("#d94933", "#9ff25e"),
     "attack_ice": ("#d94933", "#70aee4"),
     "attack_fire": ("#d94933", "#df8d39"),
 }
