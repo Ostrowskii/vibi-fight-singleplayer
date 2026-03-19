@@ -185,8 +185,6 @@ def _shop_button(label: String) -> HTML(StoryEvent):
 def _story_skill_slot(loadout_value: Loadout, idx: U32) -> HTML(StoryEvent):
   skill = _loadout_slot(loadout_value, idx);
   <div class={_story_skill_slot_class(skill)}>
-    <span class="story-slot__index">{text{U32.show(idx + 1)}}</span>
-    <span class="story-slot__name">{text{_story_skill_slot_label(skill)}}</span>
     {_story_skill_visual(skill)}
   </div>
 
@@ -197,21 +195,12 @@ def _story_skill_slot_class(skill: U32) -> String:
     case _:
       "story-slot story-slot--filled"
 
-def _story_skill_slot_label(skill: U32) -> String:
-  match skill:
-    case 0:
-      "Vazio"
-    case current_skill:
-      Fight.skill_name(current_skill)
-
 def _story_skill_visual(skill: U32) -> HTML(StoryEvent):
   match skill:
     case 0:
-      <span class="story-slot__art story-slot__art--empty"></span>
+      <span class="story-slot__placeholder"></span>
     case current_skill:
-      <span class="story-slot__art">
-        <img class="story-slot__image" src={_skill_image_src(current_skill)} alt={Fight.skill_name(current_skill)} />
-      </span>
+      <img class="story-slot__image" src={_skill_image_src(current_skill)} alt={Fight.skill_name(current_skill)} />
 
 def _skill_image_src(skill: U32) -> String:
   "../assets/skills/" ++ Fight.skill_name(skill) ++ ".svg"
@@ -384,7 +373,7 @@ def _city_layout_css() -> String:
 def _inventory_css() -> String:
   ""
   ++ ".story-inventory{width:min(100%,700px);display:grid;gap:14px;padding:22px;background:rgba(104,61,28,.92);border:2px solid #4b2d14;box-shadow:0 22px 60px rgba(17,10,4,.34);}.story-inventory__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;}.story-inventory__title{font-size:28px;font-weight:900;line-height:1;color:var(--cream);}.story-inventory__meta{margin-top:6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e0c28d;}.story-duel{display:inline-flex;align-items:center;justify-content:center;min-width:126px;padding:12px 18px;border-radius:14px;border:2px solid var(--gold);background:#f1c54a;color:var(--gold-deep);font-weight:900;box-shadow:0 12px 30px rgba(111,71,0,.24);}"
-  ++ ".story-equipped-row,.story-owned-row{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start;}.story-hp-card{min-height:112px;padding:12px 10px;display:grid;align-content:center;gap:6px;background:rgba(82,49,25,.9);border:1px solid #7b5a32;color:var(--cream);}.story-hp-card__label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#e0c28d;}.story-hp-card__value{font-size:30px;line-height:1;}.story-slot-row{display:grid;grid-template-columns:repeat(3,72px);gap:8px;justify-self:start;width:max-content;padding:8px 10px;border:1px solid #7b5a32;border-radius:16px;background:rgba(88,53,28,.9);box-shadow:inset 0 0 0 1px rgba(255,236,209,.05);}.story-slot{width:72px;aspect-ratio:1/1;min-height:0;padding:0;display:grid;place-items:center;border:none;border-radius:12px;background:transparent;text-align:center;overflow:hidden;}.story-slot--filled{background:transparent;}.story-slot--empty{border:2px dashed rgba(255,236,209,.42);background:rgba(69,41,21,.72);}.story-slot__index{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--muted);}.story-slot__name{font-size:12px;font-weight:800;color:var(--text);}.story-slot__art{width:64px;height:64px;display:grid;place-items:center;padding:0;border:none;background:transparent;overflow:hidden;}.story-slot__art--empty{background:transparent;}.story-slot__image{display:block;width:100%;height:100%;object-fit:contain;background:transparent;}"
+  ++ ".story-equipped-row,.story-owned-row{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start;}.story-hp-card{min-height:112px;padding:12px 10px;display:grid;align-content:center;gap:6px;background:rgba(82,49,25,.9);border:1px solid #7b5a32;color:var(--cream);}.story-hp-card__label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#e0c28d;}.story-hp-card__value{font-size:30px;line-height:1;}.story-slot-row{display:grid;grid-template-columns:repeat(3,72px);gap:8px;justify-self:start;width:max-content;padding:8px 10px;border:1px solid #7b5a32;border-radius:16px;background:rgba(88,53,28,.9);box-shadow:inset 0 0 0 1px rgba(255,236,209,.05);}.story-slot{width:72px;aspect-ratio:1/1;min-height:0;padding:0;display:block;border:none;border-radius:12px;background:transparent;text-align:center;overflow:visible;}.story-slot--filled{background:transparent;}.story-slot--empty{background:transparent;}.story-slot__placeholder{display:block;width:100%;height:100%;box-sizing:border-box;border:2px dashed rgba(255,236,209,.42);border-radius:12px;background:rgba(69,41,21,.72);}.story-slot__image{display:block;width:100%;height:100%;object-fit:contain;background:transparent;}"
   ++ ".story-armor,.story-owned{display:grid;gap:10px;min-width:0;}.story-armor__title,.story-owned__title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}.story-armor__grid{display:grid;grid-template-columns:repeat(2,48px);gap:10px 12px;align-content:start;}.story-armor__item{display:grid;justify-items:start;gap:5px;}.story-armor__slot{width:48px;aspect-ratio:1/1;border:1px solid #7b5a32;background:rgba(79,48,23,.86);box-shadow:inset 0 0 0 1px rgba(255,236,209,.06);}.story-armor__slot--filled{background:rgba(170,128,68,.92);}.story-armor__slot-label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#f1dfbb;line-height:1.2;}"
   ++ ".story-owned__track{width:60%;min-width:260px;min-height:86px;padding:10px;border:1px solid #7b5a32;background:rgba(88,53,28,.9);box-shadow:inset 0 0 0 1px rgba(255,236,209,.05);}.story-owned__viewport{width:100%;height:100%;overflow-x:auto;overflow-y:hidden;}.story-owned__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:64px;}.story-owned__skill{width:76px;min-height:86px;padding:8px;display:grid;justify-items:center;align-content:start;gap:5px;border:1px solid #c6a26a;border-radius:12px;background:rgba(255,244,221,.92);text-align:center;}.story-owned__skill-art{width:40px;height:40px;display:grid;place-items:center;padding:3px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}.story-owned__skill-image{display:block;width:100%;height:100%;object-fit:contain;}.story-owned__skill-name{font-size:10px;font-weight:800;color:var(--text);line-height:1.2;}.story-owned{justify-items:start;}"
 
@@ -395,7 +384,7 @@ def _end_screen_css() -> String:
 def _responsive_css() -> String:
   ""
   ++ "@media (max-width:900px){.story-city{grid-template-columns:1fr;grid-template-rows:none;padding:20px 0;gap:18px;}.story-city__line{display:none;}.story-city__cell{min-height:auto;padding:0 18px;}.story-city__cell--inventory{justify-items:stretch;}.story-inventory{width:100%;min-height:0;}.story-shop-button{width:100%;font-size:18px;}}"
-  ++ "@media (max-width:640px){.story-page--end{padding:16px;}.story-end__card{padding:24px 20px;}.story-end__title{font-size:34px;}.story-inventory__head{flex-direction:column;align-items:stretch;}.story-duel{width:100%;}.story-equipped-row,.story-owned-row{grid-template-columns:1fr;}.story-slot-row{grid-template-columns:repeat(3,68px);gap:6px;padding:6px 8px;}.story-slot{width:68px;}.story-slot__art{width:60px;height:60px;}.story-owned__track{width:100%;min-width:0;}.story-armor__grid{grid-template-columns:repeat(2,48px);}.story-owned__row{min-height:64px;}}"
+  ++ "@media (max-width:640px){.story-page--end{padding:16px;}.story-end__card{padding:24px 20px;}.story-end__title{font-size:34px;}.story-inventory__head{flex-direction:column;align-items:stretch;}.story-duel{width:100%;}.story-equipped-row,.story-owned-row{grid-template-columns:1fr;}.story-slot-row{grid-template-columns:repeat(3,68px);gap:6px;padding:6px 8px;}.story-slot{width:68px;}.story-owned__track{width:100%;min-width:0;}.story-armor__grid{grid-template-columns:repeat(2,48px);}.story-owned__row{min-height:64px;}}"
 
 main : App =
   app{StoryState, StoryEvent, init, render, on_event}
