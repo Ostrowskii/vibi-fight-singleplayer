@@ -778,10 +778,6 @@ function __vibiCampaignReward() {
   return __vibiCampaignParseU32("reward", 200);
 }
 
-function __vibiCampaignInventoryOpen() {
-  return __vibiCampaignParseU32("inv", 1) === 0 ? 0 : 1;
-}
-
 function __vibiCampaignPlayerHp() {
   const hp = __vibiCampaignParseU32("php", 50);
   return hp === 0 ? 50 : (hp >>> 0);
@@ -935,7 +931,6 @@ function __vibiCampaignStoryHref(screen, level, gold) {
   params.set("screen", screen);
   params.set("level", String(level >>> 0));
   params.set("gold", String(gold >>> 0));
-  params.set("inv", String(__vibiCampaignInventoryOpen()));
   params.set("ps1", String(__vibiCampaignSkillParam("ps1", 1)));
   params.set("ps2", String(__vibiCampaignSkillParam("ps2", 0)));
   params.set("ps3", String(__vibiCampaignSkillParam("ps3", 0)));
