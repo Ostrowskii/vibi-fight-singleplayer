@@ -122265,6 +122265,49 @@ function __vibiCampaignLoadoutMe1() {
   return ({$: "loadout", s1: 1, s2: 0, s3: 0});
 }
 
+function __vibiCampaignSkillParam(name, fallback) {
+  const skill = __vibiCampaignParseU32(name, fallback);
+  if (skill > 13) {
+    return fallback >>> 0;
+  }
+  return skill >>> 0;
+}
+
+function __vibiCampaignPlayerLoadout() {
+  const loadout = ({
+    $: "loadout",
+    s1: __vibiCampaignSkillParam("ps1", 1),
+    s2: __vibiCampaignSkillParam("ps2", 0),
+    s3: __vibiCampaignSkillParam("ps3", 0),
+  });
+  if ((loadout.s1 >>> 0) === 0 && (loadout.s2 >>> 0) === 0 && (loadout.s3 >>> 0) === 0) {
+    return __vibiCampaignLoadoutMe1();
+  }
+  return loadout;
+}
+
+function __vibiCampaignItemsRaw() {
+  const raw = (__VIBI_CAMPAIGN_PARAMS.get("items") || "").trim();
+  if (!raw) {
+    return "";
+  }
+  const seen = new Set();
+  const values = [];
+  for (const chunk of raw.split(",")) {
+    const num = Number.parseInt(chunk, 10);
+    if (!Number.isFinite(num) || num <= 1 || num > 13 || seen.has(num)) {
+      continue;
+    }
+    seen.add(num);
+    values.push(num >>> 0);
+  }
+  return values.join(",");
+}
+
+function __vibiCampaignFlag(name) {
+  return __vibiCampaignParseU32(name, 0) === 0 ? 0 : 1;
+}
+
 function __vibiCampaignBotWithHp(bot, hp) {
   if (!bot || bot.$ !== "bot") {
     return bot;
@@ -122299,7 +122342,8 @@ function __vibiCampaignApplyFightApp(app) {
   const level = __vibiCampaignLevel();
   const playerHp = __vibiCampaignPlayerHp();
   const botHp = __vibiCampaignBotHp();
-  const loadout = __vibiCampaignLoadoutMe1();
+  const playerLoadout = __vibiCampaignPlayerLoadout();
+  const botLoadout = __vibiCampaignLoadoutMe1();
   return ({
     $: "app_state",
     screen: app.screen,
@@ -122307,8 +122351,8 @@ function __vibiCampaignApplyFightApp(app) {
       $: "lobby_state",
       player_hp: playerHp >>> 0,
       bot_hp: botHp >>> 0,
-      player_loadout: loadout,
-      bot_loadout: loadout,
+      player_loadout: playerLoadout,
+      bot_loadout: botLoadout,
       player_filter: 0,
       bot_filter: 0,
     }),
@@ -122356,7 +122400,22 @@ function __vibiCampaignNextLevel(level) {
 }
 
 function __vibiCampaignStoryHref(screen, level, gold) {
-  return "../story/?screen=" + screen + "&level=" + (level >>> 0) + "&gold=" + (gold >>> 0);
+  const params = new URLSearchParams();
+  params.set("screen", screen);
+  params.set("level", String(level >>> 0));
+  params.set("gold", String(gold >>> 0));
+  params.set("ps1", String(__vibiCampaignSkillParam("ps1", 1)));
+  params.set("ps2", String(__vibiCampaignSkillParam("ps2", 0)));
+  params.set("ps3", String(__vibiCampaignSkillParam("ps3", 0)));
+  params.set("ab", String(__vibiCampaignFlag("ab")));
+  params.set("al", String(__vibiCampaignFlag("al")));
+  params.set("ac", String(__vibiCampaignFlag("ac")));
+  params.set("ah", String(__vibiCampaignFlag("ah")));
+  const items = __vibiCampaignItemsRaw();
+  if (items) {
+    params.set("items", items);
+  }
+  return "../story/?" + params.toString();
 }
 
 function __vibiCampaignOutcome(result) {
@@ -122492,6 +122551,8 @@ function __vibiObserveCampaignOutcomeModal() {
 __vibiObserveCampaignOutcomeModal();
 
 /* __vibi_turn_patch:end */
+
+
 
 
 
