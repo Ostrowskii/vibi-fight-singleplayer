@@ -1075,6 +1075,319 @@ function __vibiObserveCampaignOutcomeModal() {
   }
 }
 
+function __vibiSimEnabled() {
+  return (__VIBI_CAMPAIGN_PARAMS.get("sim") || "") === "botvbot";
+}
+
+function __vibiSimParseSkill(name, fallback) {
+  const skill = __vibiCampaignParseU32(name, fallback >>> 0);
+  if ((skill >>> 0) > 13) {
+    return fallback >>> 0;
+  }
+  return skill >>> 0;
+}
+
+function __vibiSimNormalizeLoadout(loadout, fallbackSkill) {
+  if (((loadout.s1 >>> 0) | (loadout.s2 >>> 0) | (loadout.s3 >>> 0)) !== 0) {
+    return loadout;
+  }
+  return ({$: "loadout", s1: fallbackSkill >>> 0, s2: 0, s3: 0});
+}
+
+const __VIBI_SIM_PLAYER_LOADOUT = __vibiSimNormalizeLoadout(({
+  $: "loadout",
+  s1: __vibiSimParseSkill("ps1", 2),
+  s2: __vibiSimParseSkill("ps2", 0),
+  s3: __vibiSimParseSkill("ps3", 0),
+}), 2);
+
+const __VIBI_SIM_BOT_LOADOUT = __vibiSimNormalizeLoadout(({
+  $: "loadout",
+  s1: __vibiSimParseSkill("bs1", 2),
+  s2: __vibiSimParseSkill("bs2", 0),
+  s3: __vibiSimParseSkill("bs3", 0),
+}), 2);
+
+const __VIBI_SIM_ROUND_CAP = (() => {
+  const cap = __vibiCampaignParseU32("simcap", 40);
+  return (cap >>> 0) === 0 ? 40 : (cap >>> 0);
+})();
+
+function __vibiSimBotAlive(bot) {
+  return !!bot && bot.$ === "bot" && (bot.hp >>> 0) !== 0;
+}
+
+function __vibiSimFirstLiveBot(bots) {
+  let node = bots;
+  while (node && node.$ === "cons") {
+    if (__vibiSimBotAlive(node.head)) {
+      return node.head;
+    }
+    node = node.tail;
+  }
+  return null;
+}
+
+function __vibiSimQueueLen(queue) {
+  let len = 0;
+  let node = queue;
+  let idx = 0;
+  while (node && node.$ === "cons" && idx < 4) {
+    if ((__ACTION_KIND_FN__(node.head) >>> 0) !== 0) {
+      len += 1;
+    }
+    node = node.tail;
+    idx += 1;
+  }
+  return len >>> 0;
+}
+
+function __vibiSimQueueLocked(queue) {
+  let node = queue;
+  let idx = 0;
+  while (node && node.$ === "cons" && idx < 4) {
+    if (__vibiTurnIsAttack(node.head)) {
+      return 1;
+    }
+    node = node.tail;
+    idx += 1;
+  }
+  return 0;
+}
+
+function __vibiSimPlayerMoveLocked(state) {
+  if (!state || state.$ !== "game_state") {
+    return false;
+  }
+  const mode = state.plan && state.plan.mode;
+  const runtime = mode && mode.runtime;
+  const ice = runtime && typeof runtime.player_ice === "number"
+    ? (runtime.player_ice >>> 0)
+    : 0;
+  return ice !== 0 && (ice % 2) === 1;
+}
+
+function __vibiSimStateWithQueue(state, queue) {
+  return __vibiTurnState(
+    state,
+    queue,
+    __vibiSimQueueLen(queue),
+    __vibiSimQueueLocked(queue),
+    state.plan.mode,
+  );
+}
+
+function __vibiSimBuildPlayerPlan(state, loadout) {
+  if (!state || state.$ !== "game_state") {
+    return __QUEUE_WAITS_FN__();
+  }
+  const actor = state.arena.player;
+  const targetBot = __vibiSimFirstLiveBot(state.arena.bots);
+  if (!targetBot) {
+    return __QUEUE_WAITS_FN__();
+  }
+  const target = targetBot.pos;
+  if (__vibiSimPlayerMoveLocked(state)) {
+    const lockedAttack = __FIND_ATTACK_FN__(actor, target, loadout);
+    return __vibiTurnIsAttack(lockedAttack)
+      ? __QUEUE3_FN__(lockedAttack, __vibiTurnWait(), __vibiTurnWait())
+      : __QUEUE_WAITS_FN__();
+  }
+
+  const fallbackSkill = __ROUND_SKILL_FN__(state.meta.round >>> 0, loadout) >>> 0;
+  let best = null;
+
+  const consider = (moves) => {
+    let pos = actor;
+    for (const dir of moves) {
+      const next = __STEP_BLOCKED_PLAYER_FN__(pos, dir >>> 0, state.arena.bots);
+      if (__vibiTurnPosEq(pos, next)) {
+        return;
+      }
+      pos = next;
+    }
+
+    const hitAttack = __FIND_ATTACK_FN__(pos, target, loadout);
+    const hasAttack = __vibiTurnIsAttack(hitAttack);
+    const planSkill = hasAttack ? (hitAttack.skill >>> 0) : fallbackSkill;
+    const classId = __vibiTurnSkillClass(planSkill);
+    if (moves.length > 2 && classId !== 1) {
+      return;
+    }
+
+    const attack = hasAttack ? hitAttack : __FIRST_VALID_ATTACK_FN__(planSkill, pos);
+    const dist = __vibiTurnDist(pos, target);
+    const candidate = {
+      score: __vibiTurnBandScore(classId, dist, hasAttack, moves.length),
+      queue: __vibiTurnQueueFromMoves(moves, attack),
+    };
+    if (__vibiTurnBetterCandidate(candidate, best)) {
+      best = candidate;
+    }
+  };
+
+  consider([]);
+
+  for (let dir1 = 0; dir1 < 4; ++dir1) {
+    consider([dir1]);
+    for (let dir2 = 0; dir2 < 4; ++dir2) {
+      consider([dir1, dir2]);
+      for (let dir3 = 0; dir3 < 4; ++dir3) {
+        consider([dir1, dir2, dir3]);
+      }
+    }
+  }
+
+  return best === null ? __QUEUE_WAITS_FN__() : best.queue;
+}
+
+function __vibiSimOutcomePayload(state) {
+  const round = state && state.$ === "game_state" ? (state.meta.round >>> 0) : 0;
+  const winnerCode = state && state.$ === "game_state" ? (state.arena.winner >>> 0) : 0;
+  let done = 0;
+  let result = "running";
+  let reason = "running";
+
+  if (winnerCode === 1) {
+    done = 1;
+    result = "player";
+    reason = "winner";
+  } else if (winnerCode === 2) {
+    done = 1;
+    result = "bot";
+    reason = "winner";
+  } else if (winnerCode === 3) {
+    done = 1;
+    result = "draw";
+    reason = "mutual_kill";
+  } else if ((round >>> 0) > (__VIBI_SIM_ROUND_CAP >>> 0)) {
+    done = 1;
+    result = "draw";
+    reason = "round_cap";
+  }
+
+  return {
+    mode: "botvbot",
+    done,
+    result,
+    reason,
+    round,
+    round_cap: __VIBI_SIM_ROUND_CAP >>> 0,
+    winner_code: winnerCode,
+    ps1: __VIBI_SIM_PLAYER_LOADOUT.s1 >>> 0,
+    ps2: __VIBI_SIM_PLAYER_LOADOUT.s2 >>> 0,
+    ps3: __VIBI_SIM_PLAYER_LOADOUT.s3 >>> 0,
+    bs1: __VIBI_SIM_BOT_LOADOUT.s1 >>> 0,
+    bs2: __VIBI_SIM_BOT_LOADOUT.s2 >>> 0,
+    bs3: __VIBI_SIM_BOT_LOADOUT.s3 >>> 0,
+    player_hp: state && state.$ === "game_state" ? (state.arena.player_hp >>> 0) : 0,
+    bot_hp: state && state.$ === "game_state" && __vibiSimFirstLiveBot(state.arena.bots)
+      ? (__vibiSimFirstLiveBot(state.arena.bots).hp >>> 0)
+      : 0,
+  };
+}
+
+function __vibiSimEnsureResultNode() {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  let node = document.getElementById("vibi-sim-result");
+  if (!node) {
+    node = document.createElement("script");
+    node.id = "vibi-sim-result";
+    node.type = "application/json";
+    (document.body || document.documentElement || document.head).appendChild(node);
+  }
+  return node;
+}
+
+function __vibiSimSyncResult(state) {
+  if (!__vibiSimEnabled()) {
+    return;
+  }
+  const node = __vibiSimEnsureResultNode();
+  if (!node) {
+    return;
+  }
+  node.textContent = JSON.stringify(__vibiSimOutcomePayload(state));
+}
+
+function __vibiSimMaybeAdvanceState(state) {
+  if (!__vibiSimEnabled() || !state || state.$ !== "game_state") {
+    return state;
+  }
+  __vibiSimSyncResult(state);
+  const outcome = __vibiSimOutcomePayload(state);
+  if ((outcome.done >>> 0) !== 0) {
+    return state;
+  }
+  const mode = state.plan && state.plan.mode;
+  if (!mode || mode.$ !== "plan") {
+    return state;
+  }
+  const queuedState = __vibiSimStateWithQueue(
+    state,
+    __vibiSimBuildPlayerPlan(state, __VIBI_SIM_PLAYER_LOADOUT),
+  );
+  __vibiSimSyncResult(queuedState);
+  const nextState = __READY_ROUND_STATE_FN__(queuedState, __VIBI_SIM_BOT_LOADOUT);
+  __vibiSimSyncResult(nextState);
+  return nextState;
+}
+
+const __vibiOrigFightAppFromSlotsSim = __FIGHT_APP_FROM_SLOTS_FN__;
+__FIGHT_APP_FROM_SLOTS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3) {
+  const app = __vibiOrigFightAppFromSlotsSim(
+    ps1 >>> 0,
+    ps2 >>> 0,
+    ps3 >>> 0,
+    bs1 >>> 0,
+    bs2 >>> 0,
+    bs3 >>> 0,
+  );
+  if (!__vibiSimEnabled() || !app || app.$ !== "app_state" || !app.game) {
+    return app;
+  }
+  const nextGame = __vibiSimMaybeAdvanceState(app.game);
+  return ({
+    $: "app_state",
+    screen: app.screen,
+    lobby: app.lobby,
+    game: nextGame,
+  });
+};
+
+const __vibiOrigResetRoundPlanningStateSim = __RESET_ROUND_PLANNING_STATE_FN__;
+__RESET_ROUND_PLANNING_STATE_FN__ = function(state) {
+  const nextState = __vibiOrigResetRoundPlanningStateSim(state);
+  return __vibiSimMaybeAdvanceState(nextState);
+};
+
+const __vibiOrigOnMatchEventSim = __ON_MATCH_EVENT_FN__;
+__ON_MATCH_EVENT_FN__ = function(evt, state, lobby) {
+  let nextState = __vibiOrigOnMatchEventSim(evt, state, lobby);
+  if (!__vibiSimEnabled() || !evt || evt.$ !== "evt_tick") {
+    __vibiSimSyncResult(nextState);
+    return nextState;
+  }
+  let guard = 0;
+  while (nextState && nextState.$ === "game_state") {
+    __vibiSimSyncResult(nextState);
+    const outcome = __vibiSimOutcomePayload(nextState);
+    const mode = nextState.plan && nextState.plan.mode;
+    if ((outcome.done >>> 0) !== 0 || !mode || mode.$ !== "playback") {
+      break;
+    }
+    nextState = __vibiOrigOnMatchEventSim(evt, nextState, lobby);
+    guard += 1;
+    if (guard > 512) {
+      break;
+    }
+  }
+  __vibiSimSyncResult(nextState);
+  return nextState;
+};
+
 __vibiObserveCampaignOutcomeModal();
 """
 
@@ -1124,6 +1437,7 @@ def build_patch(module_path: str, bundle_kind: str) -> str:
         "__STATE_QUEUE_FN__": encode_symbol(module_path, "_state_queue"),
         "__ACTION_KIND_FN__": encode_symbol(module_path, "_action_kind"),
         "__RESET_ROUND_PLANNING_STATE_FN__": encode_symbol(module_path, "_reset_round_planning_state"),
+        "__READY_ROUND_STATE_FN__": encode_symbol(module_path, "ready_round_state"),
         "__DEFAULT_TARGET_ORIGIN_FN__": encode_symbol(module_path, "_default_target_origin"),
         "__STEP_TARGET_ORIGIN_FN__": encode_symbol(module_path, "_step_target_origin"),
         "__ROTATE_TARGET_ORIGIN_FN__": encode_symbol(module_path, "_rotate_target_origin"),
