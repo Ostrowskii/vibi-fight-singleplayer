@@ -119,37 +119,44 @@ def _render_city(state: StoryState) -> HTML(StoryEvent):
           <a class="story-duel" href={_story_duel_href(state)}>{text{"Duel"}}</a>
         </div>
 
-        <div class="story-equipped-row">
-          <div class="story-hp-card">
-            <span class="story-hp-card__label">{text{"HP total"}}</span>
-            <strong class="story-hp-card__value">{text{U32.show(_story_total_hp(state))}}</strong>
-          </div>
-
-          <div class="story-slot-row">
-            {_story_skill_slot(_story_loadout(state), 0)}
-            {_story_skill_slot(_story_loadout(state), 1)}
-            {_story_skill_slot(_story_loadout(state), 2)}
-          </div>
-        </div>
-
-        <div class="story-owned-row">
-          <div class="story-armor">
-            <div class="story-armor__title">{text{"Armadura"}}</div>
-            <div class="story-armor__grid">
-              {_story_armor_slot(_story_armor(state), 0)}
-              {_story_armor_slot(_story_armor(state), 1)}
-              {_story_armor_slot(_story_armor(state), 2)}
-              {_story_armor_slot(_story_armor(state), 3)}
-            </div>
-          </div>
-
-          <div class="story-owned">
-            <div class="story-owned__title">{text{"Skills compradas"}}</div>
-            <div class="story-owned__track">
-              <div class="story-owned__viewport">
-                <div class="story-owned__row"></div>
+        <div class="story-inventory__body">
+          <div class="story-inventory__column story-inventory__column--sidebar">
+            <section class="story-pane story-pane--summary">
+              <div class="story-pane__eyebrow">{text{"HP total"}}</div>
+              <div class="story-summary">
+                <strong class="story-summary__value">{text{U32.show(_story_total_hp(state))}}</strong>
               </div>
-            </div>
+            </section>
+
+            <section class="story-pane story-pane--gear">
+              <div class="story-pane__eyebrow">{text{"Armadura"}}</div>
+              <div class="story-gear__grid">
+                {_story_armor_slot(_story_armor(state), 0)}
+                {_story_armor_slot(_story_armor(state), 1)}
+                {_story_armor_slot(_story_armor(state), 2)}
+                {_story_armor_slot(_story_armor(state), 3)}
+              </div>
+            </section>
+          </div>
+
+          <div class="story-inventory__column story-inventory__column--main">
+            <section class="story-pane story-pane--loadout">
+              <div class="story-pane__eyebrow">{text{"Skills equipadas"}}</div>
+              <div class="story-loadout__grid">
+                {_story_skill_slot(_story_loadout(state), 0)}
+                {_story_skill_slot(_story_loadout(state), 1)}
+                {_story_skill_slot(_story_loadout(state), 2)}
+              </div>
+            </section>
+
+            <section class="story-pane story-pane--library">
+              <div class="story-pane__eyebrow">{text{"Skills compradas"}}</div>
+              <div class="story-library__track">
+                <div class="story-library__viewport">
+                  <div class="story-library__row"></div>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
       </div>
@@ -191,32 +198,32 @@ def _story_skill_slot(loadout_value: Loadout, idx: U32) -> HTML(StoryEvent):
 def _story_skill_slot_class(skill: U32) -> String:
   match skill:
     case 0:
-      "story-slot story-slot--empty"
+      "story-loadout-slot story-loadout-slot--empty"
     case _:
-      "story-slot story-slot--filled"
+      "story-loadout-slot story-loadout-slot--filled"
 
 def _story_skill_visual(skill: U32) -> HTML(StoryEvent):
   match skill:
     case 0:
-      <span class="story-slot__placeholder"></span>
+      <span class="story-loadout-slot__placeholder"></span>
     case current_skill:
-      <img class="story-slot__image" src={_skill_image_src(current_skill)} alt={Fight.skill_name(current_skill)} />
+      <img class="story-loadout-slot__image" src={_skill_image_src(current_skill)} alt={Fight.skill_name(current_skill)} />
 
 def _skill_image_src(skill: U32) -> String:
   "../assets/skills/" ++ Fight.skill_name(skill) ++ ".svg"
 
 def _story_armor_slot(armor: ArmorSlots, idx: U32) -> HTML(StoryEvent):
-  <div class="story-armor__item">
+  <div class="story-gear__item">
     <div class={_story_armor_slot_class(_armor_slot(armor, idx))}></div>
-    <div class="story-armor__slot-label">{text{_armor_slot_label(idx)}}</div>
+    <div class="story-gear__slot-label">{text{_armor_slot_label(idx)}}</div>
   </div>
 
 def _story_armor_slot_class(equipped: U32) -> String:
   match equipped:
     case 0:
-      "story-armor__slot"
+      "story-gear__slot"
     case _:
-      "story-armor__slot story-armor__slot--filled"
+      "story-gear__slot story-gear__slot--filled"
 
 def _story_duel_href(state: StoryState) -> String:
   level = _story_level(state);
@@ -372,10 +379,10 @@ def _city_layout_css() -> String:
 
 def _inventory_css() -> String:
   ""
-  ++ ".story-inventory{width:min(100%,700px);display:grid;grid-template-columns:minmax(96px,112px) minmax(0,1fr);column-gap:14px;row-gap:10px;align-content:start;padding:16px;background:rgba(104,61,28,.92);border:2px solid #4b2d14;box-shadow:0 22px 60px rgba(17,10,4,.34);}.story-inventory__head{grid-column:1/-1;display:flex;justify-content:space-between;gap:16px;align-items:flex-start;}.story-inventory__title{font-size:28px;font-weight:900;line-height:1;color:var(--cream);}.story-inventory__meta{margin-top:6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e0c28d;}.story-duel{display:inline-flex;align-items:center;justify-content:center;min-width:126px;padding:12px 18px;border-radius:14px;border:2px solid var(--gold);background:#f1c54a;color:var(--gold-deep);font-weight:900;box-shadow:0 12px 30px rgba(111,71,0,.24);}"
-  ++ ".story-equipped-row,.story-owned-row{display:contents;}.story-hp-card{--story-slot-size:clamp(58px,5vw,64px);grid-column:1;grid-row:2;height:var(--story-slot-size);min-height:0;padding:6px 8px;display:grid;align-content:center;gap:1px;background:rgba(82,49,25,.9);border:1px solid #7b5a32;color:var(--cream);box-sizing:border-box;align-self:start;}.story-hp-card__label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#e0c28d;}.story-hp-card__value{font-size:24px;line-height:1;}.story-armor{grid-column:1;grid-row:3;align-self:start;}.story-slot-row{--story-slot-size:clamp(58px,5vw,64px);grid-column:2;grid-row:2;display:grid;grid-template-columns:repeat(3,var(--story-slot-size));gap:6px;justify-self:start;align-self:start;width:max-content;}.story-owned{grid-column:2;grid-row:3;justify-items:start;align-self:start;}.story-slot{width:var(--story-slot-size);height:var(--story-slot-size);padding:0;display:grid;place-items:center;border-radius:12px;background:transparent;text-align:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;box-sizing:border-box;box-shadow:none;outline:none;overflow:hidden;align-self:start;}.story-slot--filled{border:1px solid rgba(233,208,163,.32);}.story-slot--empty{background:#6f4720;border:1px dashed rgba(233,208,163,.36);}.story-slot__placeholder{display:block;width:100%;height:100%;}.story-slot__image{display:block;width:88%;height:88%;object-fit:contain;background:transparent;border:none;box-shadow:none;pointer-events:none;}"
-  ++ ".story-armor,.story-owned{display:grid;gap:10px;min-width:0;}.story-armor__title,.story-owned__title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}.story-armor__grid{display:grid;grid-template-columns:repeat(2,48px);gap:10px 12px;align-content:start;}.story-armor__item{display:grid;justify-items:start;gap:5px;}.story-armor__slot{width:48px;aspect-ratio:1/1;border:1px solid #7b5a32;background:rgba(79,48,23,.86);box-shadow:inset 0 0 0 1px rgba(255,236,209,.06);}.story-armor__slot--filled{background:rgba(170,128,68,.92);}.story-armor__slot-label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#f1dfbb;line-height:1.2;}"
-  ++ ".story-owned__track{width:min(100%,420px);min-width:260px;min-height:104px;padding:10px;border:1px solid #7b5a32;background:rgba(88,53,28,.9);box-shadow:inset 0 0 0 1px rgba(255,236,209,.05);}.story-owned__viewport{width:100%;height:100%;overflow-x:auto;overflow-y:hidden;}.story-owned__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:84px;}.story-owned__skill{width:84px;aspect-ratio:1/1;padding:8px;display:grid;place-items:center;border:1px solid #7b5a32;border-radius:12px;background:#6f4720;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none;}.story-owned__skill-image{display:block;width:78%;height:78%;object-fit:contain;}"
+  ++ ".story-inventory{width:min(100%,700px);display:grid;gap:12px;padding:18px;background:rgba(104,61,28,.92);border:2px solid #4b2d14;box-shadow:0 22px 60px rgba(17,10,4,.34);}.story-inventory__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;}.story-inventory__title{font-size:28px;font-weight:900;line-height:1;color:var(--cream);}.story-inventory__meta{margin-top:6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e0c28d;}.story-duel{display:inline-flex;align-items:center;justify-content:center;min-width:126px;padding:12px 18px;border-radius:14px;border:2px solid var(--gold);background:#f1c54a;color:var(--gold-deep);font-weight:900;box-shadow:0 12px 30px rgba(111,71,0,.24);}"
+  ++ ".story-inventory__body{display:grid;grid-template-columns:minmax(122px,148px) minmax(0,1fr);gap:14px;align-items:start;}.story-inventory__column{display:grid;gap:10px;align-content:start;min-width:0;}.story-pane{display:grid;gap:10px;padding:12px;background:rgba(79,48,23,.94);border:1px solid #6c4320;align-content:start;}.story-pane__eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}.story-summary{display:grid;align-content:start;min-height:0;padding:0;background:transparent;border:none;}.story-summary__value{font-size:32px;line-height:1;color:var(--cream);}.story-loadout__grid{--story-loadout-size:clamp(60px,5.2vw,66px);display:grid;grid-template-columns:repeat(3,var(--story-loadout-size));gap:6px;justify-self:start;width:max-content;}.story-loadout-slot{width:var(--story-loadout-size);height:var(--story-loadout-size);padding:0;display:grid;place-items:center;border-radius:12px;background:transparent;text-align:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;box-sizing:border-box;box-shadow:none;outline:none;overflow:hidden;}.story-loadout-slot[role='button']{cursor:pointer;}.story-loadout-slot--filled{border:1px solid rgba(233,208,163,.32);background:rgba(255,244,221,.04);}.story-loadout-slot--empty{background:#6f4720;border:1px dashed rgba(233,208,163,.36);}.story-loadout-slot__placeholder{display:block;width:100%;height:100%;}.story-loadout-slot__image{display:block;width:88%;height:88%;object-fit:contain;background:transparent;border:none;box-shadow:none;pointer-events:none;}"
+  ++ ".story-gear__grid{display:grid;grid-template-columns:repeat(2,52px);gap:10px 12px;align-content:start;}.story-gear__item{display:grid;justify-items:start;gap:5px;}.story-gear__slot{width:52px;aspect-ratio:1/1;border:1px solid #7b5a32;background:rgba(111,71,32,.78);box-shadow:inset 0 0 0 1px rgba(255,236,209,.06);}.story-gear__slot--filled{background:rgba(170,128,68,.92);}.story-gear__slot-label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#f1dfbb;line-height:1.2;}"
+  ++ ".story-library__track{width:min(100%,420px);min-width:260px;min-height:0;padding:0;border:none;background:transparent;box-shadow:none;}.story-library__viewport{width:100%;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;}.story-library__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:88px;}.story-library__empty{min-width:200px;padding:10px 12px;display:grid;place-items:center;border:1px dashed rgba(233,208,163,.36);background:#6f4720;color:#d8bea0;font-size:12px;}.story-library__skill{width:88px;aspect-ratio:1/1;padding:6px;display:grid;place-items:center;border:1px solid #7b5a32;border-radius:12px;background:#6f4720;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none;}.story-library__skill-image{display:block;width:86%;height:86%;object-fit:contain;}"
 
 def _end_screen_css() -> String:
   ""
@@ -384,7 +391,7 @@ def _end_screen_css() -> String:
 def _responsive_css() -> String:
   ""
   ++ "@media (max-width:900px){.story-city{grid-template-columns:1fr;grid-template-rows:none;padding:20px 0;gap:18px;}.story-city__line{display:none;}.story-city__cell{min-height:auto;padding:0 18px;}.story-city__cell--inventory{justify-items:stretch;}.story-inventory{width:100%;min-height:0;}.story-shop-button{width:100%;font-size:18px;}}"
-  ++ "@media (max-width:640px){.story-page--end{padding:16px;}.story-end__card{padding:24px 20px;}.story-end__title{font-size:34px;}.story-inventory{grid-template-columns:1fr;row-gap:10px;}.story-inventory__head{flex-direction:column;align-items:stretch;grid-column:1;grid-row:1;}.story-duel{width:100%;}.story-hp-card{--story-slot-size:clamp(54px,18vw,58px);grid-column:1;grid-row:2;}.story-armor{grid-column:1;grid-row:3;}.story-slot-row{--story-slot-size:clamp(54px,18vw,58px);grid-column:1;grid-row:4;gap:5px;}.story-owned{grid-column:1;grid-row:5;}.story-owned__track{width:100%;min-width:0;}.story-owned__row{min-height:76px;}.story-owned__skill{width:76px;}.story-armor__grid{grid-template-columns:repeat(2,48px);}}"
+  ++ "@media (max-width:640px){.story-page--end{padding:16px;}.story-end__card{padding:24px 20px;}.story-end__title{font-size:34px;}.story-inventory__head{flex-direction:column;align-items:stretch;}.story-duel{width:100%;}.story-inventory__body{grid-template-columns:1fr;}.story-loadout__grid{--story-loadout-size:clamp(54px,18vw,60px);gap:5px;}.story-library__track{width:100%;min-width:0;}.story-library__row{min-height:80px;}.story-library__skill{width:80px;}.story-gear__grid{grid-template-columns:repeat(2,52px);}}"
 
 main : App =
   app{StoryState, StoryEvent, init, render, on_event}

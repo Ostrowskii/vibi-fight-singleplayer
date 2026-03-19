@@ -361,30 +361,35 @@ function __story_ensure_style() {
 .story-shop-card__image{display:block;width:100%;height:100%;object-fit:contain;}
 .story-shop-card__armor-bonus{font-size:14px;font-weight:900;letter-spacing:.06em;}
 .story-shop-empty{padding:14px;border:1px dashed rgba(233,208,163,.36);color:#e2cfb1;font-size:13px;}
-.story-armor__grid{grid-template-columns:repeat(2,32px);gap:8px 10px;}
-.story-armor__item{gap:4px;}
-.story-armor__slot{width:32px;}
-.story-armor__slot-label{font-size:9px;letter-spacing:.05em;}
-.story-inventory{display:grid;grid-template-columns:minmax(96px,112px) minmax(0,1fr);column-gap:14px;row-gap:10px;align-content:start;padding:16px;}
-.story-inventory__head{grid-column:1/-1;}
-.story-equipped-row,.story-owned-row{display:contents;}
-.story-hp-card{--story-slot-size:clamp(58px,5vw,64px);grid-column:1;grid-row:2;height:var(--story-slot-size);min-height:0;padding:6px 8px;display:grid;align-content:center;gap:1px;background:rgba(82,49,25,.9);border:1px solid #7b5a32;color:#fff4dd;box-sizing:border-box;align-self:start;}
-.story-hp-card__label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#e0c28d;}
-.story-hp-card__value{font-size:24px;line-height:1;}
-.story-armor{grid-column:1;grid-row:3;align-self:start;}
-.story-slot-row{--story-slot-size:clamp(58px,5vw,64px);grid-column:2;grid-row:2;display:grid;grid-template-columns:repeat(3,var(--story-slot-size));gap:6px;justify-self:start;align-self:start;width:max-content;}
-.story-owned{grid-column:2;grid-row:3;justify-items:start;align-self:start;}
-.story-slot{width:var(--story-slot-size);height:var(--story-slot-size);padding:0;display:grid;place-items:center;border-radius:12px;background:transparent;text-align:center;font:inherit;-webkit-appearance:none;-moz-appearance:none;appearance:none;box-sizing:border-box;box-shadow:none;outline:none;overflow:hidden;align-self:start;}
-.story-slot--equipped{cursor:pointer;}
-.story-slot--filled{border:1px solid rgba(233,208,163,.32);}
-.story-slot--empty{background:#6f4720;border:1px dashed rgba(233,208,163,.36);}
-.story-slot__placeholder{display:block;width:100%;height:100%;}
-.story-slot__image{display:block;width:88%;height:88%;object-fit:contain;background:transparent;border:none;box-shadow:none;pointer-events:none;}
-.story-owned__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:84px;}
-.story-owned__empty{min-width:200px;padding:10px 12px;display:grid;place-items:center;border:1px dashed rgba(233,208,163,.36);color:#d8bea0;font-size:12px;}
-.story-owned__skill{width:84px;aspect-ratio:1/1;padding:8px;display:grid;place-items:center;border:1px solid #7b5a32;border-radius:12px;background:#6f4720;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none;}
-.story-owned__skill-image{display:block;width:78%;height:78%;object-fit:contain;}
-.story-owned__track{width:min(100%,420px);min-width:260px;min-height:104px;}
+.story-inventory{width:min(100%,700px);display:grid;gap:12px;padding:18px;background:rgba(104,61,28,.92);border:2px solid #4b2d14;box-shadow:0 22px 60px rgba(17,10,4,.34);align-content:start;}
+.story-inventory__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;}
+.story-inventory__title{font-size:28px;font-weight:900;line-height:1;color:#fff4dd;}
+.story-inventory__meta{margin-top:6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e0c28d;}
+.story-duel{display:inline-flex;align-items:center;justify-content:center;min-width:126px;padding:12px 18px;border-radius:14px;border:2px solid #d8a326;background:#f1c54a;color:#8c6006;font-weight:900;box-shadow:0 12px 30px rgba(111,71,0,.24);}
+.story-inventory__body{display:grid;grid-template-columns:minmax(122px,148px) minmax(0,1fr);gap:14px;align-items:start;}
+.story-inventory__column{display:grid;gap:10px;align-content:start;min-width:0;}
+.story-pane{display:grid;gap:10px;padding:12px;background:rgba(79,48,23,.94);border:1px solid #6c4320;align-content:start;}
+.story-pane__eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}
+.story-summary{display:grid;align-content:start;min-height:0;padding:0;background:transparent;border:none;}
+.story-summary__value{font-size:32px;line-height:1;color:#fff4dd;}
+.story-loadout__grid{--story-loadout-size:clamp(60px,5.2vw,66px);display:grid;grid-template-columns:repeat(3,var(--story-loadout-size));gap:6px;justify-self:start;width:max-content;}
+.story-loadout-slot{width:var(--story-loadout-size);height:var(--story-loadout-size);padding:0;display:grid;place-items:center;border-radius:12px;background:transparent;text-align:center;font:inherit;-webkit-appearance:none;-moz-appearance:none;appearance:none;box-sizing:border-box;box-shadow:none;outline:none;overflow:hidden;}
+.story-loadout-slot[role="button"]{cursor:pointer;}
+.story-loadout-slot--filled{border:1px solid rgba(233,208,163,.32);background:rgba(255,244,221,.04);}
+.story-loadout-slot--empty{background:#6f4720;border:1px dashed rgba(233,208,163,.36);}
+.story-loadout-slot__placeholder{display:block;width:100%;height:100%;}
+.story-loadout-slot__image{display:block;width:88%;height:88%;object-fit:contain;background:transparent;border:none;box-shadow:none;pointer-events:none;}
+.story-gear__grid{display:grid;grid-template-columns:repeat(2,52px);gap:10px 12px;align-content:start;}
+.story-gear__item{display:grid;justify-items:start;gap:5px;}
+.story-gear__slot{width:52px;aspect-ratio:1/1;border:1px solid #7b5a32;background:rgba(111,71,32,.78);box-shadow:inset 0 0 0 1px rgba(255,236,209,.06);}
+.story-gear__slot--filled{background:rgba(170,128,68,.92);}
+.story-gear__slot-label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#f1dfbb;line-height:1.2;}
+.story-library__track{width:min(100%,420px);min-width:260px;min-height:0;padding:0;border:none;background:transparent;box-shadow:none;}
+.story-library__viewport{width:100%;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;}
+.story-library__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:88px;}
+.story-library__empty{min-width:200px;padding:10px 12px;display:grid;place-items:center;border:1px dashed rgba(233,208,163,.36);background:#6f4720;color:#d8bea0;font-size:12px;}
+.story-library__skill{width:88px;aspect-ratio:1/1;padding:6px;display:grid;place-items:center;border:1px solid #7b5a32;border-radius:12px;background:#6f4720;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none;}
+.story-library__skill-image{display:block;width:86%;height:86%;object-fit:contain;}
 .story-modal-host{position:absolute;inset:0;z-index:20;pointer-events:none;}
 .story-modal-layer{position:absolute;inset:0;display:grid;place-items:center;padding:24px;background:rgba(20,12,6,.58);pointer-events:auto;}
 .story-purchase-modal{position:relative;z-index:1;width:min(100%,760px);display:grid;gap:18px;padding:24px;background:rgba(104,61,28,.98);border:2px solid #4b2d14;box-shadow:0 24px 60px rgba(8,4,1,.45);}
@@ -423,17 +428,17 @@ function __story_ensure_style() {
   .story-shop-panel{height:auto;min-height:0;}
   .story-shop-panel__grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .story-purchase-modal{width:100%;}
-  .story-inventory{grid-template-columns:1fr;row-gap:10px;}
-  .story-inventory__head{grid-column:1;grid-row:1;flex-direction:column;align-items:stretch;}
-  .story-hp-card{--story-slot-size:clamp(54px,18vw,58px);grid-column:1;grid-row:2;}
-  .story-armor{grid-column:1;grid-row:3;}
-  .story-slot-row{--story-slot-size:clamp(54px,18vw,58px);grid-column:1;grid-row:4;gap:5px;}
-  .story-owned{grid-column:1;grid-row:5;}
-  .story-owned__track{width:100%;min-width:0;}
-  .story-owned__row{min-height:76px;}
-  .story-owned__skill{width:76px;}
+  .story-inventory{width:100%;min-height:0;}
 }
 @media (max-width:640px){
+  .story-inventory__head{flex-direction:column;align-items:stretch;}
+  .story-duel{width:100%;}
+  .story-inventory__body{grid-template-columns:1fr;}
+  .story-loadout__grid{--story-loadout-size:clamp(54px,18vw,60px);gap:5px;}
+  .story-library__track{width:100%;min-width:0;}
+  .story-library__row{min-height:80px;}
+  .story-library__skill{width:80px;}
+  .story-gear__grid{grid-template-columns:repeat(2,52px);}
   .story-shop-panel__head{flex-direction:column;align-items:stretch;}
   .story-shop-panel__grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .story-purchase-modal{padding:20px;}
@@ -450,26 +455,72 @@ function __story_ensure_style() {
 function __story_render_skill_slot(skill, idx) {
   const name = skill === 0 ? "Vazio" : __story_skill_name(skill);
   if ((skill >>> 0) === 0) {
-    return '<div class="story-slot story-slot--empty"><span class="story-slot__placeholder" aria-hidden="true"></span></div>';
+    return '<div class="story-loadout-slot story-loadout-slot--empty"><span class="story-loadout-slot__placeholder" aria-hidden="true"></span></div>';
   }
-  return '<div class="story-slot story-slot--filled story-slot--equipped" data-unequip-slot="' + (idx >>> 0) + '" role="button" tabindex="0" aria-label="Desequipar ' + name + '"><img class="story-slot__image" src="' + __story_skill_image(skill) + '" alt="' + name + '" /></div>';
+  return '<div class="story-loadout-slot story-loadout-slot--filled" data-unequip-slot="' + (idx >>> 0) + '" role="button" tabindex="0" aria-label="Desequipar ' + name + '"><img class="story-loadout-slot__image" src="' + __story_skill_image(skill) + '" alt="' + name + '" /></div>';
 }
 
 function __story_render_armor_slot(state, idx) {
   const armor = __STORY_ARMORS[idx];
-  const filled = __story_armor_owned(state, idx) ? " story-armor__slot--filled" : "";
-  return '<div class="story-armor__item"><div class="story-armor__slot' + filled + '"></div><div class="story-armor__slot-label">' + armor.name + '</div></div>';
+  const filled = __story_armor_owned(state, idx) ? " story-gear__slot--filled" : "";
+  return '<div class="story-gear__item"><div class="story-gear__slot' + filled + '"></div><div class="story-gear__slot-label">' + armor.name + '</div></div>';
 }
 
 function __story_render_owned_row(state) {
   const visible = __story_visible_owned_skills(state);
   if (visible.length === 0) {
-    return '<div class="story-owned__empty">Nenhuma skill disponivel para equipar.</div>';
+    return '<div class="story-library__empty">Nenhuma skill disponivel para equipar.</div>';
   }
   return visible.map((skill) => {
     const name = __story_skill_name(skill);
-    return '<button type="button" class="story-owned__skill" data-equip-open="' + (skill >>> 0) + '"><img class="story-owned__skill-image" src="' + __story_skill_image(skill) + '" alt="' + name + '" /></button>';
+    return '<button type="button" class="story-library__skill" data-equip-open="' + (skill >>> 0) + '"><img class="story-library__skill-image" src="' + __story_skill_image(skill) + '" alt="' + name + '" /></button>';
   }).join("");
+}
+
+function __story_render_inventory_shell(state) {
+  const armorGrid = [
+    __story_render_armor_slot(state, 0),
+    __story_render_armor_slot(state, 1),
+    __story_render_armor_slot(state, 2),
+    __story_render_armor_slot(state, 3),
+  ].join("");
+  const loadoutGrid = [
+    __story_render_skill_slot(state.loadout.s1 >>> 0, 0),
+    __story_render_skill_slot(state.loadout.s2 >>> 0, 1),
+    __story_render_skill_slot(state.loadout.s3 >>> 0, 2),
+  ].join("");
+  const ownedRow = __story_render_owned_row(state);
+  return [
+    '<div class="story-inventory__head">',
+      '<div>',
+        '<div class="story-inventory__title">Inventario</div>',
+        '<div class="story-inventory__meta">Level ' + (state.level >>> 0) + ' - Gold ' + (state.gold >>> 0) + '</div>',
+      '</div>',
+      '<a class="story-duel" href="' + __story_build_duel_href(state) + '">Duel</a>',
+    '</div>',
+    '<div class="story-inventory__body">',
+      '<div class="story-inventory__column story-inventory__column--sidebar">',
+        '<section class="story-pane story-pane--summary">',
+          '<div class="story-pane__eyebrow">HP total</div>',
+          '<div class="story-summary"><strong class="story-summary__value">' + String(__story_total_hp(state)) + '</strong></div>',
+        '</section>',
+        '<section class="story-pane story-pane--gear">',
+          '<div class="story-pane__eyebrow">Armadura</div>',
+          '<div class="story-gear__grid">' + armorGrid + '</div>',
+        '</section>',
+      '</div>',
+      '<div class="story-inventory__column story-inventory__column--main">',
+        '<section class="story-pane story-pane--loadout">',
+          '<div class="story-pane__eyebrow">Skills equipadas</div>',
+          '<div class="story-loadout__grid">' + loadoutGrid + '</div>',
+        '</section>',
+        '<section class="story-pane story-pane--library">',
+          '<div class="story-pane__eyebrow">Skills compradas</div>',
+          '<div class="story-library__track"><div class="story-library__viewport"><div class="story-library__row">' + ownedRow + '</div></div></div>',
+        '</section>',
+      '</div>',
+    '</div>',
+  ].join("");
 }
 
 function __story_purchase_name(kind, value) {
@@ -721,39 +772,38 @@ function __story_bind_shop_events(root, state, render) {
 }
 
 function __story_bind_inventory_events(root, state, render) {
-  if (root.slotRow) {
-    root.slotRow.querySelectorAll("[data-unequip-slot]").forEach((node) => {
-      const run = () => {
-        const idx = Number.parseInt(node.getAttribute("data-unequip-slot") || "99", 10);
-        if (!Number.isFinite(idx) || idx < 0 || idx > 2) {
-          return;
-        }
-        __story_unequip_slot(state, idx >>> 0);
-        __story_close_modal(state);
-        render();
-      };
-      node.addEventListener("click", run);
-      node.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter" && event.key !== " ") {
-          return;
-        }
-        event.preventDefault();
-        run();
-      });
-    });
+  if (!root.inventory) {
+    return;
   }
-  if (root.ownedRow) {
-    root.ownedRow.querySelectorAll("[data-equip-open]").forEach((node) => {
-      node.addEventListener("click", () => {
-        const value = Number.parseInt(node.getAttribute("data-equip-open") || "0", 10);
-        if (!Number.isFinite(value) || value < 1) {
-          return;
-        }
-        __story_open_modal(state, "equip", "skill", value >>> 0);
-        render();
-      });
+  root.inventory.querySelectorAll("[data-unequip-slot]").forEach((node) => {
+    const run = () => {
+      const idx = Number.parseInt(node.getAttribute("data-unequip-slot") || "99", 10);
+      if (!Number.isFinite(idx) || idx < 0 || idx > 2) {
+        return;
+      }
+      __story_unequip_slot(state, idx >>> 0);
+      __story_close_modal(state);
+      render();
+    };
+    node.addEventListener("click", run);
+    node.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+      event.preventDefault();
+      run();
     });
-  }
+  });
+  root.inventory.querySelectorAll("[data-equip-open]").forEach((node) => {
+    node.addEventListener("click", () => {
+      const value = Number.parseInt(node.getAttribute("data-equip-open") || "0", 10);
+      if (!Number.isFinite(value) || value < 1) {
+        return;
+      }
+      __story_open_modal(state, "equip", "skill", value >>> 0);
+      render();
+    });
+  });
 }
 
 function __story_bind_modal_events(root, state, render) {
@@ -782,32 +832,8 @@ function __story_bind_modal_events(root, state, render) {
 }
 
 function __story_render_inventory(root, state) {
-  if (root.meta) {
-    root.meta.textContent = "Level " + (state.level >>> 0) + " - Gold " + (state.gold >>> 0);
-  }
-  if (root.hpValue) {
-    root.hpValue.textContent = String(__story_total_hp(state));
-  }
-  if (root.slotRow) {
-    root.slotRow.innerHTML = [
-      __story_render_skill_slot(state.loadout.s1 >>> 0, 0),
-      __story_render_skill_slot(state.loadout.s2 >>> 0, 1),
-      __story_render_skill_slot(state.loadout.s3 >>> 0, 2),
-    ].join("");
-  }
-  if (root.armorGrid) {
-    root.armorGrid.innerHTML = [
-      __story_render_armor_slot(state, 0),
-      __story_render_armor_slot(state, 1),
-      __story_render_armor_slot(state, 2),
-      __story_render_armor_slot(state, 3),
-    ].join("");
-  }
-  if (root.ownedRow) {
-    root.ownedRow.innerHTML = __story_render_owned_row(state);
-  }
-  if (root.duel) {
-    root.duel.setAttribute("href", __story_build_duel_href(state));
+  if (root.inventory) {
+    root.inventory.innerHTML = __story_render_inventory_shell(state);
   }
 }
 
@@ -847,12 +873,7 @@ function __story_patch_city() {
   const root = {
     city,
     modalHost,
-    meta: document.querySelector(".story-inventory__meta"),
-    duel: document.querySelector(".story-duel"),
-    hpValue: document.querySelector(".story-hp-card__value"),
-    slotRow: document.querySelector(".story-slot-row"),
-    armorGrid: document.querySelector(".story-armor__grid"),
-    ownedRow: document.querySelector(".story-owned__row"),
+    inventory: document.querySelector(".story-inventory"),
     shopCells: {
       1: document.querySelector(".story-city__cell--wizard"),
       2: document.querySelector(".story-city__cell--bowyer"),
