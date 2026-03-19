@@ -33,6 +33,121 @@ TARGETS = [
 
 PATCH_TEMPLATE = r"""
 /* __vibi_turn_patch:start */
+const __vibiTurnOrigSkillCountBase = __SKILL_COUNT_FN__;
+const __vibiTurnOrigSkillDamageBase = __SKILL_DAMAGE_FN__;
+const __vibiTurnOrigSkillRankBase = __SKILL_RANK_FN__;
+const __vibiTurnOrigSkillClassIdBase = __SKILL_CLASS_ID_FN__;
+const __vibiTurnOrigSkillNameBase = __SKILL_NAME_FN__;
+const __vibiTurnOrigSkillBaseWBase = __SKILL_BASE_W_FN__;
+const __vibiTurnOrigSkillBaseHBase = __SKILL_BASE_H_FN__;
+const __vibiTurnOrigSkillBaseCellBase = __SKILL_BASE_CELL_FN__;
+
+function __vibiTurnExtraSkillBaseCell(skill, x, y) {
+  skill >>>= 0;
+  x >>>= 0;
+  y >>>= 0;
+  if (skill === 14) {
+    if (y !== 0) {
+      return 0;
+    }
+    if (x === 0) {
+      return 16;
+    }
+    if (x === 1 || x === 2 || x === 3) {
+      return 2;
+    }
+    if (x === 4) {
+      return 3;
+    }
+    return 0;
+  }
+  if (skill === 15) {
+    if (y === 0 && x === 0) {
+      return 1;
+    }
+    if (y === 1 && (x === 0 || x === 1)) {
+      return 1;
+    }
+    if (y === 2 && (x === 1 || x === 2)) {
+      return 1;
+    }
+    return 0;
+  }
+  return __vibiTurnOrigSkillBaseCellBase(skill, x, y);
+}
+
+const __vibiTurnSkillCountOverride = function() {
+  return 15;
+};
+__SKILL_COUNT_FN__ = __vibiTurnSkillCountOverride;
+
+const __vibiTurnSkillDamageOverride = function(skill) {
+  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
+    return 10;
+  }
+  return __vibiTurnOrigSkillDamageBase(skill >>> 0);
+};
+__SKILL_DAMAGE_FN__ = __vibiTurnSkillDamageOverride;
+
+const __vibiTurnSkillRankOverride = function(skill) {
+  if ((skill >>> 0) === 14) {
+    return 6;
+  }
+  if ((skill >>> 0) === 15) {
+    return 7;
+  }
+  return __vibiTurnOrigSkillRankBase(skill >>> 0);
+};
+__SKILL_RANK_FN__ = __vibiTurnSkillRankOverride;
+
+const __vibiTurnSkillClassIdOverride = function(skill) {
+  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
+    return 0;
+  }
+  return __vibiTurnOrigSkillClassIdBase(skill >>> 0);
+};
+__SKILL_CLASS_ID_FN__ = __vibiTurnSkillClassIdOverride;
+
+const __vibiTurnSkillNameOverride = function(skill) {
+  if ((skill >>> 0) === 14) {
+    return "Me6";
+  }
+  if ((skill >>> 0) === 15) {
+    return "Me7";
+  }
+  return __vibiTurnOrigSkillNameBase(skill >>> 0);
+};
+__SKILL_NAME_FN__ = __vibiTurnSkillNameOverride;
+
+const __vibiTurnSkillBaseWOverride = function(skill) {
+  if ((skill >>> 0) === 14) {
+    return 5;
+  }
+  if ((skill >>> 0) === 15) {
+    return 3;
+  }
+  return __vibiTurnOrigSkillBaseWBase(skill >>> 0);
+};
+__SKILL_BASE_W_FN__ = __vibiTurnSkillBaseWOverride;
+
+const __vibiTurnSkillBaseHOverride = function(skill) {
+  if ((skill >>> 0) === 14) {
+    return 1;
+  }
+  if ((skill >>> 0) === 15) {
+    return 3;
+  }
+  return __vibiTurnOrigSkillBaseHBase(skill >>> 0);
+};
+__SKILL_BASE_H_FN__ = __vibiTurnSkillBaseHOverride;
+
+const __vibiTurnSkillBaseCellOverride = function(skill, x, y) {
+  return __vibiTurnExtraSkillBaseCell(skill >>> 0, x >>> 0, y >>> 0);
+};
+__SKILL_BASE_CELL_FN__ = __vibiTurnSkillBaseCellOverride;
+
+const __VIBI_SHARED_SKILL_COUNT = __SKILL_COUNT_FN__() >>> 0;
+
 const __vibiTurnWait = () => ({$: "wait"});
 
 function __vibiTurnList4(a, b, c, d) {
@@ -810,7 +925,7 @@ function __vibiCampaignLoadoutMe1() {
 
 function __vibiCampaignSkillParam(name, fallback) {
   const skill = __vibiCampaignParseU32(name, fallback);
-  if (skill > 13) {
+  if (skill > __VIBI_SHARED_SKILL_COUNT) {
     return fallback >>> 0;
   }
   return skill >>> 0;
@@ -838,7 +953,7 @@ function __vibiCampaignItemsRaw() {
   const values = [];
   for (const chunk of raw.split(",")) {
     const num = Number.parseInt(chunk, 10);
-    if (!Number.isFinite(num) || num <= 1 || num > 13 || seen.has(num)) {
+    if (!Number.isFinite(num) || num <= 1 || num > __VIBI_SHARED_SKILL_COUNT || seen.has(num)) {
       continue;
     }
     seen.add(num);
@@ -1097,7 +1212,7 @@ function __vibiSimEnabled() {
 
 function __vibiSimParseSkill(name, fallback) {
   const skill = __vibiCampaignParseU32(name, fallback >>> 0);
-  if ((skill >>> 0) > 13) {
+  if ((skill >>> 0) > (__VIBI_SHARED_SKILL_COUNT >>> 0)) {
     return fallback >>> 0;
   }
   return skill >>> 0;
@@ -1428,7 +1543,22 @@ def build_extra_patch(bundle_kind: str) -> str:
 def build_patch(module_path: str, bundle_kind: str) -> str:
     text = PATCH_TEMPLATE.replace("__VIBI_EXTRA_PATCH__", build_extra_patch(bundle_kind))
     replacements = {
+        "__SKILL_COUNT_RAW_FN__": encode_symbol("/shared/fight", "skill_count", with_dollar=False),
+        "__SKILL_COUNT_FN__": encode_symbol("/shared/fight", "skill_count"),
+        "__SKILL_DAMAGE_RAW_FN__": encode_symbol("/shared/fight", "skill_damage", with_dollar=False),
+        "__SKILL_DAMAGE_FN__": encode_symbol("/shared/fight", "skill_damage"),
+        "__SKILL_RANK_RAW_FN__": encode_symbol("/shared/fight", "skill_rank", with_dollar=False),
+        "__SKILL_RANK_FN__": encode_symbol("/shared/fight", "skill_rank"),
+        "__SKILL_CLASS_ID_RAW_FN__": encode_symbol("/shared/fight", "skill_class_id", with_dollar=False),
         "__SKILL_CLASS_ID_FN__": encode_symbol("/shared/fight", "skill_class_id"),
+        "__SKILL_NAME_RAW_FN__": encode_symbol("/shared/fight", "skill_name", with_dollar=False),
+        "__SKILL_NAME_FN__": encode_symbol("/shared/fight", "skill_name"),
+        "__SKILL_BASE_W_RAW_FN__": encode_symbol("/shared/fight", "skill_base_w", with_dollar=False),
+        "__SKILL_BASE_W_FN__": encode_symbol("/shared/fight", "skill_base_w"),
+        "__SKILL_BASE_H_RAW_FN__": encode_symbol("/shared/fight", "skill_base_h", with_dollar=False),
+        "__SKILL_BASE_H_FN__": encode_symbol("/shared/fight", "skill_base_h"),
+        "__SKILL_BASE_CELL_RAW_FN__": encode_symbol("/shared/fight", "skill_base_cell", with_dollar=False),
+        "__SKILL_BASE_CELL_FN__": encode_symbol("/shared/fight", "skill_base_cell"),
         "__SKILL_HOOK_PULL_FN__": encode_symbol("/shared/fight", "skill_hook_pull"),
         "__DEFAULT_SETUP_SKILL_FN__": encode_symbol("/shared/fight", "default_setup_skill"),
         "__ACTION_SET_FN__": encode_symbol(module_path, "_action_set"),

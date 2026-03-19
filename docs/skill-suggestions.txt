@@ -20,19 +20,33 @@ Legenda
 Melee
 
 Me6
+foco: gancho reto ancorado
+[
+  ["P", "H", "H", "H", "DH"]
+]
+
+Me7
+foco: zigue-zague ofensivo
+[
+  ["A", null, null],
+  ["A", "A", null],
+  [null, "A", "A"]
+]
+
+Me8
 foco: cleave frontal compacto
 [
   [null, "A", null],
   ["A", "A", "A"]
 ]
 
-Me7
+Me9
 foco: estocada longa
 [
   ["A", "A", "A", "A", "A"]
 ]
 
-Me8
+Me10
 foco: cruz curta
 [
   [null, "A", null],
@@ -40,13 +54,7 @@ foco: cruz curta
   [null, "A", null]
 ]
 
-Me9
-foco: gancho reto com dano na ponta
-[
-  ["AH", "H", "H", "H", "H"]
-]
-
-Me10
+Me11
 foco: parede curta em L
 [
   ["A", null, null],
@@ -54,14 +62,14 @@ foco: parede curta em L
   ["A", "A", "A"]
 ]
 
-Me11
+Me12
 foco: golpe em U
 [
   ["A", null, "A"],
   ["A", "A", "A"]
 ]
 
-Me12
+Me13
 foco: grade vertical dupla
 [
   ["A", null, "A"],

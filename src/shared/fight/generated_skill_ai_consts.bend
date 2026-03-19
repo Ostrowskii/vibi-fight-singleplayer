@@ -36,6 +36,10 @@ def skill_has_anchor_consts(skill: U32) -> U32:
       1
     case 13:
       1
+    case 14:
+      1
+    case 15:
+      0
     case _:
       0
 
@@ -67,6 +71,10 @@ def skill_delta_diag_top_left_down_right(skill: U32) -> DeltaPos:
       delta_pos{1, 5, 1, 4}
     case 13:
       delta_pos{1, 6, 1, 4}
+    case 14:
+      delta_pos{1, 4, 0, 0}
+    case 15:
+      delta_pos{0, 0, 0, 0}
     case _:
       delta_pos{0, 0, 0, 0}
 
@@ -98,6 +106,10 @@ def skill_delta_diag_down_left_top_right(skill: U32) -> DeltaPos:
       delta_pos{1, 5, 0, 4}
     case 13:
       delta_pos{1, 6, 0, 4}
+    case 14:
+      delta_pos{1, 4, 0, 0}
+    case 15:
+      delta_pos{0, 0, 0, 0}
     case _:
       delta_pos{0, 0, 0, 0}
 
@@ -129,6 +141,10 @@ def skill_same_row_right_min_diff(skill: U32) -> U32:
       3
     case 13:
       3
+    case 14:
+      4
+    case 15:
+      0
     case _:
       0
 
@@ -160,6 +176,10 @@ def skill_same_row_right_min_pos_count(skill: U32) -> U32:
       1
     case 13:
       1
+    case 14:
+      1
+    case 15:
+      0
     case _:
       0
 
@@ -197,6 +217,8 @@ def skill_same_row_right_min_pos_x(skill: U32, idx: U32) -> U32:
       2
     case 13 0:
       2
+    case 14 0:
+      0
     case _ _:
       0
 
@@ -234,6 +256,8 @@ def skill_same_row_right_min_pos_y(skill: U32, idx: U32) -> U32:
       2
     case 13 0:
       2
+    case 14 0:
+      0
     case _ _:
       0
 
@@ -265,6 +289,10 @@ def skill_same_row_left_max_diff(skill: U32) -> U32:
       7
     case 13:
       8
+    case 14:
+      4
+    case 15:
+      0
     case _:
       0
 
@@ -296,6 +324,10 @@ def skill_same_row_left_max_pos_count(skill: U32) -> U32:
       3
     case 13:
       5
+    case 14:
+      1
+    case 15:
+      0
     case _:
       0
 
@@ -340,6 +372,8 @@ def skill_same_row_left_max_pos_x(skill: U32, idx: U32) -> U32:
     case 13 3:
       0
     case 13 4:
+      0
+    case 14 0:
       0
     case _ _:
       0
@@ -386,6 +420,8 @@ def skill_same_row_left_max_pos_y(skill: U32, idx: U32) -> U32:
       3
     case 13 4:
       4
+    case 14 0:
+      0
     case _ _:
       0
 
@@ -417,5 +453,9 @@ def skill_use_area(skill: U32) -> AreaBox:
       area_box{7, 0, 7, 4}
     case 13:
       area_box{8, 0, 8, 4}
+    case 14:
+      area_box{4, 0, 4, 0}
+    case 15:
+      area_box{0, 0, 2, 2}
     case _:
       area_box{0, 0, 0, 0}

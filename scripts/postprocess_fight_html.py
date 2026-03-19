@@ -6,7 +6,7 @@ BOOTSTRAP_START = 'const __fight_params = new URLSearchParams(window.location.se
 BOOTSTRAP_END = "__run_app(__fight_app);"
 
 BOOTSTRAP = """const __fight_params = new URLSearchParams(window.location.search);
-const __fight_skill_count = n2f7368617265642f66696768742f736b696c6c5f636f756e74();
+const __fight_skill_count = $n2f7368617265642f66696768742f736b696c6c5f636f756e74();
 function __fight_parse_slot(name, fallback) {
   const raw = __fight_params.get(name);
   if (raw === null || raw === "") {

@@ -4,7 +4,7 @@ def default_hp() -> U32:
   50
 
 def skill_count() -> U32:
-  13
+  15
 
 def empty_item_slot() -> U32:
   0
@@ -51,6 +51,10 @@ def skill_damage(skill: U32) -> U32:
       10
     case 13:
       10
+    case 14:
+      10
+    case 15:
+      10
     case _:
       0
 
@@ -82,6 +86,10 @@ def skill_rank(skill: U32) -> U32:
       4
     case 13:
       5
+    case 14:
+      6
+    case 15:
+      7
     case _:
       0
 
@@ -113,6 +121,10 @@ def skill_class_id(skill: U32) -> U32:
       1
     case 13:
       1
+    case 14:
+      0
+    case 15:
+      0
     case _:
       0
 
@@ -172,6 +184,10 @@ def skill_name(skill: U32) -> String:
       "Ra4"
     case 13:
       "Ra5"
+    case 14:
+      "Me6"
+    case 15:
+      "Me7"
     case _:
       "?"
 
@@ -221,6 +237,10 @@ def skill_base_w(skill: U32) -> U32:
       9
     case 13:
       9
+    case 14:
+      5
+    case 15:
+      3
     case _:
       0
 
@@ -252,6 +272,10 @@ def skill_base_h(skill: U32) -> U32:
       5
     case 13:
       5
+    case 14:
+      1
+    case 15:
+      3
     case _:
       0
 
@@ -551,6 +575,28 @@ def skill_base_cell(skill: U32, x: U32, y: U32) -> U32:
       cell_player()
     case 13 4 8:
       cell_dist_attack()
+
+    case 14 0 0:
+      cell_player()
+    case 14 0 1:
+      cell_hook()
+    case 14 0 2:
+      cell_hook()
+    case 14 0 3:
+      cell_hook()
+    case 14 0 4:
+      cell_dist_attack() | cell_hook()
+
+    case 15 0 0:
+      cell_attack()
+    case 15 1 0:
+      cell_attack()
+    case 15 1 1:
+      cell_attack()
+    case 15 2 1:
+      cell_attack()
+    case 15 2 2:
+      cell_attack()
 
     case _ _ _:
       0

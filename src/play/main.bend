@@ -3497,6 +3497,8 @@ def _lobby_side_card(side: U32, lobby: LobbyState) -> HTML(FightEvent):
         {_lobby_skill_pick_card_filtered(side, lobby, 11)}
         {_lobby_skill_pick_card_filtered(side, lobby, 12)}
         {_lobby_skill_pick_card_filtered(side, lobby, 13)}
+        {_lobby_skill_pick_card_filtered(side, lobby, 14)}
+        {_lobby_skill_pick_card_filtered(side, lobby, 15)}
       </div>
     </div>
   </section>

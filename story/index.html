@@ -58000,6 +58000,8 @@ const __STORY_SKILLS = {
   11: {name: "Ra3", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
   12: {name: "Ra4", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
   13: {name: "Ra5", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
+  14: {name: "Me6", classLabel: "Melee", customDescription: "", legends: ["P", "D", "H"], damage: 10, pull: 4},
+  15: {name: "Me7", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
 };
 
 const __STORY_LEGEND_COLORS = {
@@ -58023,7 +58025,7 @@ const __STORY_ARMORS = [
 const __STORY_SHOPS = {
   1: {title: "Wizard's Tower", eyebrow: "Loja de magia", skills: [5, 6, 9], armors: []},
   2: {title: "The Bowyer's Workshop", eyebrow: "Loja de arqueiro", skills: [8, 10, 11, 12, 13], armors: []},
-  3: {title: "The Blacksmith's Forge", eyebrow: "Loja de espadas e armaduras", skills: [2, 3, 4, 7], armors: [0, 1, 2, 3]},
+  3: {title: "The Blacksmith's Forge", eyebrow: "Loja de espadas e armaduras", skills: [2, 3, 4, 7, 14, 15], armors: [0, 1, 2, 3]},
 };
 
 function __story_parse_u32(name, fallback) {
@@ -58074,7 +58076,7 @@ function __story_parse_items() {
   const items = [];
   for (const chunk of raw.split(",")) {
     const value = Number.parseInt(chunk, 10);
-    if (!Number.isFinite(value) || value < 1 || value > 13 || seen.has(value)) {
+    if (!Number.isFinite(value) || value < 1 || value > 15 || seen.has(value)) {
       continue;
     }
     seen.add(value);
@@ -58880,6 +58882,8 @@ function __story_start_patch() {
 
 __story_start_patch();
 /* __vibi_story_patch:end */
+
+
 
 
 

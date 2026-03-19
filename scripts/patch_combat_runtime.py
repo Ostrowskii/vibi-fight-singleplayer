@@ -27,7 +27,120 @@ PATCH_TEMPLATE = r"""
 // 4. debounce DOM work with setTimeout until requestAnimationFrame exists
 // 5. cache previews by skill+rotation
 const __VIBI_RENDER_DEBOUNCE_MS = 8;
-const __vibiSkillCount = n2f7368617265642f66696768742f736b696c6c5f636f756e74();
+const __vibiOrigSkillCountBase = $n2f7368617265642f66696768742f736b696c6c5f636f756e74;
+const __vibiOrigSkillDamageBase = $n2f7368617265642f66696768742f736b696c6c5f64616d616765;
+const __vibiOrigSkillRankBase = $n2f7368617265642f66696768742f736b696c6c5f72616e6b;
+const __vibiOrigSkillClassIdBase = $n2f7368617265642f66696768742f736b696c6c5f636c6173735f6964;
+const __vibiOrigSkillNameBase = $n2f7368617265642f66696768742f736b696c6c5f6e616d65;
+const __vibiOrigSkillBaseWBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f77;
+const __vibiOrigSkillBaseHBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f68;
+const __vibiOrigSkillBaseCellBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f63656c6c;
+
+function __vibiExtraSkillBaseCell(skill, x, y) {
+  skill >>>= 0;
+  x >>>= 0;
+  y >>>= 0;
+  if (skill === 14) {
+    if (y !== 0) {
+      return 0;
+    }
+    if (x === 0) {
+      return 16;
+    }
+    if (x === 1 || x === 2 || x === 3) {
+      return 2;
+    }
+    if (x === 4) {
+      return 3;
+    }
+    return 0;
+  }
+  if (skill === 15) {
+    if (y === 0 && x === 0) {
+      return 1;
+    }
+    if (y === 1 && (x === 0 || x === 1)) {
+      return 1;
+    }
+    if (y === 2 && (x === 1 || x === 2)) {
+      return 1;
+    }
+    return 0;
+  }
+  return __vibiOrigSkillBaseCellBase(skill, x, y);
+}
+
+const __vibiSkillCountOverride = function() {
+  return 15;
+};
+$n2f7368617265642f66696768742f736b696c6c5f636f756e74 = __vibiSkillCountOverride;
+
+const __vibiSkillDamageOverride = function(skill) {
+  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
+    return 10;
+  }
+  return __vibiOrigSkillDamageBase(skill >>> 0);
+};
+$n2f7368617265642f66696768742f736b696c6c5f64616d616765 = __vibiSkillDamageOverride;
+
+const __vibiSkillRankOverride = function(skill) {
+  if ((skill >>> 0) === 14) {
+    return 6;
+  }
+  if ((skill >>> 0) === 15) {
+    return 7;
+  }
+  return __vibiOrigSkillRankBase(skill >>> 0);
+};
+$n2f7368617265642f66696768742f736b696c6c5f72616e6b = __vibiSkillRankOverride;
+
+const __vibiSkillClassIdOverride = function(skill) {
+  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
+    return 0;
+  }
+  return __vibiOrigSkillClassIdBase(skill >>> 0);
+};
+$n2f7368617265642f66696768742f736b696c6c5f636c6173735f6964 = __vibiSkillClassIdOverride;
+
+const __vibiSkillNameOverride = function(skill) {
+  if ((skill >>> 0) === 14) {
+    return "Me6";
+  }
+  if ((skill >>> 0) === 15) {
+    return "Me7";
+  }
+  return __vibiOrigSkillNameBase(skill >>> 0);
+};
+$n2f7368617265642f66696768742f736b696c6c5f6e616d65 = __vibiSkillNameOverride;
+
+const __vibiSkillBaseWOverride = function(skill) {
+  if ((skill >>> 0) === 14) {
+    return 5;
+  }
+  if ((skill >>> 0) === 15) {
+    return 3;
+  }
+  return __vibiOrigSkillBaseWBase(skill >>> 0);
+};
+$n2f7368617265642f66696768742f736b696c6c5f626173655f77 = __vibiSkillBaseWOverride;
+
+const __vibiSkillBaseHOverride = function(skill) {
+  if ((skill >>> 0) === 14) {
+    return 1;
+  }
+  if ((skill >>> 0) === 15) {
+    return 3;
+  }
+  return __vibiOrigSkillBaseHBase(skill >>> 0);
+};
+$n2f7368617265642f66696768742f736b696c6c5f626173655f68 = __vibiSkillBaseHOverride;
+
+const __vibiSkillBaseCellOverride = function(skill, x, y) {
+  return __vibiExtraSkillBaseCell(skill >>> 0, x >>> 0, y >>> 0);
+};
+$n2f7368617265642f66696768742f736b696c6c5f626173655f63656c6c = __vibiSkillBaseCellOverride;
+
+const __vibiSkillCount = $n2f7368617265642f66696768742f736b696c6c5f636f756e74();
 const __vibiGridPool = Array.from({ length: 256 }, () => new Uint32Array(9));
 let __vibiGridPoolIndex = 0;
 const __vibiSkillCache = new Array((__vibiSkillCount >>> 0) + 1);

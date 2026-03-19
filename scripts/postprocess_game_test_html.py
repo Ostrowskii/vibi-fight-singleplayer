@@ -6,7 +6,7 @@ BOOTSTRAP_START = 'const __game_test_params = new URLSearchParams(window.locatio
 BOOTSTRAP_END = "__run_app(__game_test_app);"
 
 BOOTSTRAP = """const __game_test_params = new URLSearchParams(window.location.search);
-const __game_test_skill_count = n2f7368617265642f66696768742f736b696c6c5f636f756e74();
+const __game_test_skill_count = $n2f7368617265642f66696768742f736b696c6c5f636f756e74();
 function __game_test_parse_skill(name, fallback) {
   const raw = __game_test_params.get(name);
   if (raw === null || raw === "") {

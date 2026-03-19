@@ -34,10 +34,12 @@ SKILLS = {
     11: "Ra3",
     12: "Ra4",
     13: "Ra5",
+    14: "Me6",
+    15: "Me7",
 }
 
 # Lethal skills in the current ruleset: direct damage or fire that can end fights.
-ELIGIBLE_SKILL_IDS = [1, 2, 3, 4, 6, 8, 10, 11, 12, 13]
+ELIGIBLE_SKILL_IDS = [1, 2, 3, 4, 6, 8, 10, 11, 12, 13, 14, 15]
 DEFAULT_ROUND_CAP = 40
 
 

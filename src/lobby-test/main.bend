@@ -235,6 +235,8 @@ def _side_card(state: LobbyTestState, side: U32) -> HTML(LobbyTestEvent):
         {_skill_card(side, loadout_value, filter, 11)}
         {_skill_card(side, loadout_value, filter, 12)}
         {_skill_card(side, loadout_value, filter, 13)}
+        {_skill_card(side, loadout_value, filter, 14)}
+        {_skill_card(side, loadout_value, filter, 15)}
       </div>
     </div>
   </section>
