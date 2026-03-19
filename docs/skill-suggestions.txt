@@ -1,10 +1,15 @@
-Skill Suggestions
+Skill Catalog And Ranking
 
 Notas
 
-- formato espelhado do catalogo atual: strings como "A", "D", "F", "I", "H", "P" e `null`
-- nomes abaixo sao provisórios
-- a ideia aqui e ter opcoes para teste e balanceamento, nao uma lista fechada
+- este arquivo junta as skills atuais do jogo e as sugestoes futuras no mesmo lugar
+- a ordem principal abaixo vai das mais fracas para as mais fortes
+- ranking 1v1 letal baseado no runner atual:
+  - `python3 scripts/skill_matchups_runner.py --json-out /tmp/skill-matchups-full.json`
+- score usado para ordenar:
+  - `wins + 0.5 * draws`
+- o runner atual avalia cada skill no lado do player
+- skills utilitarias sem dano letal ficam fora do ranking principal
 
 Legenda
 
@@ -14,26 +19,186 @@ Legenda
 - F = fogo
 - I = gelo
 - H = hook
-- combinacoes como "DF", "DI" e "AH" significam multiplos efeitos no mesmo tile
+- combinacoes como `DF`, `DI` e `DH` significam multiplos efeitos no mesmo tile
 
 
-Melee
+Fracas
 
 Me6
-foco: gancho reto ancorado
+classe: Melee
+status: atual no jogo
+score: 1.0 | wins: 0 | draws: 2 | losses: 10
 [
   ["P", "H", "H", "H", "DH"]
 ]
 
+Me1
+classe: Melee
+status: atual no jogo
+score: 2.0 | wins: 2 | draws: 0 | losses: 10
+[
+  ["A", "A", "A", "A"]
+]
+
 Me7
-foco: zigue-zague ofensivo
+classe: Melee
+status: atual no jogo
+score: 2.0 | wins: 2 | draws: 0 | losses: 10
 [
   ["A", null, null],
   ["A", "A", null],
   [null, "A", "A"]
 ]
 
+Ra4
+classe: Ranged
+status: atual no jogo
+score: 2.5 | wins: 1 | draws: 3 | losses: 8
+[
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, "D", "D", "D", null],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, null, null, "D", null]
+]
+
+Ra5
+classe: Ranged
+status: atual no jogo
+score: 2.5 | wins: 1 | draws: 3 | losses: 8
+[
+  ["P", null, "P", null, null, null, null, null, "D"],
+  ["P", null, "P", null, null, null, null, null, "D"],
+  ["P", null, "P", null, null, "D", "D", "D", "D"],
+  ["P", null, "P", null, null, null, null, null, "D"],
+  ["P", null, "P", null, null, null, null, null, "D"]
+]
+
+
+Medianas
+
+Me2
+classe: Melee
+status: atual no jogo
+score: 3.0 | wins: 2 | draws: 2 | losses: 8
+[
+  [null, null, null, "A"],
+  [null, null, "A", null],
+  [null, "A", null, null],
+  ["A", null, null, null]
+]
+
+Me3
+classe: Melee
+status: atual no jogo
+score: 3.0 | wins: 2 | draws: 2 | losses: 8
+[
+  ["A", null, "A"],
+  [null, "A", null],
+  ["A", null, "A"]
+]
+
+Ra2
+classe: Ranged
+status: atual no jogo
+score: 4.0 | wins: 2 | draws: 4 | losses: 6
+[
+  ["P", null, "P", null, null, null, "D", null, "D"],
+  ["P", null, "P", null, null, null, "D", null, "D"],
+  ["P", null, "P", null, null, null, "D", null, "D"],
+  ["P", null, "P", null, null, null, "D", null, "D"],
+  ["P", null, "P", null, null, null, "D", null, "D"]
+]
+
+Me4
+classe: Melee
+status: atual no jogo
+score: 4.0 | wins: 4 | draws: 0 | losses: 8
+[
+  ["A", null, null, null],
+  ["A", null, null, null],
+  ["A", null, null, null],
+  ["A", "A", null, null]
+]
+
+
+Fortes
+
+Ma2
+classe: Mage
+status: atual no jogo
+score: 4.5 | wins: 4 | draws: 1 | losses: 7
+[
+  [null, "P", null, null, null, null, "F", null],
+  ["P", null, null, null, null, "F", "F", "F"],
+  [null, "P", null, null, null, null, "F", null]
+]
+
+Ra3
+classe: Ranged
+status: atual no jogo
+score: 5.0 | wins: 5 | draws: 0 | losses: 7
+[
+  ["P", null, "P", null, null, null, null, null, null],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, "D", "D", "D", "D"],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, null, null, null]
+]
+
+
+Muito Fortes
+
+Ra1
+classe: Ranged
+status: atual no jogo
+score: 10.0 | wins: 10 | draws: 0 | losses: 2
+[
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, "D", "D", "D", "D", "D"],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, null, "D", null, null]
+]
+
+
+Utilitarias Fora Do Ranking 1v1
+
+Me5
+classe: Melee
+status: atual no jogo
+motivo: hook puro, sem dano letal no runner
+[
+  ["H", "H", "H", "H", "H", "H", "H"]
+]
+
+Ma1
+classe: Mage
+status: atual no jogo
+motivo: gelo puro, sem dano letal direto no runner
+[
+  [null, "P", null, null, null, null, "I", null],
+  ["P", null, null, null, null, "I", "I", "I"],
+  [null, "P", null, null, null, null, "I", null]
+]
+
+Ma3
+classe: Mage
+status: atual no jogo
+motivo: gelo puro, sem dano letal direto no runner
+[
+  [null, null, null, null, null, null, "I"],
+  [null, "P", null, null, null, "I", null],
+  ["P", "P", "P", null, "I", null, null],
+  [null, "P", null, null, null, "I", null],
+  [null, null, null, null, null, null, "I"]
+]
+
+
+Sugestoes Futuras Nao Testadas
+
 Me8
+classe: Melee
 foco: cleave frontal compacto
 [
   [null, "A", null],
@@ -41,12 +206,14 @@ foco: cleave frontal compacto
 ]
 
 Me9
+classe: Melee
 foco: estocada longa
 [
   ["A", "A", "A", "A", "A"]
 ]
 
 Me10
+classe: Melee
 foco: cruz curta
 [
   [null, "A", null],
@@ -55,6 +222,7 @@ foco: cruz curta
 ]
 
 Me11
+classe: Melee
 foco: parede curta em L
 [
   ["A", null, null],
@@ -63,6 +231,7 @@ foco: parede curta em L
 ]
 
 Me12
+classe: Melee
 foco: golpe em U
 [
   ["A", null, "A"],
@@ -70,6 +239,7 @@ foco: golpe em U
 ]
 
 Me13
+classe: Melee
 foco: grade vertical dupla
 [
   ["A", null, "A"],
@@ -77,10 +247,8 @@ foco: grade vertical dupla
   ["A", null, "A"]
 ]
 
-
-Ranged
-
 Ra6
+classe: Ranged
 foco: raio fino vertical
 [
   ["P", null, "P", null, null, null, null, "D", null],
@@ -91,6 +259,7 @@ foco: raio fino vertical
 ]
 
 Ra7
+classe: Ranged
 foco: disparo aberto alto e baixo
 [
   ["P", null, "P", null, null, null, null, null, "D"],
@@ -101,6 +270,7 @@ foco: disparo aberto alto e baixo
 ]
 
 Ra8
+classe: Ranged
 foco: bloco pesado de area
 [
   ["P", null, "P", null, null, null, "D", "D", "D"],
@@ -111,6 +281,7 @@ foco: bloco pesado de area
 ]
 
 Ra9
+classe: Ranged
 foco: escada diagonal descendente
 [
   ["P", null, "P", null, null, null, null, null, "D"],
@@ -121,6 +292,7 @@ foco: escada diagonal descendente
 ]
 
 Ra10
+classe: Ranged
 foco: rake inferior
 [
   ["P", null, "P", null, null, null, null, null, null],
@@ -131,6 +303,7 @@ foco: rake inferior
 ]
 
 Ra11
+classe: Ranged
 foco: forcado de longo alcance
 [
   ["P", null, "P", null, null, null, "D", null, "D"],
@@ -140,10 +313,8 @@ foco: forcado de longo alcance
   ["P", null, "P", null, null, null, "D", null, "D"]
 ]
 
-
-Mage
-
 Ma4
+classe: Mage
 foco: lanca de fogo com impacto
 [
   [null, "P", null, null, null, null, "F"],
@@ -152,6 +323,7 @@ foco: lanca de fogo com impacto
 ]
 
 Ma5
+classe: Mage
 foco: garfo gelado com dano nas pontas
 [
   [null, "P", null, null, null, "I", null],
@@ -160,7 +332,8 @@ foco: garfo gelado com dano nas pontas
 ]
 
 Ma6
-foco: poça larga de fogo
+classe: Mage
+foco: poca larga de fogo
 [
   [null, null, "P", null, null, null, null],
   [null, "P", null, null, "F", "DF", "F"],
@@ -170,6 +343,7 @@ foco: poça larga de fogo
 ]
 
 Ma7
+classe: Mage
 foco: parede fria com centro de travamento
 [
   [null, "P", null, null, null, "I", "DI"],
@@ -178,6 +352,7 @@ foco: parede fria com centro de travamento
 ]
 
 Ma8
+classe: Mage
 foco: chuva diagonal de impacto flamejante
 [
   [null, null, "P", null, null, null, "DF"],
@@ -188,6 +363,7 @@ foco: chuva diagonal de impacto flamejante
 ]
 
 Ma9
+classe: Mage
 foco: crescente de brasas
 [
   [null, "P", null, null, null, "F", null],
@@ -196,6 +372,7 @@ foco: crescente de brasas
 ]
 
 Ma10
+classe: Mage
 foco: pique gelado
 [
   [null, "P", null, null, null, null, "DI"],
