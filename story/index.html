@@ -58234,16 +58234,17 @@ function __story_ensure_style() {
 .story-modal-layer{position:absolute;inset:0;display:grid;place-items:center;padding:24px;background:rgba(20,12,6,.58);pointer-events:auto;}
 .story-purchase-modal{position:relative;z-index:1;width:min(100%,760px);display:grid;gap:18px;padding:24px;background:rgba(104,61,28,.98);border:2px solid #4b2d14;box-shadow:0 24px 60px rgba(8,4,1,.45);}
 .story-purchase-modal__title{margin:0;font-size:32px;line-height:1;color:#fff4dd;}
+.story-purchase-modal__body{display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr);gap:18px;align-items:stretch;}
+.story-purchase-modal__left{display:grid;grid-template-rows:auto auto;gap:14px;}
 .story-purchase-modal__hero{display:grid;place-items:center;}
 .story-purchase-modal__art{width:min(220px,100%);aspect-ratio:1/1;display:grid;place-items:center;padding:14px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}
 .story-purchase-modal__art--armor{background:#d4bc95;color:#654523;}
 .story-purchase-modal__image{display:block;width:100%;height:100%;object-fit:contain;}
 .story-purchase-modal__armor-bonus{font-size:26px;font-weight:900;letter-spacing:.06em;}
-.story-purchase-modal__details{display:grid;grid-template-columns:180px minmax(0,1fr);gap:14px;}
 .story-purchase-modal__cost{min-height:120px;padding:16px;display:grid;align-content:start;gap:8px;border:1px solid #7b5a32;background:rgba(82,49,25,.9);color:#fff4dd;}
 .story-purchase-modal__cost-label,.story-purchase-modal__description-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}
 .story-purchase-modal__cost-value{font-size:28px;line-height:1;font-weight:900;}
-.story-purchase-modal__description{min-height:120px;padding:16px;border:1px dashed rgba(233,208,163,.36);background:rgba(82,49,25,.48);}
+.story-purchase-modal__description{min-height:100%;padding:16px;border:1px dashed rgba(233,208,163,.36);background:rgba(82,49,25,.48);}
 .story-purchase-modal__confirm{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;color:#fff4dd;}
 .story-purchase-modal__confirm-copy{font-size:18px;font-weight:800;}
 .story-purchase-modal__actions{display:flex;gap:10px;flex-wrap:wrap;}
@@ -58265,7 +58266,7 @@ function __story_ensure_style() {
   .story-shop-panel__grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .story-purchase-modal{padding:20px;}
   .story-purchase-modal__title{font-size:28px;}
-  .story-purchase-modal__details{grid-template-columns:1fr;}
+  .story-purchase-modal__body{grid-template-columns:1fr;}
   .story-purchase-modal__confirm{align-items:stretch;}
   .story-purchase-modal__actions{width:100%;}
   .story-purchase-modal__button{flex:1 1 0;}
@@ -58412,7 +58413,7 @@ function __story_render_purchase_modal(state) {
   if ((state.warningOpen >>> 0) !== 0) {
     warning = '<div class="story-warning-modal"><h3 class="story-warning-modal__title">Gold insuficiente</h3><p class="story-warning-modal__copy">Voce nao tem gold suficiente para essa compra.</p><div class="story-warning-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-warning-ok="1">OK</button></div></div>';
   }
-  return '<div class="story-modal-layer"><div class="story-purchase-modal"><h2 class="story-purchase-modal__title">' + name + '</h2><div class="story-purchase-modal__hero">' + __story_render_purchase_art(pending.kind, pending.value, 1) + '</div><div class="story-purchase-modal__details"><div class="story-purchase-modal__cost"><div class="story-purchase-modal__cost-label">Custo</div><div class="story-purchase-modal__cost-value">' + cost + ' gold</div></div><div class="story-purchase-modal__description"><div class="story-purchase-modal__description-label">Descricao</div></div></div><div class="story-purchase-modal__confirm"><div class="story-purchase-modal__confirm-copy">Confirmar compra?</div><div class="story-purchase-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-purchase-confirm="1">Sim</button><button type="button" class="story-purchase-modal__button" data-purchase-cancel="1">Nao</button></div></div></div>' + warning + '</div>';
+  return '<div class="story-modal-layer"><div class="story-purchase-modal"><h2 class="story-purchase-modal__title">' + name + '</h2><div class="story-purchase-modal__body"><div class="story-purchase-modal__left"><div class="story-purchase-modal__hero">' + __story_render_purchase_art(pending.kind, pending.value, 1) + '</div><div class="story-purchase-modal__cost"><div class="story-purchase-modal__cost-label">Custo</div><div class="story-purchase-modal__cost-value">' + cost + ' gold</div></div></div><div class="story-purchase-modal__description"><div class="story-purchase-modal__description-label">Descricao</div></div></div><div class="story-purchase-modal__confirm"><div class="story-purchase-modal__confirm-copy">Confirmar compra?</div><div class="story-purchase-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-purchase-confirm="1">Sim</button><button type="button" class="story-purchase-modal__button" data-purchase-cancel="1">Nao</button></div></div></div>' + warning + '</div>';
 }
 
 function __story_bind_shop_events(root, state, render) {
@@ -58446,6 +58447,12 @@ function __story_bind_shop_events(root, state, render) {
       render();
     });
   });
+  if (!root.modalHost) {
+    return;
+  }
+}
+
+function __story_bind_modal_events(root, state, render) {
   if (!root.modalHost) {
     return;
   }
@@ -58551,6 +58558,7 @@ function __story_patch_city() {
     __story_render_inventory(root, state);
     __story_render_shops(root, state, render);
     __story_render_modals(root, state);
+    __story_bind_modal_events(root, state, render);
     __story_sync_url(state);
   };
   render();
@@ -58580,6 +58588,8 @@ function __story_start_patch() {
 
 __story_start_patch();
 /* __vibi_story_patch:end */
+
+
 
 
 
