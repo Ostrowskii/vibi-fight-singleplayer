@@ -124,6 +124,10 @@ function __story_parse_open_shop() {
   return value >= 1 && value <= 3 ? value : 0;
 }
 
+function __story_parse_inventory_open() {
+  return __story_parse_u32("inv", 1) === 0 ? 0 : 1;
+}
+
 function __story_parse_state() {
   return {
     screen: (__story_params.get("screen") || "city").toLowerCase(),
@@ -137,6 +141,7 @@ function __story_parse_state() {
       __story_parse_flag("ac"),
       __story_parse_flag("ah"),
     ],
+    inventoryOpen: __story_parse_inventory_open(),
     openShop: __story_parse_open_shop(),
   };
 }
@@ -183,6 +188,7 @@ function __story_build_story_search(screen, state) {
   params.set("al", String(state.armor[1] >>> 0));
   params.set("ac", String(state.armor[2] >>> 0));
   params.set("ah", String(state.armor[3] >>> 0));
+  params.set("inv", String(state.inventoryOpen >>> 0));
   if (state.items.length > 0) {
     params.set("items", state.items.join(","));
   }
@@ -210,6 +216,7 @@ function __story_build_duel_href(state) {
   params.set("al", String(state.armor[1] >>> 0));
   params.set("ac", String(state.armor[2] >>> 0));
   params.set("ah", String(state.armor[3] >>> 0));
+  params.set("inv", String(state.inventoryOpen >>> 0));
   if (state.items.length > 0) {
     params.set("items", state.items.join(","));
   }
@@ -237,6 +244,8 @@ function __story_ensure_style() {
 .story-city__cell--bowyer{align-content:end;justify-items:start;}
 .story-city__cell--forge{align-content:end;justify-items:end;}
 .story-shop-button{cursor:pointer;}
+.story-inventory-reopen{display:none;cursor:pointer;}
+.story-inventory-reopen--visible{display:inline-flex;}
 .story-shop-panel{width:min(100%,700px);display:grid;gap:14px;padding:22px;background:rgba(104,61,28,.94);border:2px solid #4b2d14;box-shadow:0 22px 60px rgba(17,10,4,.34);}
 .story-shop-panel__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;}
 .story-shop-panel__eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#e0c28d;font-weight:900;}
@@ -394,6 +403,13 @@ function __story_bind_shop_events(root, state, render) {
 }
 
 function __story_render_inventory(root, state) {
+  const inventoryOpen = (state.inventoryOpen >>> 0) !== 0;
+  if (root.inventory) {
+    root.inventory.classList.toggle("story-inventory--closed", !inventoryOpen);
+  }
+  if (root.inventoryReopen) {
+    root.inventoryReopen.classList.toggle("story-inventory-reopen--visible", !inventoryOpen);
+  }
   if (root.meta) {
     root.meta.textContent = "Level " + (state.level >>> 0) + " - Gold " + (state.gold >>> 0);
   }
@@ -445,6 +461,9 @@ function __story_patch_city() {
   const state = __story_parse_state();
   const root = {
     city,
+    inventory: document.querySelector(".story-inventory"),
+    inventoryClose: document.querySelector(".story-inventory__toggle"),
+    inventoryReopen: document.querySelector(".story-inventory-reopen"),
     meta: document.querySelector(".story-inventory__meta"),
     duel: document.querySelector(".story-duel"),
     hpValue: document.querySelector(".story-hp-card__value"),
@@ -457,6 +476,18 @@ function __story_patch_city() {
       3: document.querySelector(".story-city__cell--forge"),
     },
   };
+  if (root.inventoryClose) {
+    root.inventoryClose.onclick = () => {
+      state.inventoryOpen = 0;
+      render();
+    };
+  }
+  if (root.inventoryReopen) {
+    root.inventoryReopen.onclick = () => {
+      state.inventoryOpen = 1;
+      render();
+    };
+  }
   const render = () => {
     __story_render_inventory(root, state);
     __story_render_shops(root, state, render);

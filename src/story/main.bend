@@ -116,7 +116,7 @@ def _render_city(state: StoryState) -> HTML(StoryEvent):
             <div class="story-inventory__title">{text{"Inventario"}}</div>
             <div class="story-inventory__meta">{text{"Level " ++ U32.show(_story_level(state)) ++ " - Gold " ++ U32.show(_story_gold(state))}}</div>
           </div>
-          <a class="story-duel" href={_story_duel_href(state)}>{text{"Duel"}}</a>
+          <button type="button" class="story-inventory__toggle">{text{"X"}}</button>
         </div>
 
         <div class="story-equipped-row">
@@ -150,9 +150,13 @@ def _render_city(state: StoryState) -> HTML(StoryEvent):
                 <div class="story-owned__row"></div>
               </div>
             </div>
+            <div class="story-owned__actions">
+              <a class="story-duel" href={_story_duel_href(state)}>{text{"Duel"}}</a>
+            </div>
           </div>
         </div>
       </div>
+      <button type="button" class="story-inventory-reopen">{text{"Inventario"}}</button>
     </section>
 
     <section class="story-city__cell story-city__cell--bowyer">
@@ -383,10 +387,10 @@ def _city_layout_css() -> String:
 
 def _inventory_css() -> String:
   ""
-  ++ ".story-inventory{width:min(100%,700px);display:grid;gap:14px;padding:22px;background:rgba(104,61,28,.92);border:2px solid #4b2d14;box-shadow:0 22px 60px rgba(17,10,4,.34);}.story-inventory__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;}.story-inventory__title{font-size:28px;font-weight:900;line-height:1;color:var(--cream);}.story-inventory__meta{margin-top:6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e0c28d;}.story-duel{display:inline-flex;align-items:center;justify-content:center;min-width:126px;padding:12px 18px;border-radius:14px;border:2px solid var(--gold);background:#f1c54a;color:var(--gold-deep);font-weight:900;box-shadow:0 12px 30px rgba(111,71,0,.24);}"
+  ++ ".story-inventory{width:min(100%,700px);display:grid;gap:14px;padding:22px;background:rgba(104,61,28,.92);border:2px solid #4b2d14;box-shadow:0 22px 60px rgba(17,10,4,.34);}.story-inventory--closed{display:none;}.story-inventory__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;}.story-inventory__title{font-size:28px;font-weight:900;line-height:1;color:var(--cream);}.story-inventory__meta{margin-top:6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e0c28d;}.story-inventory__toggle,.story-inventory-reopen{display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,235,201,.72);border-radius:12px;background:rgba(62,35,12,.8);color:#fff2da;font-weight:900;cursor:pointer;}.story-inventory__toggle{width:42px;height:42px;font-size:18px;}.story-inventory-reopen{display:none;min-width:148px;padding:14px 18px;font-size:18px;box-shadow:0 16px 42px rgba(18,10,4,.32);}.story-inventory-reopen--visible{display:inline-flex;}.story-duel{display:inline-flex;align-items:center;justify-content:center;min-width:126px;padding:12px 18px;border-radius:14px;border:2px solid var(--gold);background:#f1c54a;color:var(--gold-deep);font-weight:900;box-shadow:0 12px 30px rgba(111,71,0,.24);}"
   ++ ".story-equipped-row,.story-owned-row{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start;}.story-hp-card{min-height:112px;padding:12px 10px;display:grid;align-content:center;gap:6px;background:rgba(82,49,25,.9);border:1px solid #7b5a32;color:var(--cream);}.story-hp-card__label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#e0c28d;}.story-hp-card__value{font-size:30px;line-height:1;}.story-slot-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}.story-slot{min-height:120px;padding:10px;display:grid;justify-items:center;align-content:start;gap:7px;background:rgba(255,244,221,.95);border:1px solid #c6a26a;border-radius:16px;text-align:center;}.story-slot--empty{opacity:.72;}.story-slot__index{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--muted);}.story-slot__name{font-size:12px;font-weight:800;color:var(--text);}.story-slot__art{width:64px;height:64px;display:grid;place-items:center;padding:4px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}.story-slot__art--empty{background:#d8c09b;}.story-slot__image{display:block;width:100%;height:100%;object-fit:contain;}"
   ++ ".story-armor,.story-owned{display:grid;gap:10px;min-width:0;}.story-armor__title,.story-owned__title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}.story-armor__grid{display:grid;grid-template-columns:repeat(2,48px);gap:10px 12px;align-content:start;}.story-armor__item{display:grid;justify-items:start;gap:5px;}.story-armor__slot{width:48px;aspect-ratio:1/1;border:1px solid #7b5a32;background:rgba(79,48,23,.86);box-shadow:inset 0 0 0 1px rgba(255,236,209,.06);}.story-armor__slot--filled{background:rgba(170,128,68,.92);}.story-armor__slot-label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#f1dfbb;line-height:1.2;}"
-  ++ ".story-owned__track{min-height:86px;padding:10px;border:1px solid #7b5a32;background:rgba(88,53,28,.9);box-shadow:inset 0 0 0 1px rgba(255,236,209,.05);}.story-owned__viewport{width:100%;height:100%;overflow-x:auto;overflow-y:hidden;}.story-owned__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:64px;}.story-owned__skill{width:76px;min-height:86px;padding:8px;display:grid;justify-items:center;align-content:start;gap:5px;border:1px solid #c6a26a;border-radius:12px;background:rgba(255,244,221,.92);text-align:center;}.story-owned__skill-art{width:40px;height:40px;display:grid;place-items:center;padding:3px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}.story-owned__skill-image{display:block;width:100%;height:100%;object-fit:contain;}.story-owned__skill-name{font-size:10px;font-weight:800;color:var(--text);line-height:1.2;}"
+  ++ ".story-owned__track{min-height:86px;padding:10px;border:1px solid #7b5a32;background:rgba(88,53,28,.9);box-shadow:inset 0 0 0 1px rgba(255,236,209,.05);}.story-owned__viewport{width:100%;height:100%;overflow-x:auto;overflow-y:hidden;}.story-owned__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:64px;}.story-owned__actions{display:flex;justify-content:flex-end;}.story-owned__skill{width:76px;min-height:86px;padding:8px;display:grid;justify-items:center;align-content:start;gap:5px;border:1px solid #c6a26a;border-radius:12px;background:rgba(255,244,221,.92);text-align:center;}.story-owned__skill-art{width:40px;height:40px;display:grid;place-items:center;padding:3px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}.story-owned__skill-image{display:block;width:100%;height:100%;object-fit:contain;}.story-owned__skill-name{font-size:10px;font-weight:800;color:var(--text);line-height:1.2;}"
 
 def _end_screen_css() -> String:
   ""
@@ -395,7 +399,7 @@ def _end_screen_css() -> String:
 def _responsive_css() -> String:
   ""
   ++ "@media (max-width:900px){.story-city{grid-template-columns:1fr;grid-template-rows:none;padding:20px 0;gap:18px;}.story-city__line{display:none;}.story-city__cell{min-height:auto;padding:0 18px;}.story-city__cell--inventory{justify-items:stretch;}.story-inventory{width:100%;min-height:0;}.story-shop-button{width:100%;font-size:18px;}}"
-  ++ "@media (max-width:640px){.story-page--end{padding:16px;}.story-end__card{padding:24px 20px;}.story-end__title{font-size:34px;}.story-inventory__head{flex-direction:column;align-items:stretch;}.story-duel{width:100%;}.story-equipped-row,.story-owned-row{grid-template-columns:1fr;}.story-slot-row{grid-template-columns:1fr;}.story-armor__grid{grid-template-columns:repeat(2,48px);}.story-owned__row{min-height:64px;}}"
+  ++ "@media (max-width:640px){.story-page--end{padding:16px;}.story-end__card{padding:24px 20px;}.story-end__title{font-size:34px;}.story-inventory__head{align-items:flex-start;}.story-inventory-reopen{width:100%;justify-content:center;}.story-duel{width:100%;}.story-equipped-row,.story-owned-row{grid-template-columns:1fr;}.story-slot-row{grid-template-columns:1fr;}.story-armor__grid{grid-template-columns:repeat(2,48px);}.story-owned__row{min-height:64px;}.story-owned__actions{justify-content:stretch;}}"
 
 main : App =
   app{StoryState, StoryEvent, init, render, on_event}
