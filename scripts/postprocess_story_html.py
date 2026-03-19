@@ -435,11 +435,11 @@ function __story_render_legend_text(skill, code) {
     case "A":
       return "Espaco de encaixe do jogador e tambem de dano. Acerta o alvo encaixado nessa area e causa " + (damage >>> 0) + " de dano.";
     case "D":
-      return "Espaco de encaixe de dano. Causa " + (damage >>> 0) + " de dano. Esses tiles sao a parte ofensiva da skill.";
+      return "Espaco de encaixe de dano. Causa " + (damage >>> 0) + " de dano.";
     case "H":
       return "Puxa o alvo atingido na direcao do jogador por " + (pull >>> 0) + " tiles.";
     case "I":
-      return "Aplica gelo no tile. Quem tocar ou passar por gelo fica travado e perde movimento em turnos alternados, enquanto estiver em contato.";
+      return "Aplica gelo no tile. Quem tocar ou passar por gelo, perde movimento no proximmo turno.";
     case "F":
       return "Aplica fogo no tile. Quem estiver sobre fogo recebe 5 de dano por turno, e o dano de queimado continua por 2 turnos depois de sair.";
     default:
