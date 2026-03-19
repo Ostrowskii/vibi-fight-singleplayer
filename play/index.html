@@ -136819,6 +136819,20 @@ $n2f706c61792f6d61696e235f6275696c645f626f745f706c616e = function(player, enemy,
 const __VIBI_LOBBY_HREF = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
 const __VIBI_LOBBY_LABEL = "Voltar lobby";
 
+const __vibiOrigDefaultSetupSkill = $n2f7368617265642f66696768742f64656661756c745f73657475705f736b696c6c;
+$n2f7368617265642f66696768742f64656661756c745f73657475705f736b696c6c = function(side, slot) {
+  switch (slot >>> 0) {
+    case 0:
+      return 2;
+    case 1:
+      return 3;
+    case 2:
+      return 4;
+    default:
+      return __vibiOrigDefaultSetupSkill(side >>> 0, slot >>> 0);
+  }
+};
+
 function __vibiLobbyCount(loadout) {
   if (!loadout || loadout.$ !== "loadout") {
     return 0;
@@ -136840,7 +136854,7 @@ function __vibiLobbyFallbackLoadout(loadout) {
   if (__vibiLobbyCount(loadout) !== 0) {
     return loadout;
   }
-  return ({$: "loadout", s1: 4, s2: 0, s3: 0});
+  return ({$: "loadout", s1: 2, s2: 0, s3: 0});
 }
 
 function __vibiLobbyBattleLoadouts(lobby) {
@@ -136976,7 +136990,7 @@ function __vibiObserveBattleLobbyButton() {
 
 __vibiObserveBattleLobbyButton();
 
-const __VIBI_LOBBY_COPY_TEXT = "Selecione ate 3 skills por lado. Se um lado entrar vazio, ele recebe Me1 por padrao na partida.";
+const __VIBI_LOBBY_COPY_TEXT = "Selecione ate 3 skills por lado. Se um lado entrar vazio, ele recebe Me2 por padrao na partida.";
 
 $n2f706c61792f6d61696e235f6170705f746f67676c655f706c617965725f736b696c6c5f6e657874 = function(app, lobby, next) {
   return $n2f706c61792f6d61696e235f6170705f776974685f6c6f626279(app, $n2f706c61792f6d61696e235f6c6f6262795f776974685f706c617965725f6c6f61646f7574(lobby, next));
@@ -137041,6 +137055,8 @@ function __vibiObserveLobbyCopy() {
 __vibiObserveLobbyCopy();
 
 /* __vibi_turn_patch:end */
+
+
 
 
 

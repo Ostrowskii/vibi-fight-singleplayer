@@ -463,6 +463,20 @@ COMMON_EXTRA_PATCH = r"""
 const __VIBI_LOBBY_HREF = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
 const __VIBI_LOBBY_LABEL = "Voltar lobby";
 
+const __vibiOrigDefaultSetupSkill = __DEFAULT_SETUP_SKILL_FN__;
+__DEFAULT_SETUP_SKILL_FN__ = function(side, slot) {
+  switch (slot >>> 0) {
+    case 0:
+      return 2;
+    case 1:
+      return 3;
+    case 2:
+      return 4;
+    default:
+      return __vibiOrigDefaultSetupSkill(side >>> 0, slot >>> 0);
+  }
+};
+
 function __vibiLobbyCount(loadout) {
   if (!loadout || loadout.$ !== "loadout") {
     return 0;
@@ -484,7 +498,7 @@ function __vibiLobbyFallbackLoadout(loadout) {
   if (__vibiLobbyCount(loadout) !== 0) {
     return loadout;
   }
-  return ({$: "loadout", s1: 4, s2: 0, s3: 0});
+  return ({$: "loadout", s1: 2, s2: 0, s3: 0});
 }
 
 function __vibiLobbyBattleLoadouts(lobby) {
@@ -623,7 +637,7 @@ __vibiObserveBattleLobbyButton();
 
 
 PLAY_EXTRA_PATCH = r"""
-const __VIBI_LOBBY_COPY_TEXT = "Selecione ate 3 skills por lado. Se um lado entrar vazio, ele recebe Me1 por padrao na partida.";
+const __VIBI_LOBBY_COPY_TEXT = "Selecione ate 3 skills por lado. Se um lado entrar vazio, ele recebe Me2 por padrao na partida.";
 
 __APP_TOGGLE_PLAYER_SKILL_NEXT_FN__ = function(app, lobby, next) {
   return __APP_WITH_LOBBY_FN__(app, __LOBBY_WITH_PLAYER_LOADOUT_FN__(lobby, next));
@@ -732,6 +746,7 @@ def build_patch(module_path: str, bundle_kind: str) -> str:
     replacements = {
         "__SKILL_CLASS_ID_FN__": encode_symbol("/shared/fight", "skill_class_id"),
         "__SKILL_HOOK_PULL_FN__": encode_symbol("/shared/fight", "skill_hook_pull"),
+        "__DEFAULT_SETUP_SKILL_FN__": encode_symbol("/shared/fight", "default_setup_skill"),
         "__ACTION_SET_FN__": encode_symbol(module_path, "_action_set"),
         "__QUEUE3_FN__": encode_symbol(module_path, "_queue3"),
         "__QUEUE_WAITS_FN__": encode_symbol(module_path, "_queue_waits"),

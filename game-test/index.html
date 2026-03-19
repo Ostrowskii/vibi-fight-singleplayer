@@ -121995,6 +121995,20 @@ $n2f67616d652d746573742f6d61696e235f6275696c645f626f745f706c616e = function(play
 const __VIBI_LOBBY_HREF = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
 const __VIBI_LOBBY_LABEL = "Voltar lobby";
 
+const __vibiOrigDefaultSetupSkill = $n2f7368617265642f66696768742f64656661756c745f73657475705f736b696c6c;
+$n2f7368617265642f66696768742f64656661756c745f73657475705f736b696c6c = function(side, slot) {
+  switch (slot >>> 0) {
+    case 0:
+      return 2;
+    case 1:
+      return 3;
+    case 2:
+      return 4;
+    default:
+      return __vibiOrigDefaultSetupSkill(side >>> 0, slot >>> 0);
+  }
+};
+
 function __vibiLobbyCount(loadout) {
   if (!loadout || loadout.$ !== "loadout") {
     return 0;
@@ -122016,7 +122030,7 @@ function __vibiLobbyFallbackLoadout(loadout) {
   if (__vibiLobbyCount(loadout) !== 0) {
     return loadout;
   }
-  return ({$: "loadout", s1: 4, s2: 0, s3: 0});
+  return ({$: "loadout", s1: 2, s2: 0, s3: 0});
 }
 
 function __vibiLobbyBattleLoadouts(lobby) {
@@ -122182,6 +122196,8 @@ $n2f67616d652d746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74
 
 
 
+
+
 const __game_test_params = new URLSearchParams(window.location.search);
 const __game_test_skill_count = n2f7368617265642f66696768742f736b696c6c5f636f756e74();
 function __game_test_parse_skill(name, fallback) {
@@ -122214,17 +122230,17 @@ function __game_test_parse_item(name, fallback) {
 }
 const __game_test_app = n2f67616d652d746573742f6d61696e();
 __game_test_app.init = n2f67616d652d746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74735f6974656d73()(
-  __game_test_parse_skill("ps1", 4)
+  __game_test_parse_skill("ps1", 2)
 )(
-  __game_test_parse_skill("ps2", 2)
+  __game_test_parse_skill("ps2", 3)
 )(
-  __game_test_parse_skill("ps3", 3)
+  __game_test_parse_skill("ps3", 4)
 )(
-  __game_test_parse_skill("bs1", 4)
+  __game_test_parse_skill("bs1", 2)
 )(
-  __game_test_parse_skill("bs2", 2)
+  __game_test_parse_skill("bs2", 3)
 )(
-  __game_test_parse_skill("bs3", 3)
+  __game_test_parse_skill("bs3", 4)
 )(
   __game_test_parse_item("pi1", 0)
 )(

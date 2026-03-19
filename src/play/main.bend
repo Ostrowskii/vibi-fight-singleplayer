@@ -229,7 +229,7 @@ def _lobby_from_loadouts(player_loadout: Loadout, bot_loadout: Loadout) -> Lobby
 def _loadout_with_default_fallback(loadout_value: Loadout) -> Loadout:
   match _loadout_count(loadout_value):
     case 0:
-      loadout{4, 0, 0}
+      loadout{2, 0, 0}
     case _:
       loadout_value
 

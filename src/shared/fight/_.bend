@@ -12,11 +12,11 @@ def empty_item_slot() -> U32:
 def default_setup_skill(side: U32, slot: U32) -> U32:
   match side slot:
     case _ 0:
-      4
-    case _ 1:
       2
-    case _ 2:
+    case _ 1:
       3
+    case _ 2:
+      4
     case _ _:
       0
 

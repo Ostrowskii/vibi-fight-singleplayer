@@ -122043,6 +122043,20 @@ $n2f67616d655f746573742f6d61696e235f6275696c645f626f745f706c616e = function(play
 const __VIBI_LOBBY_HREF = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
 const __VIBI_LOBBY_LABEL = "Voltar lobby";
 
+const __vibiOrigDefaultSetupSkill = $n2f7368617265642f66696768742f64656661756c745f73657475705f736b696c6c;
+$n2f7368617265642f66696768742f64656661756c745f73657475705f736b696c6c = function(side, slot) {
+  switch (slot >>> 0) {
+    case 0:
+      return 2;
+    case 1:
+      return 3;
+    case 2:
+      return 4;
+    default:
+      return __vibiOrigDefaultSetupSkill(side >>> 0, slot >>> 0);
+  }
+};
+
 function __vibiLobbyCount(loadout) {
   if (!loadout || loadout.$ !== "loadout") {
     return 0;
@@ -122064,7 +122078,7 @@ function __vibiLobbyFallbackLoadout(loadout) {
   if (__vibiLobbyCount(loadout) !== 0) {
     return loadout;
   }
-  return ({$: "loadout", s1: 4, s2: 0, s3: 0});
+  return ({$: "loadout", s1: 2, s2: 0, s3: 0});
 }
 
 function __vibiLobbyBattleLoadouts(lobby) {
@@ -122230,6 +122244,8 @@ $n2f67616d655f746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74
 
 
 
+
+
 const __fight_params = new URLSearchParams(window.location.search);
 const __fight_skill_count = n2f7368617265642f66696768742f736b696c6c5f636f756e74();
 function __fight_parse_slot(name, fallback) {
@@ -122251,17 +122267,17 @@ function __fight_parse_slot(name, fallback) {
 }
 const __fight_app = n2f66696768742f6d61696e();
 __fight_app.init = n2f67616d655f746573742f6d61696e2f66696768745f6170705f66726f6d5f736c6f7473()(
-  __fight_parse_slot("ps1", 4)
+  __fight_parse_slot("ps1", 2)
 )(
-  __fight_parse_slot("ps2", 2)
+  __fight_parse_slot("ps2", 3)
 )(
-  __fight_parse_slot("ps3", 3)
+  __fight_parse_slot("ps3", 4)
 )(
-  __fight_parse_slot("bs1", 4)
+  __fight_parse_slot("bs1", 2)
 )(
-  __fight_parse_slot("bs2", 2)
+  __fight_parse_slot("bs2", 3)
 )(
-  __fight_parse_slot("bs3", 3)
+  __fight_parse_slot("bs3", 4)
 );
 __run_app(__fight_app);
 __app_notify_ready(null);
