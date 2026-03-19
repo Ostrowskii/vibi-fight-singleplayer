@@ -136930,6 +136930,19 @@ $n2f706c61792f6d61696e235f706c61796261636b5f73746172745f7374617465 = function(st
   return __vibiOrigPlaybackStartState(state, idx >>> 0, botPlans);
 };
 
+function __vibiEnsureBattleModalStyle() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  if (document.getElementById("vibi-battle-modal-style")) {
+    return;
+  }
+  const style = document.createElement("style");
+  style.id = "vibi-battle-modal-style";
+  style.textContent = ".board-wrap{isolation:isolate;}.modal{z-index:30;}.modal__card{position:relative;z-index:31;}";
+  document.head.appendChild(style);
+}
+
 function __vibiPatchBattleLobbyButton() {
   if (typeof document === "undefined") {
     return;
@@ -136971,6 +136984,7 @@ function __vibiObserveBattleLobbyButton() {
     return;
   }
   const start = () => {
+    __vibiEnsureBattleModalStyle();
     __vibiPatchBattleLobbyButton();
     if (typeof MutationObserver === "undefined" || !document.body) {
       return;
@@ -137055,6 +137069,8 @@ function __vibiObserveLobbyCopy() {
 __vibiObserveLobbyCopy();
 
 /* __vibi_turn_patch:end */
+
+
 
 
 

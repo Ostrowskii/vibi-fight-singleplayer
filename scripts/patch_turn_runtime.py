@@ -574,6 +574,19 @@ __PLAYBACK_START_STATE_FN__ = function(state, idx, botPlans) {
   return __vibiOrigPlaybackStartState(state, idx >>> 0, botPlans);
 };
 
+function __vibiEnsureBattleModalStyle() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  if (document.getElementById("vibi-battle-modal-style")) {
+    return;
+  }
+  const style = document.createElement("style");
+  style.id = "vibi-battle-modal-style";
+  style.textContent = ".board-wrap{isolation:isolate;}.modal{z-index:30;}.modal__card{position:relative;z-index:31;}";
+  document.head.appendChild(style);
+}
+
 function __vibiPatchBattleLobbyButton() {
   if (typeof document === "undefined") {
     return;
@@ -615,6 +628,7 @@ function __vibiObserveBattleLobbyButton() {
     return;
   }
   const start = () => {
+    __vibiEnsureBattleModalStyle();
     __vibiPatchBattleLobbyButton();
     if (typeof MutationObserver === "undefined" || !document.body) {
       return;
