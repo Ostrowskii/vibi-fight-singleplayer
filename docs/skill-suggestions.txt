@@ -1,0 +1,196 @@
+Skill Suggestions
+
+Notas
+
+- formato espelhado do catalogo atual: strings como "A", "D", "F", "I", "H", "P" e `null`
+- nomes abaixo sao provisórios
+- a ideia aqui e ter opcoes para teste e balanceamento, nao uma lista fechada
+
+Legenda
+
+- P = encaixe do ator
+- A = dano melee sem P
+- D = dano em skill com P
+- F = fogo
+- I = gelo
+- H = hook
+- combinacoes como "DF", "DI" e "AH" significam multiplos efeitos no mesmo tile
+
+
+Melee
+
+Me6
+foco: cleave frontal compacto
+[
+  [null, "A", null],
+  ["A", "A", "A"]
+]
+
+Me7
+foco: estocada longa
+[
+  ["A", "A", "A", "A", "A"]
+]
+
+Me8
+foco: cruz curta
+[
+  [null, "A", null],
+  ["A", "A", "A"],
+  [null, "A", null]
+]
+
+Me9
+foco: gancho reto com dano na ponta
+[
+  ["AH", "H", "H", "H", "H"]
+]
+
+Me10
+foco: parede curta em L
+[
+  ["A", null, null],
+  ["A", null, null],
+  ["A", "A", "A"]
+]
+
+Me11
+foco: golpe em U
+[
+  ["A", null, "A"],
+  ["A", "A", "A"]
+]
+
+Me12
+foco: grade vertical dupla
+[
+  ["A", null, "A"],
+  ["A", null, "A"],
+  ["A", null, "A"]
+]
+
+
+Ranged
+
+Ra6
+foco: raio fino vertical
+[
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, null, "D", null]
+]
+
+Ra7
+foco: disparo aberto alto e baixo
+[
+  ["P", null, "P", null, null, null, null, null, "D"],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, null, null, null, null],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, null, null, null, "D"]
+]
+
+Ra8
+foco: bloco pesado de area
+[
+  ["P", null, "P", null, null, null, "D", "D", "D"],
+  ["P", null, "P", null, null, null, "D", "D", "D"],
+  ["P", null, "P", null, null, null, "D", "D", "D"],
+  ["P", null, "P", null, null, null, null, null, null],
+  ["P", null, "P", null, null, null, null, null, null]
+]
+
+Ra9
+foco: escada diagonal descendente
+[
+  ["P", null, "P", null, null, null, null, null, "D"],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, "D", null, null, null],
+  ["P", null, "P", null, "D", null, null, null, null]
+]
+
+Ra10
+foco: rake inferior
+[
+  ["P", null, "P", null, null, null, null, null, null],
+  ["P", null, "P", null, null, null, null, null, null],
+  ["P", null, "P", null, null, null, "D", null, null],
+  ["P", null, "P", null, null, null, "D", "D", "D"],
+  ["P", null, "P", null, null, null, "D", "D", "D"]
+]
+
+Ra11
+foco: forcado de longo alcance
+[
+  ["P", null, "P", null, null, null, "D", null, "D"],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, null, null, null],
+  ["P", null, "P", null, null, null, null, "D", null],
+  ["P", null, "P", null, null, null, "D", null, "D"]
+]
+
+
+Mage
+
+Ma4
+foco: lanca de fogo com impacto
+[
+  [null, "P", null, null, null, null, "F"],
+  ["P", null, null, null, null, "F", "DF"],
+  [null, "P", null, null, null, null, "F"]
+]
+
+Ma5
+foco: garfo gelado com dano nas pontas
+[
+  [null, "P", null, null, null, "I", null],
+  ["P", null, null, null, "DI", null, "DI"],
+  [null, "P", null, null, null, "I", null]
+]
+
+Ma6
+foco: poça larga de fogo
+[
+  [null, null, "P", null, null, null, null],
+  [null, "P", null, null, "F", "DF", "F"],
+  ["P", null, null, null, "F", "F", "F"],
+  [null, "P", null, null, "F", "DF", "F"],
+  [null, null, "P", null, null, null, null]
+]
+
+Ma7
+foco: parede fria com centro de travamento
+[
+  [null, "P", null, null, null, "I", "DI"],
+  ["P", null, null, null, "I", "I", "I"],
+  [null, "P", null, null, null, "I", "DI"]
+]
+
+Ma8
+foco: chuva diagonal de impacto flamejante
+[
+  [null, null, "P", null, null, null, "DF"],
+  [null, "P", null, null, null, "DF", null],
+  ["P", null, null, null, "DF", null, null],
+  [null, "P", null, null, null, "DF", null],
+  [null, null, "P", null, null, null, "DF"]
+]
+
+Ma9
+foco: crescente de brasas
+[
+  [null, "P", null, null, null, "F", null],
+  ["P", null, null, null, "DF", "F", "DF"],
+  [null, "P", null, null, null, "F", null]
+]
+
+Ma10
+foco: pique gelado
+[
+  [null, "P", null, null, null, null, "DI"],
+  ["P", null, null, null, null, "I", "I"],
+  [null, "P", null, null, null, null, "DI"]
+]
