@@ -119,15 +119,11 @@ function __story_parse_items() {
 }
 
 function __story_parse_loadout() {
-  const loadout = {
+  return {
     s1: __story_parse_u32("ps1", 1),
     s2: __story_parse_u32("ps2", 0),
     s3: __story_parse_u32("ps3", 0),
   };
-  if ((loadout.s1 >>> 0) === 0) {
-    loadout.s1 = 1;
-  }
-  return loadout;
 }
 
 function __story_parse_open_shop() {
@@ -149,8 +145,9 @@ function __story_parse_state() {
       __story_parse_flag("ah"),
     ],
     openShop: __story_parse_open_shop(),
-    pendingPurchase: null,
+    pendingModal: null,
     warningOpen: 0,
+    warningMessage: "",
   };
 }
 
@@ -212,8 +209,69 @@ function __story_skill_legends(skill) {
   return __STORY_LEGEND_ORDER.filter((code) => meta.legends.includes(code));
 }
 
+function __story_loadout_empty(loadout) {
+  return (loadout.s1 >>> 0) === 0 && (loadout.s2 >>> 0) === 0 && (loadout.s3 >>> 0) === 0;
+}
+
+function __story_set_loadout_slot(state, idx, skill) {
+  const next = skill >>> 0;
+  switch (idx >>> 0) {
+    case 0:
+      state.loadout.s1 = next;
+      break;
+    case 1:
+      state.loadout.s2 = next;
+      break;
+    case 2:
+      state.loadout.s3 = next;
+      break;
+    default:
+      break;
+  }
+}
+
+function __story_duel_loadout(state) {
+  if (!__story_loadout_empty(state.loadout)) {
+    return state.loadout;
+  }
+  return {s1: 1, s2: 0, s3: 0};
+}
+
+function __story_owned_skills(state) {
+  const owned = [1];
+  for (const skill of state.items) {
+    const value = skill >>> 0;
+    if (value !== 0 && !owned.includes(value)) {
+      owned.push(value);
+    }
+  }
+  return owned;
+}
+
+function __story_skill_equipped(state, skill) {
+  const value = skill >>> 0;
+  return (state.loadout.s1 >>> 0) === value || (state.loadout.s2 >>> 0) === value || (state.loadout.s3 >>> 0) === value;
+}
+
+function __story_visible_owned_skills(state) {
+  return __story_owned_skills(state).filter((skill) => !__story_skill_equipped(state, skill >>> 0));
+}
+
+function __story_first_free_slot(state) {
+  if ((state.loadout.s1 >>> 0) === 0) {
+    return 0;
+  }
+  if ((state.loadout.s2 >>> 0) === 0) {
+    return 1;
+  }
+  if ((state.loadout.s3 >>> 0) === 0) {
+    return 2;
+  }
+  return 99;
+}
+
 function __story_item_owned(state, skill) {
-  return state.items.includes(skill >>> 0);
+  return __story_owned_skills(state).includes(skill >>> 0);
 }
 
 function __story_armor_owned(state, slot) {
@@ -243,15 +301,16 @@ function __story_build_story_search(screen, state) {
 
 function __story_build_duel_href(state) {
   const params = new URLSearchParams();
+  const duelLoadout = __story_duel_loadout(state);
   params.set("campaign", "1");
   params.set("level", String(state.level >>> 0));
   params.set("gold", String(state.gold >>> 0));
   params.set("reward", "200");
   params.set("php", String(__story_total_hp(state)));
   params.set("bhp", "30");
-  params.set("ps1", String(state.loadout.s1 >>> 0));
-  params.set("ps2", String(state.loadout.s2 >>> 0));
-  params.set("ps3", String(state.loadout.s3 >>> 0));
+  params.set("ps1", String(duelLoadout.s1 >>> 0));
+  params.set("ps2", String(duelLoadout.s2 >>> 0));
+  params.set("ps3", String(duelLoadout.s3 >>> 0));
   params.set("bs1", "1");
   params.set("bs2", "0");
   params.set("bs3", "0");
@@ -306,9 +365,15 @@ function __story_ensure_style() {
 .story-armor__item{gap:4px;}
 .story-armor__slot{width:32px;}
 .story-armor__slot-label{font-size:9px;letter-spacing:.05em;}
+.story-slot{min-height:92px;padding:12px;display:grid;place-items:center;border:1px solid #c6a26a;border-radius:16px;background:rgba(255,244,221,.95);text-align:center;font:inherit;-webkit-appearance:none;appearance:none;}
+.story-slot--equipped{cursor:pointer;}
+.story-slot--empty{opacity:.72;}
+.story-slot__art{width:clamp(44px,7vw,64px);aspect-ratio:1/1;display:grid;place-items:center;padding:4px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}
+.story-slot__art--empty{background:#d8c09b;}
+.story-slot__image{display:block;width:100%;height:100%;object-fit:contain;}
 .story-owned__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:64px;}
 .story-owned__empty{min-width:200px;padding:10px 12px;display:grid;place-items:center;border:1px dashed rgba(233,208,163,.36);color:#d8bea0;font-size:12px;}
-.story-owned__skill{width:76px;min-height:86px;padding:8px;display:grid;justify-items:center;align-content:start;gap:5px;border:1px solid #c6a26a;border-radius:12px;background:rgba(255,244,221,.92);text-align:center;}
+.story-owned__skill{width:76px;min-height:86px;padding:8px;display:grid;justify-items:center;align-content:start;gap:5px;border:1px solid #c6a26a;border-radius:12px;background:rgba(255,244,221,.92);text-align:center;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none;}
 .story-owned__skill-art{width:40px;height:40px;display:grid;place-items:center;padding:3px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}
 .story-owned__skill-image{display:block;width:100%;height:100%;object-fit:contain;}
 .story-owned__skill-name{font-size:10px;font-weight:800;color:#24190f;line-height:1.2;}
@@ -318,6 +383,7 @@ function __story_ensure_style() {
 .story-purchase-modal__title{margin:0;font-size:32px;line-height:1;color:#fff4dd;}
 .story-purchase-modal__body{display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr);gap:18px;align-items:stretch;}
 .story-purchase-modal__left{display:grid;grid-template-rows:auto auto;gap:14px;}
+.story-purchase-modal__left--equip{grid-template-rows:1fr;align-content:center;}
 .story-purchase-modal__hero{display:grid;place-items:center;}
 .story-purchase-modal__art{width:min(220px,100%);aspect-ratio:1/1;display:grid;place-items:center;padding:14px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}
 .story-purchase-modal__art--armor{background:#d4bc95;color:#654523;}
@@ -349,6 +415,7 @@ function __story_ensure_style() {
   .story-shop-panel{height:auto;min-height:0;}
   .story-shop-panel__grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .story-purchase-modal{width:100%;}
+  .story-slot__art{width:clamp(44px,20vw,60px);}
 }
 @media (max-width:640px){
   .story-shop-panel__head{flex-direction:column;align-items:stretch;}
@@ -369,8 +436,10 @@ function __story_render_skill_slot(skill, idx) {
   const art = skill === 0
     ? '<span class="story-slot__art story-slot__art--empty"></span>'
     : '<span class="story-slot__art"><img class="story-slot__image" src="' + __story_skill_image(skill) + '" alt="' + name + '" /></span>';
-  const className = skill === 0 ? "story-slot story-slot--empty" : "story-slot";
-  return '<div class="' + className + '"><span class="story-slot__index">' + (idx + 1) + '</span><span class="story-slot__name">' + name + '</span>' + art + '</div>';
+  if ((skill >>> 0) === 0) {
+    return '<div class="story-slot story-slot--empty">' + art + '</div>';
+  }
+  return '<button type="button" class="story-slot story-slot--equipped" data-unequip-slot="' + (idx >>> 0) + '" aria-label="Desequipar ' + name + '">' + art + '</button>';
 }
 
 function __story_render_armor_slot(state, idx) {
@@ -380,12 +449,13 @@ function __story_render_armor_slot(state, idx) {
 }
 
 function __story_render_owned_row(state) {
-  if (state.items.length === 0) {
-    return '<div class="story-owned__empty">Nenhuma skill comprada ainda.</div>';
+  const visible = __story_visible_owned_skills(state);
+  if (visible.length === 0) {
+    return '<div class="story-owned__empty">Nenhuma skill disponivel para equipar.</div>';
   }
-  return state.items.map((skill) => {
+  return visible.map((skill) => {
     const name = __story_skill_name(skill);
-    return '<div class="story-owned__skill"><span class="story-owned__skill-art"><img class="story-owned__skill-image" src="' + __story_skill_image(skill) + '" alt="' + name + '" /></span><span class="story-owned__skill-name">' + name + '</span></div>';
+    return '<button type="button" class="story-owned__skill" data-equip-open="' + (skill >>> 0) + '"><span class="story-owned__skill-art"><img class="story-owned__skill-image" src="' + __story_skill_image(skill) + '" alt="' + name + '" /></span><span class="story-owned__skill-name">' + name + '</span></button>';
   }).join("");
 }
 
@@ -462,24 +532,31 @@ function __story_render_purchase_legends(kind, value) {
   }).join("");
 }
 
-function __story_open_purchase(state, kind, value) {
-  state.pendingPurchase = {kind, value: value >>> 0};
+function __story_open_modal(state, mode, kind, value) {
+  state.pendingModal = {mode, kind, value: value >>> 0};
   state.warningOpen = 0;
+  state.warningMessage = "";
 }
 
-function __story_close_purchase(state) {
-  state.pendingPurchase = null;
-  state.warningOpen = 0;
+function __story_open_warning(state, message) {
+  state.warningOpen = 1;
+  state.warningMessage = message;
 }
 
-function __story_confirm_purchase(state) {
-  const pending = state.pendingPurchase;
-  if (!pending) {
-    return;
-  }
+function __story_close_modal(state) {
+  state.pendingModal = null;
+  state.warningOpen = 0;
+  state.warningMessage = "";
+}
+
+function __story_unequip_slot(state, idx) {
+  __story_set_loadout_slot(state, idx >>> 0, 0);
+}
+
+function __story_confirm_purchase(state, pending) {
   const cost = __story_purchase_cost(pending.kind, pending.value);
   if ((state.gold >>> 0) < (cost >>> 0)) {
-    state.warningOpen = 1;
+    __story_open_warning(state, "Voce nao tem gold suficiente para essa compra.");
     return;
   }
   state.gold = ((state.gold >>> 0) - (cost >>> 0)) >>> 0;
@@ -488,7 +565,40 @@ function __story_confirm_purchase(state) {
   } else if (!__story_item_owned(state, pending.value >>> 0)) {
     state.items = state.items.concat([pending.value >>> 0]);
   }
-  __story_close_purchase(state);
+  __story_close_modal(state);
+}
+
+function __story_confirm_equip(state, pending) {
+  const skill = pending.value >>> 0;
+  if (!__story_item_owned(state, skill)) {
+    __story_open_warning(state, "Essa skill nao esta disponivel no inventario.");
+    return;
+  }
+  if (__story_skill_equipped(state, skill)) {
+    __story_open_warning(state, "Essa skill ja esta equipada.");
+    return;
+  }
+  const slot = __story_first_free_slot(state);
+  if ((slot >>> 0) >= 3) {
+    __story_open_warning(state, "Nao ha slot disponivel para equipar essa skill.");
+    return;
+  }
+  __story_set_loadout_slot(state, slot, skill);
+  __story_close_modal(state);
+}
+
+function __story_confirm_modal(state) {
+  const pending = state.pendingModal;
+  if (!pending) {
+    return;
+  }
+  if (pending.mode === "purchase") {
+    __story_confirm_purchase(state, pending);
+    return;
+  }
+  if (pending.mode === "equip") {
+    __story_confirm_equip(state, pending);
+  }
 }
 
 function __story_render_shop_skill_card(state, skill) {
@@ -535,13 +645,12 @@ function __story_render_shop_button(shopId) {
   return '<button type="button" class="story-shop-button" data-shop-open="' + shopId + '">' + __STORY_SHOPS[shopId].title + '</button>';
 }
 
-function __story_render_purchase_modal(state) {
-  const pending = state.pendingPurchase;
+function __story_render_pending_modal(state) {
+  const pending = state.pendingModal;
   if (!pending) {
     return "";
   }
   const name = __story_purchase_name(pending.kind, pending.value);
-  const cost = __story_purchase_cost(pending.kind, pending.value);
   const description = __story_render_purchase_description(pending.kind, pending.value);
   const legends = __story_render_purchase_legends(pending.kind, pending.value);
   const descriptionClass = description ? "story-purchase-modal__description-copy" : "story-purchase-modal__description-copy story-purchase-modal__description-copy--empty";
@@ -553,23 +662,27 @@ function __story_render_purchase_modal(state) {
   right += "</div>";
   let warning = "";
   if ((state.warningOpen >>> 0) !== 0) {
-    warning = '<div class="story-warning-modal"><h3 class="story-warning-modal__title">Gold insuficiente</h3><p class="story-warning-modal__copy">Voce nao tem gold suficiente para essa compra.</p><div class="story-warning-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-warning-ok="1">OK</button></div></div>';
+    warning = '<div class="story-warning-modal"><h3 class="story-warning-modal__title">Aviso</h3><p class="story-warning-modal__copy">' + __story_escape_html(state.warningMessage || "Nao foi possivel concluir essa acao.") + '</p><div class="story-warning-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-warning-ok="1">OK</button></div></div>';
   }
-  return '<div class="story-modal-layer"><div class="story-purchase-modal"><h2 class="story-purchase-modal__title">' + name + '</h2><div class="story-purchase-modal__body"><div class="story-purchase-modal__left"><div class="story-purchase-modal__hero">' + __story_render_purchase_art(pending.kind, pending.value, 1) + '</div><div class="story-purchase-modal__cost"><div class="story-purchase-modal__cost-label">Custo</div><div class="story-purchase-modal__cost-value">' + cost + ' gold</div></div></div>' + right + '</div><div class="story-purchase-modal__confirm"><div class="story-purchase-modal__confirm-copy">Confirmar compra?</div><div class="story-purchase-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-purchase-confirm="1">Sim</button><button type="button" class="story-purchase-modal__button" data-purchase-cancel="1">Nao</button></div></div></div>' + warning + '</div>';
+  if (pending.mode === "equip") {
+    return '<div class="story-modal-layer"><div class="story-purchase-modal"><h2 class="story-purchase-modal__title">' + name + '</h2><div class="story-purchase-modal__body"><div class="story-purchase-modal__left story-purchase-modal__left--equip"><div class="story-purchase-modal__hero">' + __story_render_purchase_art("skill", pending.value, 1) + '</div></div>' + right + '</div><div class="story-purchase-modal__confirm"><div class="story-purchase-modal__confirm-copy">Equipar no primeiro slot disponivel?</div><div class="story-purchase-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-modal-confirm="1">Sim</button><button type="button" class="story-purchase-modal__button" data-modal-cancel="1">Nao</button></div></div></div>' + warning + '</div>';
+  }
+  const cost = __story_purchase_cost(pending.kind, pending.value);
+  return '<div class="story-modal-layer"><div class="story-purchase-modal"><h2 class="story-purchase-modal__title">' + name + '</h2><div class="story-purchase-modal__body"><div class="story-purchase-modal__left"><div class="story-purchase-modal__hero">' + __story_render_purchase_art(pending.kind, pending.value, 1) + '</div><div class="story-purchase-modal__cost"><div class="story-purchase-modal__cost-label">Custo</div><div class="story-purchase-modal__cost-value">' + cost + ' gold</div></div></div>' + right + '</div><div class="story-purchase-modal__confirm"><div class="story-purchase-modal__confirm-copy">Confirmar compra?</div><div class="story-purchase-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-modal-confirm="1">Sim</button><button type="button" class="story-purchase-modal__button" data-modal-cancel="1">Nao</button></div></div></div>' + warning + '</div>';
 }
 
 function __story_bind_shop_events(root, state, render) {
   root.city.querySelectorAll("[data-shop-open]").forEach((node) => {
     node.addEventListener("click", () => {
       state.openShop = Number.parseInt(node.getAttribute("data-shop-open") || "0", 10) >>> 0;
-      __story_close_purchase(state);
+      __story_close_modal(state);
       render();
     });
   });
   root.city.querySelectorAll("[data-shop-close]").forEach((node) => {
     node.addEventListener("click", () => {
       state.openShop = 0;
-      __story_close_purchase(state);
+      __story_close_modal(state);
       render();
     });
   });
@@ -585,7 +698,7 @@ function __story_bind_shop_events(root, state, render) {
       if (!Number.isFinite(value) || value < 0) {
         return;
       }
-      __story_open_purchase(state, kind, value >>> 0);
+      __story_open_modal(state, "purchase", kind, value >>> 0);
       render();
     });
   });
@@ -594,25 +707,54 @@ function __story_bind_shop_events(root, state, render) {
   }
 }
 
+function __story_bind_inventory_events(root, state, render) {
+  if (root.slotRow) {
+    root.slotRow.querySelectorAll("[data-unequip-slot]").forEach((node) => {
+      node.addEventListener("click", () => {
+        const idx = Number.parseInt(node.getAttribute("data-unequip-slot") || "99", 10);
+        if (!Number.isFinite(idx) || idx < 0 || idx > 2) {
+          return;
+        }
+        __story_unequip_slot(state, idx >>> 0);
+        __story_close_modal(state);
+        render();
+      });
+    });
+  }
+  if (root.ownedRow) {
+    root.ownedRow.querySelectorAll("[data-equip-open]").forEach((node) => {
+      node.addEventListener("click", () => {
+        const value = Number.parseInt(node.getAttribute("data-equip-open") || "0", 10);
+        if (!Number.isFinite(value) || value < 1) {
+          return;
+        }
+        __story_open_modal(state, "equip", "skill", value >>> 0);
+        render();
+      });
+    });
+  }
+}
+
 function __story_bind_modal_events(root, state, render) {
   if (!root.modalHost) {
     return;
   }
-  root.modalHost.querySelectorAll("[data-purchase-cancel]").forEach((node) => {
+  root.modalHost.querySelectorAll("[data-modal-cancel]").forEach((node) => {
     node.addEventListener("click", () => {
-      __story_close_purchase(state);
+      __story_close_modal(state);
       render();
     });
   });
-  root.modalHost.querySelectorAll("[data-purchase-confirm]").forEach((node) => {
+  root.modalHost.querySelectorAll("[data-modal-confirm]").forEach((node) => {
     node.addEventListener("click", () => {
-      __story_confirm_purchase(state);
+      __story_confirm_modal(state);
       render();
     });
   });
   root.modalHost.querySelectorAll("[data-warning-ok]").forEach((node) => {
     node.addEventListener("click", () => {
       state.warningOpen = 0;
+      state.warningMessage = "";
       render();
     });
   });
@@ -650,7 +792,7 @@ function __story_render_inventory(root, state) {
 
 function __story_render_modals(root, state) {
   if (root.modalHost) {
-    root.modalHost.innerHTML = __story_render_purchase_modal(state);
+    root.modalHost.innerHTML = __story_render_pending_modal(state);
   }
 }
 
@@ -698,6 +840,7 @@ function __story_patch_city() {
   };
   const render = () => {
     __story_render_inventory(root, state);
+    __story_bind_inventory_events(root, state, render);
     __story_render_shops(root, state, render);
     __story_render_modals(root, state);
     __story_bind_modal_events(root, state, render);
