@@ -57987,20 +57987,31 @@ function __run_app(app) {
 const __story_params = new URLSearchParams(window.location.search);
 
 const __STORY_SKILLS = {
-  1: {name: "Me1", classLabel: "Melee"},
-  2: {name: "Me2", classLabel: "Melee"},
-  3: {name: "Me3", classLabel: "Melee"},
-  4: {name: "Me4", classLabel: "Melee"},
-  5: {name: "Ma1", classLabel: "Mage"},
-  6: {name: "Ma2", classLabel: "Mage"},
-  7: {name: "Me5", classLabel: "Melee"},
-  8: {name: "Ra1", classLabel: "Ranged"},
-  9: {name: "Ma3", classLabel: "Mage"},
-  10: {name: "Ra2", classLabel: "Ranged"},
-  11: {name: "Ra3", classLabel: "Ranged"},
-  12: {name: "Ra4", classLabel: "Ranged"},
-  13: {name: "Ra5", classLabel: "Ranged"},
+  1: {name: "Me1", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
+  2: {name: "Me2", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
+  3: {name: "Me3", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
+  4: {name: "Me4", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
+  5: {name: "Ma1", classLabel: "Mage", customDescription: "", legends: ["P", "I"], damage: 0, pull: 0},
+  6: {name: "Ma2", classLabel: "Mage", customDescription: "", legends: ["P", "F"], damage: 0, pull: 0},
+  7: {name: "Me5", classLabel: "Melee", customDescription: "", legends: ["H"], damage: 0, pull: 2},
+  8: {name: "Ra1", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
+  9: {name: "Ma3", classLabel: "Mage", customDescription: "", legends: ["P", "I"], damage: 0, pull: 0},
+  10: {name: "Ra2", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
+  11: {name: "Ra3", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
+  12: {name: "Ra4", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
+  13: {name: "Ra5", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
 };
+
+const __STORY_LEGEND_COLORS = {
+  P: "#58d8e8",
+  A: "#ddb151",
+  D: "#ddb151",
+  H: "#e2bf48",
+  I: "#70aee4",
+  F: "#df8d39",
+};
+
+const __STORY_LEGEND_ORDER = ["P", "A", "D", "H", "I", "F"];
 
 const __STORY_ARMORS = [
   {param: "ab", name: "Calcado", hp: 10},
@@ -58122,12 +58133,48 @@ function __story_skill_name(skill) {
   return (__STORY_SKILLS[skill] && __STORY_SKILLS[skill].name) || "Vazio";
 }
 
+function __story_skill_meta(skill) {
+  return __STORY_SKILLS[skill >>> 0] || null;
+}
+
 function __story_skill_class_label(skill) {
   return (__STORY_SKILLS[skill] && __STORY_SKILLS[skill].classLabel) || "";
 }
 
 function __story_skill_image(skill) {
   return "../assets/skills/" + __story_skill_name(skill) + ".svg";
+}
+
+function __story_escape_html(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function __story_skill_damage(skill) {
+  const meta = __story_skill_meta(skill);
+  return meta ? (meta.damage >>> 0) : 0;
+}
+
+function __story_skill_pull(skill) {
+  const meta = __story_skill_meta(skill);
+  return meta ? (meta.pull >>> 0) : 0;
+}
+
+function __story_skill_custom_description(skill) {
+  const meta = __story_skill_meta(skill);
+  return meta ? (meta.customDescription || "") : "";
+}
+
+function __story_skill_legends(skill) {
+  const meta = __story_skill_meta(skill);
+  if (!meta || !Array.isArray(meta.legends)) {
+    return [];
+  }
+  return __STORY_LEGEND_ORDER.filter((code) => meta.legends.includes(code));
 }
 
 function __story_item_owned(state, skill) {
@@ -58242,9 +58289,16 @@ function __story_ensure_style() {
 .story-purchase-modal__image{display:block;width:100%;height:100%;object-fit:contain;}
 .story-purchase-modal__armor-bonus{font-size:26px;font-weight:900;letter-spacing:.06em;}
 .story-purchase-modal__cost{min-height:120px;padding:16px;display:grid;align-content:start;gap:8px;border:1px solid #7b5a32;background:rgba(82,49,25,.9);color:#fff4dd;}
-.story-purchase-modal__cost-label,.story-purchase-modal__description-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}
+.story-purchase-modal__cost-label,.story-purchase-modal__section-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#e0c28d;font-weight:900;}
 .story-purchase-modal__cost-value{font-size:28px;line-height:1;font-weight:900;}
-.story-purchase-modal__description{min-height:100%;padding:16px;border:1px dashed rgba(233,208,163,.36);background:rgba(82,49,25,.48);}
+.story-purchase-modal__right{min-height:100%;display:grid;grid-template-rows:auto auto;gap:14px;align-content:start;}
+.story-purchase-modal__section{min-height:0;padding:16px;border:1px dashed rgba(233,208,163,.36);background:rgba(82,49,25,.48);display:grid;gap:10px;align-content:start;}
+.story-purchase-modal__description-copy{min-height:86px;margin:0;color:#fff1d7;line-height:1.55;white-space:pre-wrap;}
+.story-purchase-modal__description-copy--empty{opacity:.4;}
+.story-purchase-modal__legend-list{display:grid;gap:10px;}
+.story-purchase-modal__legend-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;}
+.story-purchase-modal__legend-swatch{width:14px;height:14px;margin-top:4px;border:1px solid rgba(42,24,7,.38);background:var(--story-legend-color,#ddb151);}
+.story-purchase-modal__legend-copy{color:#fff1d7;line-height:1.5;}
 .story-purchase-modal__confirm{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;color:#fff4dd;}
 .story-purchase-modal__confirm-copy{font-size:18px;font-weight:800;}
 .story-purchase-modal__actions{display:flex;gap:10px;flex-wrap:wrap;}
@@ -58329,6 +58383,50 @@ function __story_render_purchase_art(kind, value, large) {
   return '<span class="story-shop-card__art"><img class="story-shop-card__image" src="' + __story_skill_image(value >>> 0) + '" alt="' + name + '" /></span>';
 }
 
+function __story_render_purchase_description(kind, value) {
+  if (kind === "armor") {
+    const armor = __STORY_ARMORS[value >>> 0];
+    return armor ? ('Aumenta seu HP total em ' + (armor.hp >>> 0) + '.') : "";
+  }
+  return __story_skill_custom_description(value >>> 0);
+}
+
+function __story_render_legend_text(skill, code) {
+  const damage = __story_skill_damage(skill);
+  const pull = __story_skill_pull(skill);
+  switch (code) {
+    case "P":
+      return "Espaco de encaixe do jogador. Nao causa dano.";
+    case "A":
+      return "Espaco de encaixe do jogador e tambem de dano. Acerta o alvo encaixado nessa area e causa " + (damage >>> 0) + " de dano.";
+    case "D":
+      return "Espaco de encaixe de dano. Causa " + (damage >>> 0) + " de dano. Esses tiles sao a parte ofensiva da skill.";
+    case "H":
+      return "Puxa o alvo atingido na direcao do jogador por " + (pull >>> 0) + " tiles.";
+    case "I":
+      return "Aplica gelo no tile. Quem tocar ou passar por gelo fica travado e perde movimento em turnos alternados, enquanto estiver em contato.";
+    case "F":
+      return "Aplica fogo no tile. Quem estiver sobre fogo recebe 5 de dano por turno, e o dano de queimado continua por 2 turnos depois de sair.";
+    default:
+      return "";
+  }
+}
+
+function __story_render_purchase_legends(kind, value) {
+  if (kind !== "skill") {
+    return "";
+  }
+  const legends = __story_skill_legends(value >>> 0);
+  if (legends.length === 0) {
+    return "";
+  }
+  return legends.map((code) => {
+    const color = __STORY_LEGEND_COLORS[code] || "#ddb151";
+    const text = __story_escape_html(__story_render_legend_text(value >>> 0, code));
+    return '<div class="story-purchase-modal__legend-item"><span class="story-purchase-modal__legend-swatch" style="--story-legend-color:' + color + ';"></span><span class="story-purchase-modal__legend-copy">' + text + '</span></div>';
+  }).join("");
+}
+
 function __story_open_purchase(state, kind, value) {
   state.pendingPurchase = {kind, value: value >>> 0};
   state.warningOpen = 0;
@@ -58409,11 +58507,20 @@ function __story_render_purchase_modal(state) {
   }
   const name = __story_purchase_name(pending.kind, pending.value);
   const cost = __story_purchase_cost(pending.kind, pending.value);
+  const description = __story_render_purchase_description(pending.kind, pending.value);
+  const legends = __story_render_purchase_legends(pending.kind, pending.value);
+  const descriptionClass = description ? "story-purchase-modal__description-copy" : "story-purchase-modal__description-copy story-purchase-modal__description-copy--empty";
+  const descriptionHtml = description ? __story_escape_html(description) : "&nbsp;";
+  let right = '<div class="story-purchase-modal__right"><div class="story-purchase-modal__section"><div class="story-purchase-modal__section-label">Descricao</div><p class="' + descriptionClass + '">' + descriptionHtml + '</p></div>';
+  if (legends) {
+    right += '<div class="story-purchase-modal__section"><div class="story-purchase-modal__section-label">Legenda</div><div class="story-purchase-modal__legend-list">' + legends + '</div></div>';
+  }
+  right += "</div>";
   let warning = "";
   if ((state.warningOpen >>> 0) !== 0) {
     warning = '<div class="story-warning-modal"><h3 class="story-warning-modal__title">Gold insuficiente</h3><p class="story-warning-modal__copy">Voce nao tem gold suficiente para essa compra.</p><div class="story-warning-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-warning-ok="1">OK</button></div></div>';
   }
-  return '<div class="story-modal-layer"><div class="story-purchase-modal"><h2 class="story-purchase-modal__title">' + name + '</h2><div class="story-purchase-modal__body"><div class="story-purchase-modal__left"><div class="story-purchase-modal__hero">' + __story_render_purchase_art(pending.kind, pending.value, 1) + '</div><div class="story-purchase-modal__cost"><div class="story-purchase-modal__cost-label">Custo</div><div class="story-purchase-modal__cost-value">' + cost + ' gold</div></div></div><div class="story-purchase-modal__description"><div class="story-purchase-modal__description-label">Descricao</div></div></div><div class="story-purchase-modal__confirm"><div class="story-purchase-modal__confirm-copy">Confirmar compra?</div><div class="story-purchase-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-purchase-confirm="1">Sim</button><button type="button" class="story-purchase-modal__button" data-purchase-cancel="1">Nao</button></div></div></div>' + warning + '</div>';
+  return '<div class="story-modal-layer"><div class="story-purchase-modal"><h2 class="story-purchase-modal__title">' + name + '</h2><div class="story-purchase-modal__body"><div class="story-purchase-modal__left"><div class="story-purchase-modal__hero">' + __story_render_purchase_art(pending.kind, pending.value, 1) + '</div><div class="story-purchase-modal__cost"><div class="story-purchase-modal__cost-label">Custo</div><div class="story-purchase-modal__cost-value">' + cost + ' gold</div></div></div>' + right + '</div><div class="story-purchase-modal__confirm"><div class="story-purchase-modal__confirm-copy">Confirmar compra?</div><div class="story-purchase-modal__actions"><button type="button" class="story-purchase-modal__button story-purchase-modal__button--confirm" data-purchase-confirm="1">Sim</button><button type="button" class="story-purchase-modal__button" data-purchase-cancel="1">Nao</button></div></div></div>' + warning + '</div>';
 }
 
 function __story_bind_shop_events(root, state, render) {
@@ -58588,6 +58695,8 @@ function __story_start_patch() {
 
 __story_start_patch();
 /* __vibi_story_patch:end */
+
+
 
 
 
