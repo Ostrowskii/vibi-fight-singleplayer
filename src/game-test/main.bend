@@ -219,11 +219,14 @@ def _sanitize_skill_slot(skill: U32) -> U32:
     case 0:
       0
     case value:
-      match value <= Fight.skill_count():
-        case 0:
-          0
-        case _:
-          value
+      _sanitize_skill_slot_nonzero(value, value <= Fight.skill_count())
+
+def _sanitize_skill_slot_nonzero(value: U32, inside_range: U32) -> U32:
+  match inside_range:
+    case 0:
+      0
+    case _:
+      value
 
 def _loadout_from_slots(s1: U32, s2: U32, s3: U32) -> Loadout:
   loadout{_sanitize_skill_slot(s1), _sanitize_skill_slot(s2), _sanitize_skill_slot(s3)}
@@ -232,7 +235,10 @@ def _lobby_from_loadouts(player_loadout: Loadout, bot_loadout: Loadout) -> Lobby
   lobby_state{Fight.default_hp(), Fight.default_hp(), player_loadout, bot_loadout, 0, 0}
 
 def _loadout_with_default_fallback(loadout_value: Loadout) -> Loadout:
-  match _loadout_count(loadout_value):
+  _loadout_with_default_fallback_count(loadout_value, _loadout_count(loadout_value))
+
+def _loadout_with_default_fallback_count(loadout_value: Loadout, count: U32) -> Loadout:
+  match count:
     case 0:
       loadout{2, 0, 0}
     case _:

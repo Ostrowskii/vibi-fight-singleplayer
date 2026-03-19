@@ -3,8 +3,24 @@ import /HTML/
 import /U32/ as U32
 import /shared/fight/ as Fight
 
+type StoryScreen {
+  city{}
+  game_over{}
+  victory{}
+}
+
+type Loadout {
+  loadout{s1: U32, s2: U32, s3: U32}
+}
+
 type StoryState {
-  story_state{}
+  story_state{
+    screen: StoryScreen,
+    current_level: U32,
+    gold: U32,
+    items: List(U32),
+    loadout: Loadout,
+  }
 }
 
 type StoryEvent {
@@ -12,59 +28,244 @@ type StoryEvent {
 }
 
 init : StoryState =
-  story_state{}
+  story_app_init()
+
+def story_app_init() -> StoryState:
+  story_app_from_query(0, 1, 0)
+
+def story_app_from_query(screen_id: U32, current_level: U32, gold: U32) -> StoryState:
+  story_state{
+    _story_screen_from_id(screen_id),
+    _campaign_level_clamp(current_level),
+    gold,
+    [],
+    _campaign_default_loadout()
+  }
 
 def on_event(evt: StoryEvent, state: StoryState) -> StoryState:
   state
 
 def render(state: StoryState) -> HTML(StoryEvent):
-  <main class="story-page">
+  screen = _story_screen(state);
+  <main class={_story_page_class(screen)}>
     <style>{text{css()}}</style>
-    <section class="story-card">
-      <div class="story-eyebrow">{text{"Play Story"}}</div>
-      <h1 class="story-title">{text{"Campanha em construcao"}}</h1>
-      <p class="story-copy">{text{"Essa rota vai usar a mesma chamada de fight do modo Play, com skills compartilhadas e itens entrando depois."}}</p>
-      <div class="story-facts">
-        <div class="story-fact">
-          <span class="story-fact__label">{text{"HP base"}}</span>
-          <strong class="story-fact__value">{text{"50"}}</strong>
-        </div>
-        <div class="story-fact">
-          <span class="story-fact__label">{text{"Skills atuais"}}</span>
-          <strong class="story-fact__value">{text{U32.show(Fight.skill_count())}}</strong>
-        </div>
-      </div>
-      <div class="story-skill-row">
-        {_story_skill_card(1)}
-        {_story_skill_card(2)}
-        {_story_skill_card(3)}
-        {_story_skill_card(4)}
-        {_story_skill_card(5)}
-        {_story_skill_card(6)}
-      </div>
-      <div class="story-actions">
-        <a class="story-link" href="../">{text{"Voltar ao menu"}}</a>
-        <a class="story-link story-link--primary" href="../play/">{text{"Ir para Play"}}</a>
-      </div>
-    </section>
+    {_render_story_screen_w(screen, state)}
   </main>
 
-def _story_skill_card(skill: U32) -> HTML(StoryEvent):
-  <div class="story-skill">
-    <span class="story-skill__art-frame">
-      <img class="story-skill__art" src={_skill_image_src(skill)} alt={Fight.skill_name(skill)} />
-    </span>
-    <span class="story-skill__name">{text{Fight.skill_name(skill)}}</span>
-    <span class="story-skill__class">{text{Fight.skill_class_label(skill)}}</span>
+def _story_screen(state: StoryState) -> StoryScreen:
+  match state:
+    case story_state{screen, _, _, _, _}:
+      screen
+
+def _story_level(state: StoryState) -> U32:
+  match state:
+    case story_state{_, current_level, _, _, _}:
+      current_level
+
+def _story_gold(state: StoryState) -> U32:
+  match state:
+    case story_state{_, _, gold, _, _}:
+      gold
+
+def _story_loadout(state: StoryState) -> Loadout:
+  match state:
+    case story_state{_, _, _, _, loadout_value}:
+      loadout_value
+
+def _story_page_class(screen: StoryScreen) -> String:
+  match screen:
+    case city{}:
+      "story-page story-page--city"
+    case _:
+      "story-page story-page--end"
+
+def _render_story_screen_w(screen: StoryScreen, state: StoryState) -> HTML(StoryEvent):
+  match screen:
+    case city{}:
+      _render_city(state)
+    case game_over{}:
+      _render_end_screen(state, 0)
+    case victory{}:
+      _render_end_screen(state, 1)
+
+def _render_city(state: StoryState) -> HTML(StoryEvent):
+  <section class="story-city">
+    <div class="story-city__backdrop"></div>
+    <div class="story-city__line story-city__line--vertical"></div>
+    <div class="story-city__line story-city__line--horizontal"></div>
+
+    <section class="story-city__cell story-city__cell--wizard">
+      {_shop_button("Wizard's Tower")}
+    </section>
+
+    <section class="story-city__cell story-city__cell--inventory">
+      <div class="story-inventory">
+        <div class="story-inventory__head">
+          <div>
+            <div class="story-inventory__title">{text{"Inventario"}}</div>
+            <div class="story-inventory__meta">{text{"Level " ++ U32.show(_story_level(state)) ++ " - Gold " ++ U32.show(_story_gold(state))}}</div>
+          </div>
+          <a class="story-duel" href={_story_duel_href(state)}>{text{"Duel"}}</a>
+        </div>
+
+        <div class="story-slot-row">
+          {_story_skill_slot(_story_loadout(state), 0)}
+          {_story_skill_slot(_story_loadout(state), 1)}
+          {_story_skill_slot(_story_loadout(state), 2)}
+        </div>
+      </div>
+    </section>
+
+    <section class="story-city__cell story-city__cell--bowyer">
+      {_shop_button("The Bowyer's Workshop")}
+    </section>
+
+    <section class="story-city__cell story-city__cell--forge">
+      {_shop_button("The Blacksmith's Forge")}
+    </section>
+  </section>
+
+def _render_end_screen(state: StoryState, won: U32) -> HTML(StoryEvent):
+  <section class="story-end">
+    <div class="story-end__card">
+      <div class="story-end__eyebrow">{text{_story_end_eyebrow(won)}}</div>
+      <h1 class="story-end__title">{text{_story_end_title(won)}}</h1>
+      <p class="story-end__copy">{text{_story_end_copy(state, won)}}</p>
+      <div class="story-end__actions">
+        <a class="story-link" href="../">{text{"Voltar ao menu"}}</a>
+        <a class="story-link story-link--primary" href="?screen=city&level=1&gold=0">{text{"Reiniciar campanha"}}</a>
+      </div>
+    </div>
+  </section>
+
+def _shop_button(label: String) -> HTML(StoryEvent):
+  <button type="button" class="story-shop-button" disabled="disabled">
+    {text{label}}
+  </button>
+
+def _story_skill_slot(loadout_value: Loadout, idx: U32) -> HTML(StoryEvent):
+  skill = _loadout_slot(loadout_value, idx);
+  <div class={_story_skill_slot_class(skill)}>
+    <span class="story-slot__index">{text{U32.show(idx + 1)}}</span>
+    <span class="story-slot__name">{text{_story_skill_slot_label(skill)}}</span>
+    {_story_skill_visual(skill)}
   </div>
+
+def _story_skill_slot_class(skill: U32) -> String:
+  match skill:
+    case 0:
+      "story-slot story-slot--empty"
+    case _:
+      "story-slot"
+
+def _story_skill_slot_label(skill: U32) -> String:
+  match skill:
+    case 0:
+      "Vazio"
+    case current_skill:
+      Fight.skill_name(current_skill)
+
+def _story_skill_visual(skill: U32) -> HTML(StoryEvent):
+  match skill:
+    case 0:
+      <span class="story-slot__art story-slot__art--empty"></span>
+    case current_skill:
+      <span class="story-slot__art">
+        <img class="story-slot__image" src={_skill_image_src(current_skill)} alt={Fight.skill_name(current_skill)} />
+      </span>
 
 def _skill_image_src(skill: U32) -> String:
   "../assets/skills/" ++ Fight.skill_name(skill) ++ ".svg"
 
+def _story_duel_href(state: StoryState) -> String:
+  level = _story_level(state);
+  loadout_value = _story_loadout(state);
+  "../fight/?campaign=1"
+  ++ "&level=" ++ U32.show(level)
+  ++ "&gold=" ++ U32.show(_story_gold(state))
+  ++ "&reward=" ++ U32.show(_campaign_reward_gold(level))
+  ++ "&php=" ++ U32.show(_campaign_player_hp(level))
+  ++ "&bhp=" ++ U32.show(_campaign_bot_hp(level))
+  ++ "&ps1=" ++ U32.show(_loadout_slot(loadout_value, 0))
+  ++ "&ps2=" ++ U32.show(_loadout_slot(loadout_value, 1))
+  ++ "&ps3=" ++ U32.show(_loadout_slot(loadout_value, 2))
+  ++ "&bs1=1&bs2=0&bs3=0"
+
+def _story_end_eyebrow(won: U32) -> String:
+  match won:
+    case 0:
+      "Campanha"
+    case _:
+      "Campanha completa"
+
+def _story_end_title(won: U32) -> String:
+  match won:
+    case 0:
+      "Game Over"
+    case _:
+      "Vitoria final"
+
+def _story_end_copy(state: StoryState, won: U32) -> String:
+  match won:
+    case 0:
+      "Voce caiu em um level obrigatorio. Gold final: " ++ U32.show(_story_gold(state)) ++ "."
+    case _:
+      "Voce fechou os 12 levels da campanha placeholder com " ++ U32.show(_story_gold(state)) ++ " gold."
+
+def _story_screen_from_id(screen_id: U32) -> StoryScreen:
+  match screen_id:
+    case 1:
+      game_over{}
+    case 2:
+      victory{}
+    case _:
+      city{}
+
+def _campaign_default_loadout() -> Loadout:
+  loadout{1, 0, 0}
+
+def _campaign_level_clamp(level: U32) -> U32:
+  match level:
+    case 0:
+      1
+    case value:
+      _campaign_level_clamp_upper(value, value <= 12)
+
+def _campaign_level_clamp_upper(level: U32, inside_range: U32) -> U32:
+  match inside_range:
+    case 0:
+      12
+    case _:
+      level
+
+def _campaign_player_hp(level: U32) -> U32:
+  50
+
+def _campaign_bot_hp(level: U32) -> U32:
+  30
+
+def _campaign_reward_gold(level: U32) -> U32:
+  200
+
+def _loadout_slot(loadout_value: Loadout, idx: U32) -> U32:
+  match loadout_value:
+    case loadout{s1, s2, s3}:
+      match idx:
+        case 0:
+          s1
+        case 1:
+          s2
+        case 2:
+          s3
+        case _:
+          0
+
 def css() -> String:
   ""
-  ++ ":root{--bg:#d3bb94;--panel:#efe2c6;--card:#f7ecd3;--text:#2a2115;--muted:#6b593c;--border:#7a613c;--button:#966320;--button-alt:#b58a43;}*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{min-height:100svh;}a{text-decoration:none;}"
-  ++ ".story-page{min-height:100svh;padding:32px 20px;display:grid;place-items:center;}.story-card{width:min(100%,860px);display:grid;gap:18px;padding:28px;background:var(--panel);border:1px solid var(--border);}.story-eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800;}.story-title{margin:0;font-size:42px;line-height:1;}.story-copy{margin:0;color:var(--muted);line-height:1.6;}.story-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}.story-fact{padding:14px;background:var(--card);border:1px solid #bda173;}.story-fact__label{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}.story-fact__value{display:block;margin-top:6px;font-size:28px;}.story-skill-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}.story-skill{padding:14px;background:var(--card);border:1px solid #bda173;display:grid;gap:8px;justify-items:center;text-align:center;}.story-skill__art-frame{width:64px;height:64px;display:grid;place-items:center;padding:4px;border:1px solid #ccb287;background:#efe2c6;overflow:hidden;}.story-skill__art{display:block;width:100%;height:100%;object-fit:contain;}.story-skill__name{font-weight:800;}.story-skill__class{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}.story-actions{display:flex;gap:12px;flex-wrap:wrap;}.story-link{display:inline-flex;align-items:center;justify-content:center;min-width:140px;padding:11px 15px;border-radius:999px;background:var(--button-alt);color:#fff8eb;font-weight:800;}.story-link--primary{background:var(--button);}@media (max-width:720px){.story-page{padding:20px 14px;}.story-title{font-size:34px;}.story-facts,.story-skill-row{grid-template-columns:1fr 1fr;}}"
+  ++ ":root{--bg:#2c2216;--panel:#e7d0ac;--panel-strong:#6f4720;--card:#f2dfbf;--text:#24190f;--muted:#6d5438;--line:#b38f53;--gold:#d8a326;--gold-deep:#8c6006;--cream:#fff4dd;--button:#74441b;}*{box-sizing:border-box;}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Trebuchet MS','Segoe UI',sans-serif;}body{min-height:100svh;}a{text-decoration:none;color:inherit;}button{font:inherit;}"
+  ++ ".story-page{min-height:100svh;}.story-page--city{position:relative;overflow:hidden;}.story-page--end{display:grid;place-items:center;padding:24px;background:radial-gradient(circle at top,#5c3a1c 0%,#2c2216 62%);}.story-city{position:relative;min-height:100svh;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));}.story-city__backdrop{position:absolute;inset:0;background-image:linear-gradient(rgba(26,16,9,.36),rgba(26,16,9,.62)),url('../assets/background/background-para-substituir.png');background-size:cover;background-position:center;}.story-city__line{position:absolute;background:rgba(226,194,137,.58);box-shadow:0 0 0 1px rgba(78,51,22,.38);z-index:1;}.story-city__line--vertical{top:0;bottom:0;left:50%;width:2px;transform:translateX(-1px);}.story-city__line--horizontal{left:0;right:0;top:50%;height:2px;transform:translateY(-1px);}.story-city__cell{position:relative;z-index:2;min-height:50svh;padding:34px;display:grid;align-content:center;justify-items:center;}.story-city__cell--inventory{align-content:start;justify-items:end;}.story-inventory{width:min(100%,420px);display:grid;gap:18px;padding:22px;background:rgba(104,61,28,.92);border:2px solid #4b2d14;box-shadow:0 22px 60px rgba(17,10,4,.34);}.story-inventory__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;}.story-inventory__title{font-size:28px;font-weight:900;line-height:1;color:var(--cream);}.story-inventory__meta{margin-top:6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#e0c28d;}.story-duel{display:inline-flex;align-items:center;justify-content:center;min-width:126px;padding:12px 18px;border-radius:14px;border:2px solid var(--gold);background:#f1c54a;color:var(--gold-deep);font-weight:900;box-shadow:0 12px 30px rgba(111,71,0,.24);}.story-slot-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}.story-slot{min-height:150px;padding:12px;display:grid;justify-items:center;align-content:start;gap:8px;background:rgba(255,244,221,.95);border:1px solid #c6a26a;border-radius:16px;text-align:center;}.story-slot--empty{opacity:.72;}.story-slot__index{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--muted);}.story-slot__name{font-size:13px;font-weight:800;color:var(--text);}.story-slot__art{width:72px;height:72px;display:grid;place-items:center;padding:4px;border:1px solid #ccb287;background:#ead9bb;overflow:hidden;}.story-slot__art--empty{background:#d8c09b;}.story-slot__image{display:block;width:100%;height:100%;object-fit:contain;}.story-shop-button{min-width:min(100%,320px);padding:20px 26px;border:1px solid rgba(255,235,201,.72);border-radius:20px;background:rgba(62,35,12,.8);color:#fff2da;font-size:22px;font-weight:900;letter-spacing:.03em;box-shadow:0 16px 42px rgba(18,10,4,.32);}.story-shop-button[disabled]{opacity:1;cursor:default;}.story-end{width:min(100%,560px);}.story-end__card{display:grid;gap:16px;padding:30px 28px;background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 48px rgba(17,10,4,.26);}.story-end__eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800;}.story-end__title{margin:0;font-size:44px;line-height:1;}.story-end__copy{margin:0;color:var(--muted);line-height:1.6;}.story-end__actions{display:flex;gap:12px;flex-wrap:wrap;}.story-link{display:inline-flex;align-items:center;justify-content:center;min-width:160px;padding:12px 18px;border-radius:999px;background:#c49a54;color:#fff6e7;font-weight:900;}.story-link--primary{background:var(--button);}"
+  ++ "@media (max-width:900px){.story-city{grid-template-columns:1fr;grid-template-rows:none;padding:20px 0;gap:18px;}.story-city__line{display:none;}.story-city__cell{min-height:auto;padding:0 18px;}.story-city__cell--inventory{justify-items:stretch;}.story-inventory{width:100%;}.story-shop-button{width:100%;font-size:18px;}}"
+  ++ "@media (max-width:560px){.story-page--end{padding:16px;}.story-end__card{padding:24px 20px;}.story-end__title{font-size:34px;}.story-inventory__head{flex-direction:column;align-items:stretch;}.story-duel{width:100%;}.story-slot-row{grid-template-columns:1fr;}}"
 
 main : App =
   app{StoryState, StoryEvent, init, render, on_event}

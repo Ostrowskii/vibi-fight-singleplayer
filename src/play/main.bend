@@ -214,11 +214,14 @@ def _sanitize_skill_slot(skill: U32) -> U32:
     case 0:
       0
     case value:
-      match value <= Fight.skill_count():
-        case 0:
-          0
-        case _:
-          value
+      _sanitize_skill_slot_nonzero(value, value <= Fight.skill_count())
+
+def _sanitize_skill_slot_nonzero(value: U32, inside_range: U32) -> U32:
+  match inside_range:
+    case 0:
+      0
+    case _:
+      value
 
 def _loadout_from_slots(s1: U32, s2: U32, s3: U32) -> Loadout:
   loadout{_sanitize_skill_slot(s1), _sanitize_skill_slot(s2), _sanitize_skill_slot(s3)}
@@ -227,7 +230,10 @@ def _lobby_from_loadouts(player_loadout: Loadout, bot_loadout: Loadout) -> Lobby
   lobby_state{Fight.default_hp(), Fight.default_hp(), player_loadout, bot_loadout, 0, 0}
 
 def _loadout_with_default_fallback(loadout_value: Loadout) -> Loadout:
-  match _loadout_count(loadout_value):
+  _loadout_with_default_fallback_count(loadout_value, _loadout_count(loadout_value))
+
+def _loadout_with_default_fallback_count(loadout_value: Loadout, count: U32) -> Loadout:
+  match count:
     case 0:
       loadout{2, 0, 0}
     case _:
@@ -3144,45 +3150,63 @@ def _event_kind(evt: FightEvent) -> U32:
       0
 
 def on_event(evt: FightEvent, app: AppState) -> AppState:
-  _on_event_kind(_event_kind(evt), evt, app)
-
-def _on_event_kind(kind: U32, evt: FightEvent, app: AppState) -> AppState:
   match evt:
-    case _:
-      _on_event_kind_match(kind, evt, app)
-
-def _on_event_kind_match(kind: U32, evt: FightEvent, app: AppState) -> AppState:
-  match kind:
-    case 1:
+    case evt_go_home{}:
       _app_with_screen(app, home{})
-    case 2:
+    case evt_open_play{}:
       _app_with_screen(app, play_lobby{})
-    case 3:
+    case evt_open_story{}:
       _app_with_screen(app, story{})
-    case 4:
+    case evt_lobby_play{}:
       _app_start_match(app)
-    case 5:
+    case evt_lobby_player_hp_dec{}:
       _app_update_lobby_player_hp(app, 0)
-    case 6:
+    case evt_lobby_player_hp_inc{}:
       _app_update_lobby_player_hp(app, 1)
-    case 7:
+    case evt_lobby_bot_hp_dec{}:
       _app_update_lobby_bot_hp(app, 0)
-    case 8:
+    case evt_lobby_bot_hp_inc{}:
       _app_update_lobby_bot_hp(app, 1)
-    case 9:
-      match evt:
-        case evt_lobby_skill{side, skill}:
-          _app_toggle_lobby_skill(app, side, skill)
-        case _:
-          app
-    case 35:
-      match evt:
-        case evt_lobby_filter{side, filter}:
-          _app_set_lobby_filter(app, side, filter)
-        case _:
-          app
-    case _:
-      _app_match_event(evt, app)
+    case evt_lobby_skill{side, skill}:
+      _app_toggle_lobby_skill(app, side, skill)
+    case evt_lobby_filter{side, filter}:
+      _app_set_lobby_filter(app, side, filter)
+    case evt_move_up{}:
+      _app_match_event(evt_move_up{}, app)
+    case evt_move_down{}:
+      _app_match_event(evt_move_down{}, app)
+    case evt_move_left{}:
+      _app_match_event(evt_move_left{}, app)
+    case evt_move_right{}:
+      _app_match_event(evt_move_right{}, app)
+    case evt_skill_1{}:
+      _app_match_event(evt_skill_1{}, app)
+    case evt_skill_2{}:
+      _app_match_event(evt_skill_2{}, app)
+    case evt_skill_3{}:
+      _app_match_event(evt_skill_3{}, app)
+    case evt_rotate_left{}:
+      _app_match_event(evt_rotate_left{}, app)
+    case evt_rotate_right{}:
+      _app_match_event(evt_rotate_right{}, app)
+    case evt_confirm{}:
+      _app_match_event(evt_confirm{}, app)
+    case evt_ready{}:
+      _app_match_event(evt_ready{}, app)
+    case evt_escape{}:
+      _app_match_event(evt_escape{}, app)
+    case evt_clear{}:
+      _app_match_event(evt_clear{}, app)
+    case evt_reset{}:
+      _app_match_event(evt_reset{}, app)
+    case evt_bot_count_dec{}:
+      _app_match_event(evt_bot_count_dec{}, app)
+    case evt_bot_count_inc{}:
+      _app_match_event(evt_bot_count_inc{}, app)
+    case evt_tick{}:
+      _app_match_event(evt_tick{}, app)
+    case evt_ignore{}:
+      _app_match_event(evt_ignore{}, app)
 
 def _app_match_event(evt: FightEvent, app: AppState) -> AppState:
   match _screen_is_match(_app_screen(app)):
@@ -3935,19 +3959,26 @@ def _lobby_skill_pick_card_filtered(side: U32, lobby: LobbyState, skill: U32) ->
   </button>
 
 def _lobby_filter_matches(filter: U32, skill: U32) -> U32:
-  match skill:
-    case 1:
+  _lobby_filter_matches_class(filter, skill, Fight.skill_class_id(skill))
+
+def _lobby_filter_matches_class(filter: U32, skill: U32, class_id: U32) -> U32:
+  match skill filter class_id:
+    case 1 _ _:
       0
-    case _:
-      match filter:
-        case 0:
-          1
-        case 1:
-          Fight.skill_class_id(skill) === 1
-        case 2:
-          Fight.skill_class_id(skill) === 2
-        case _:
-          Fight.skill_class_id(skill) === 0
+    case _ 0 _:
+      1
+    case _ 1 1:
+      1
+    case _ 1 _:
+      0
+    case _ 2 2:
+      1
+    case _ 2 _:
+      0
+    case _ _ 0:
+      1
+    case _ _ _:
+      0
 
 def _lobby_skill_pick_attrs(side: U32, loadout_value: Loadout, skill: U32) -> List(Attr(FightEvent)):
   _button_attrs(_lobby_skill_pick_class(loadout_value, skill), _lobby_skill_pick_evt(side, skill))

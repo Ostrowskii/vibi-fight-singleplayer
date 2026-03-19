@@ -26,7 +26,7 @@ TARGETS = [
         "path": ROOT / "fight" / "index.html",
         "module_path": "/game_test/main",
         "marker": "const __fight_params =",
-        "bundle_kind": "game_test",
+        "bundle_kind": "fight",
     },
 ]
 
@@ -726,6 +726,286 @@ __GAME_TEST_APP_FROM_SLOTS_ITEMS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3, p
 """
 
 
+FIGHT_EXTRA_PATCH = r"""
+const __VIBI_CAMPAIGN_PARAMS = new URLSearchParams(window.location.search);
+
+function __vibiCampaignEnabled() {
+  return (__VIBI_CAMPAIGN_PARAMS.get("campaign") || "") === "1";
+}
+
+function __vibiCampaignParseU32(name, fallback) {
+  const raw = __VIBI_CAMPAIGN_PARAMS.get(name);
+  if (raw === null || raw === "") {
+    return fallback >>> 0;
+  }
+  const num = Number.parseInt(raw, 10);
+  if (!Number.isFinite(num) || num < 0) {
+    return fallback >>> 0;
+  }
+  return num >>> 0;
+}
+
+function __vibiCampaignLevel() {
+  const level = __vibiCampaignParseU32("level", 1);
+  if (level < 1) {
+    return 1;
+  }
+  if (level > 12) {
+    return 12;
+  }
+  return level >>> 0;
+}
+
+function __vibiCampaignGold() {
+  return __vibiCampaignParseU32("gold", 0);
+}
+
+function __vibiCampaignReward() {
+  return __vibiCampaignParseU32("reward", 200);
+}
+
+function __vibiCampaignPlayerHp() {
+  const hp = __vibiCampaignParseU32("php", 50);
+  return hp === 0 ? 50 : (hp >>> 0);
+}
+
+function __vibiCampaignBotHp() {
+  const hp = __vibiCampaignParseU32("bhp", 30);
+  return hp === 0 ? 30 : (hp >>> 0);
+}
+
+function __vibiCampaignLoadoutMe1() {
+  return ({$: "loadout", s1: 1, s2: 0, s3: 0});
+}
+
+function __vibiCampaignBotWithHp(bot, hp) {
+  if (!bot || bot.$ !== "bot") {
+    return bot;
+  }
+  return ({
+    $: "bot",
+    pos: bot.pos,
+    hp: hp >>> 0,
+    fire: bot.fire >>> 0,
+    ice: bot.ice >>> 0,
+  });
+}
+
+function __vibiCampaignBotsWithHp(items, hp) {
+  if (!items || items.$ !== "cons") {
+    return items;
+  }
+  return ({
+    $: "cons",
+    head: __vibiCampaignBotWithHp(items.head, hp >>> 0),
+    tail: __vibiCampaignBotsWithHp(items.tail, hp >>> 0),
+  });
+}
+
+function __vibiCampaignApplyFightApp(app) {
+  if (!__vibiCampaignEnabled()) {
+    return app;
+  }
+  if (!app || app.$ !== "app_state" || !app.lobby || !app.game) {
+    return app;
+  }
+  const level = __vibiCampaignLevel();
+  const playerHp = __vibiCampaignPlayerHp();
+  const botHp = __vibiCampaignBotHp();
+  const loadout = __vibiCampaignLoadoutMe1();
+  return ({
+    $: "app_state",
+    screen: app.screen,
+    lobby: ({
+      $: "lobby_state",
+      player_hp: playerHp >>> 0,
+      bot_hp: botHp >>> 0,
+      player_loadout: loadout,
+      bot_loadout: loadout,
+      player_filter: 0,
+      bot_filter: 0,
+    }),
+    game: ({
+      $: "game_state",
+      meta: ({
+        $: "game_meta",
+        round: app.game.meta.round >>> 0,
+        level: level >>> 0,
+        bot_total: app.game.meta.bot_total >>> 0,
+      }),
+      arena: ({
+        $: "game_arena",
+        player_hp: playerHp >>> 0,
+        player: app.game.arena.player,
+        bots: __vibiCampaignBotsWithHp(app.game.arena.bots, botHp >>> 0),
+        winner: app.game.arena.winner >>> 0,
+      }),
+      plan: app.game.plan,
+    }),
+  });
+}
+
+const __vibiOrigFightAppFromSlotsCampaign = __FIGHT_APP_FROM_SLOTS_FN__;
+__FIGHT_APP_FROM_SLOTS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3) {
+  return __vibiCampaignApplyFightApp(
+    __vibiOrigFightAppFromSlotsCampaign(
+      ps1 >>> 0,
+      ps2 >>> 0,
+      ps3 >>> 0,
+      bs1 >>> 0,
+      bs2 >>> 0,
+      bs3 >>> 0,
+    ),
+  );
+};
+
+function __vibiCampaignIsGateLevel(level) {
+  return (level >>> 0) !== 0 && ((level >>> 0) % 4) === 0;
+}
+
+function __vibiCampaignNextLevel(level) {
+  const next = ((level >>> 0) + 1) >>> 0;
+  return next > 12 ? 12 : next;
+}
+
+function __vibiCampaignStoryHref(screen, level, gold) {
+  return "../story/?screen=" + screen + "&level=" + (level >>> 0) + "&gold=" + (gold >>> 0);
+}
+
+function __vibiCampaignOutcome(result) {
+  const level = __vibiCampaignLevel();
+  const gold = __vibiCampaignGold();
+  const reward = __vibiCampaignReward();
+  if (result === "Vitoria") {
+    const total = (gold + reward) >>> 0;
+    if ((level >>> 0) >= 12) {
+      return ({
+        title: "Vitoria final",
+        note: "Gold ganho neste round: " + reward + ".",
+        href: __vibiCampaignStoryHref("victory", 12, total),
+        label: "OK",
+      });
+    }
+    return ({
+      title: "Level vencido",
+      note: "Gold ganho neste round: " + reward + ".",
+      href: __vibiCampaignStoryHref("city", __vibiCampaignNextLevel(level), total),
+      label: "OK",
+    });
+  }
+  if (__vibiCampaignIsGateLevel(level)) {
+    return ({
+      title: "Game Over",
+      note: "Esse level precisava ser vencido para continuar.",
+      href: __vibiCampaignStoryHref("game_over", level, gold),
+      label: "OK",
+    });
+  }
+  return ({
+    title: "Level perdido",
+    note: "Voce pode seguir para o proximo level.",
+    href: __vibiCampaignStoryHref("city", __vibiCampaignNextLevel(level), gold),
+    label: "OK",
+  });
+}
+
+function __vibiEnsureCampaignModalStyle() {
+  if (typeof document === "undefined" || !document.head) {
+    return;
+  }
+  if (document.getElementById("vibi-campaign-modal-style")) {
+    return;
+  }
+  const style = document.createElement("style");
+  style.id = "vibi-campaign-modal-style";
+  style.textContent = ".vibi-campaign-note{margin:0;color:#6b593c;line-height:1.6;text-align:center;}.vibi-campaign-action{min-width:160px;}";
+  document.head.appendChild(style);
+}
+
+function __vibiPatchCampaignOutcomeModal() {
+  if (!__vibiCampaignEnabled() || typeof document === "undefined") {
+    return;
+  }
+  const card = document.querySelector(".modal--visible .modal__card");
+  if (!card) {
+    return;
+  }
+  const title = card.querySelector(".modal__title");
+  if (!title) {
+    return;
+  }
+  let result = card.getAttribute("data-vibi-campaign-result") || "";
+  if (!result) {
+    result = (title.textContent || "").trim();
+    if (result !== "Vitoria" && result !== "Derrota" && result !== "Empate") {
+      return;
+    }
+    card.setAttribute("data-vibi-campaign-result", result);
+  }
+  const eyebrow = card.querySelector(".modal__eyebrow");
+  if (eyebrow && eyebrow.textContent !== "Campanha") {
+    eyebrow.textContent = "Campanha";
+  }
+  const outcome = __vibiCampaignOutcome(result);
+  if (title.textContent !== outcome.title) {
+    title.textContent = outcome.title;
+  }
+  let note = card.querySelector(".vibi-campaign-note");
+  if (!note) {
+    note = document.createElement("p");
+    note.className = "vibi-campaign-note";
+    title.insertAdjacentElement("afterend", note);
+  }
+  if (note.textContent !== outcome.note) {
+    note.textContent = outcome.note;
+  }
+  const existingButton = card.querySelector("button, a");
+  let action = card.querySelector(".vibi-campaign-action");
+  if (!action) {
+    action = document.createElement("a");
+    action.className = ((existingButton && existingButton.className) || "button") + " vibi-campaign-action";
+    if (existingButton && existingButton.parentNode === card) {
+      existingButton.replaceWith(action);
+    } else {
+      card.appendChild(action);
+    }
+  }
+  if ((action.getAttribute("href") || "") !== outcome.href) {
+    action.setAttribute("href", outcome.href);
+  }
+  if ((action.textContent || "") !== outcome.label) {
+    action.textContent = outcome.label;
+  }
+}
+
+function __vibiObserveCampaignOutcomeModal() {
+  if (!__vibiCampaignEnabled() || typeof document === "undefined") {
+    return;
+  }
+  const start = () => {
+    __vibiEnsureCampaignModalStyle();
+    __vibiPatchCampaignOutcomeModal();
+    if (typeof MutationObserver === "undefined" || !document.body) {
+      return;
+    }
+    const observer = new MutationObserver(() => __vibiPatchCampaignOutcomeModal());
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, {once: true});
+  } else {
+    start();
+  }
+}
+
+__vibiObserveCampaignOutcomeModal();
+"""
+
+
 def encode_symbol(module_path: str, name: str, with_dollar: bool = True) -> str:
     separator = "#" if name.startswith("_") else "/"
     encoded = ("n" + (module_path + separator + name).encode().hex())
@@ -738,6 +1018,8 @@ def build_extra_patch(bundle_kind: str) -> str:
         parts.append(PLAY_EXTRA_PATCH.strip())
     elif bundle_kind == "game_test":
         parts.append(GAME_TEST_EXTRA_PATCH.strip())
+    elif bundle_kind == "fight":
+        parts.append(FIGHT_EXTRA_PATCH.strip())
     return "\n\n".join(part for part in parts if part) + "\n"
 
 
