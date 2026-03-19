@@ -41,7 +41,7 @@ const __STORY_LEGEND_COLORS = {
   P: "#58d8e8",
   A: "#ddb151",
   D: "#ddb151",
-  H: "#e2bf48",
+  H: "#9ff25e",
   I: "#70aee4",
   F: "#df8d39",
 };
