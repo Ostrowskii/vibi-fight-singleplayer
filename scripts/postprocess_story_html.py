@@ -368,11 +368,11 @@ function __story_ensure_style() {
 .story-slot-row{display:grid;grid-template-columns:repeat(3,72px);gap:8px;justify-self:start;width:max-content;padding:8px 10px;border:1px solid #7b5a32;border-radius:16px;background:rgba(88,53,28,.9);box-shadow:inset 0 0 0 1px rgba(255,236,209,.05);}
 .story-slot{width:72px;aspect-ratio:1/1;min-height:0;padding:0;display:grid;place-items:center;border:none;border-radius:12px;background:transparent;text-align:center;font:inherit;-webkit-appearance:none;appearance:none;overflow:hidden;}
 .story-slot--equipped{cursor:pointer;}
-.story-slot--filled{background:#ead9bb;}
+.story-slot--filled{background:transparent;}
 .story-slot--empty{border:2px dashed rgba(255,236,209,.42);background:rgba(69,41,21,.72);}
-.story-slot__art{width:100%;height:100%;display:grid;place-items:center;padding:0;border:none;background:transparent;overflow:hidden;}
+.story-slot__art{width:64px;height:64px;display:grid;place-items:center;padding:0;border:none;background:transparent;overflow:hidden;}
 .story-slot__art--empty{background:transparent;}
-.story-slot__image{display:block;width:100%;height:100%;object-fit:contain;}
+.story-slot__image{display:block;width:100%;height:100%;object-fit:contain;background:transparent;}
 .story-owned__row{display:flex;gap:10px;align-items:stretch;min-width:100%;width:max-content;min-height:64px;}
 .story-owned__empty{min-width:200px;padding:10px 12px;display:grid;place-items:center;border:1px dashed rgba(233,208,163,.36);color:#d8bea0;font-size:12px;}
 .story-owned__skill{width:76px;min-height:86px;padding:8px;display:grid;justify-items:center;align-content:start;gap:5px;border:1px solid #c6a26a;border-radius:12px;background:rgba(255,244,221,.92);text-align:center;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none;}
@@ -421,6 +421,7 @@ function __story_ensure_style() {
   .story-purchase-modal{width:100%;}
   .story-slot-row{grid-template-columns:repeat(3,68px);gap:6px;padding:6px 8px;}
   .story-slot{width:68px;}
+  .story-slot__art{width:60px;height:60px;}
   .story-owned__track{width:100%;min-width:0;}
 }
 @media (max-width:640px){
