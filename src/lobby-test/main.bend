@@ -237,6 +237,24 @@ def _side_card(state: LobbyTestState, side: U32) -> HTML(LobbyTestEvent):
         {_skill_card(side, loadout_value, filter, 13)}
         {_skill_card(side, loadout_value, filter, 14)}
         {_skill_card(side, loadout_value, filter, 15)}
+        {_skill_card(side, loadout_value, filter, 16)}
+        {_skill_card(side, loadout_value, filter, 17)}
+        {_skill_card(side, loadout_value, filter, 18)}
+        {_skill_card(side, loadout_value, filter, 19)}
+        {_skill_card(side, loadout_value, filter, 20)}
+        {_skill_card(side, loadout_value, filter, 21)}
+        {_skill_card(side, loadout_value, filter, 22)}
+        {_skill_card(side, loadout_value, filter, 23)}
+        {_skill_card(side, loadout_value, filter, 24)}
+        {_skill_card(side, loadout_value, filter, 25)}
+        {_skill_card(side, loadout_value, filter, 26)}
+        {_skill_card(side, loadout_value, filter, 27)}
+        {_skill_card(side, loadout_value, filter, 28)}
+        {_skill_card(side, loadout_value, filter, 29)}
+        {_skill_card(side, loadout_value, filter, 30)}
+        {_skill_card(side, loadout_value, filter, 31)}
+        {_skill_card(side, loadout_value, filter, 32)}
+        {_skill_card(side, loadout_value, filter, 33)}
       </div>
     </div>
   </section>

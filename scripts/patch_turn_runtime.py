@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+FIGHT_PATH = ROOT / "src" / "shared" / "fight" / "_.bend"
 PATCH_START = "/* __vibi_turn_patch:start */"
 PATCH_END = "/* __vibi_turn_patch:end */"
 
@@ -41,101 +44,76 @@ const __vibiTurnOrigSkillNameBase = __SKILL_NAME_FN__;
 const __vibiTurnOrigSkillBaseWBase = __SKILL_BASE_W_FN__;
 const __vibiTurnOrigSkillBaseHBase = __SKILL_BASE_H_FN__;
 const __vibiTurnOrigSkillBaseCellBase = __SKILL_BASE_CELL_FN__;
+const __VIBI_TURN_EXTRA_SKILLS = __EXTRA_SKILLS_JSON__;
+
+function __vibiTurnExtraSkillMeta(skill) {
+  return __VIBI_TURN_EXTRA_SKILLS[skill >>> 0] || null;
+}
 
 function __vibiTurnExtraSkillBaseCell(skill, x, y) {
-  skill >>>= 0;
-  x >>>= 0;
-  y >>>= 0;
-  if (skill === 14) {
-    if (y !== 0) {
-      return 0;
-    }
-    if (x === 0) {
-      return 16;
-    }
-    if (x === 1 || x === 2 || x === 3) {
-      return 2;
-    }
-    if (x === 4) {
-      return 3;
-    }
-    return 0;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (!extra) {
+    return __vibiTurnOrigSkillBaseCellBase(skill >>> 0, x >>> 0, y >>> 0);
   }
-  if (skill === 15) {
-    if (y === 0 && x === 0) {
-      return 1;
-    }
-    if (y === 1 && (x === 0 || x === 1)) {
-      return 1;
-    }
-    if (y === 2 && (x === 1 || x === 2)) {
-      return 1;
-    }
-    return 0;
-  }
-  return __vibiTurnOrigSkillBaseCellBase(skill, x, y);
+  const key = (x >>> 0) + "," + (y >>> 0);
+  const value = extra.cells[key];
+  return value === undefined ? 0 : (value >>> 0);
 }
 
 const __vibiTurnSkillCountOverride = function() {
-  return 15;
+  return __EXTRA_SKILL_COUNT__;
 };
 __SKILL_COUNT_FN__ = __vibiTurnSkillCountOverride;
 
 const __vibiTurnSkillDamageOverride = function(skill) {
-  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
-    return 10;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.damage >>> 0;
   }
   return __vibiTurnOrigSkillDamageBase(skill >>> 0);
 };
 __SKILL_DAMAGE_FN__ = __vibiTurnSkillDamageOverride;
 
 const __vibiTurnSkillRankOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 6;
-  }
-  if ((skill >>> 0) === 15) {
-    return 7;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.rank >>> 0;
   }
   return __vibiTurnOrigSkillRankBase(skill >>> 0);
 };
 __SKILL_RANK_FN__ = __vibiTurnSkillRankOverride;
 
 const __vibiTurnSkillClassIdOverride = function(skill) {
-  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
-    return 0;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.classId >>> 0;
   }
   return __vibiTurnOrigSkillClassIdBase(skill >>> 0);
 };
 __SKILL_CLASS_ID_FN__ = __vibiTurnSkillClassIdOverride;
 
 const __vibiTurnSkillNameOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return "Me6";
-  }
-  if ((skill >>> 0) === 15) {
-    return "Me7";
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.name;
   }
   return __vibiTurnOrigSkillNameBase(skill >>> 0);
 };
 __SKILL_NAME_FN__ = __vibiTurnSkillNameOverride;
 
 const __vibiTurnSkillBaseWOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 5;
-  }
-  if ((skill >>> 0) === 15) {
-    return 3;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.w >>> 0;
   }
   return __vibiTurnOrigSkillBaseWBase(skill >>> 0);
 };
 __SKILL_BASE_W_FN__ = __vibiTurnSkillBaseWOverride;
 
 const __vibiTurnSkillBaseHOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 1;
-  }
-  if ((skill >>> 0) === 15) {
-    return 3;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.h >>> 0;
   }
   return __vibiTurnOrigSkillBaseHBase(skill >>> 0);
 };
@@ -1540,6 +1518,103 @@ __ON_MATCH_EVENT_FN__ = function(evt, state, lobby) {
 __vibiObserveCampaignOutcomeModal();
 """
 
+CELL_BITS = {
+    "cell_attack": 1,
+    "cell_dist_attack": 1,
+    "cell_hook": 2,
+    "cell_ice": 4,
+    "cell_fire": 8,
+    "cell_player": 16,
+}
+
+
+def extract_block(source: str, name: str) -> str:
+    pattern = rf"^def {re.escape(name)}\([^\n]*\) -> [^:]+:\n(.*?)(?=^def |\Z)"
+    match = re.search(pattern, source, re.MULTILINE | re.DOTALL)
+    if not match:
+        raise RuntimeError(f"Could not find block for {name}")
+    return match.group(1)
+
+
+def parse_skill_count(source: str) -> int:
+    match = re.search(r"^def skill_count\(\) -> U32:\n\s+(\d+)", source, re.MULTILINE)
+    if not match:
+        raise RuntimeError("Could not find skill_count")
+    return int(match.group(1))
+
+
+def parse_single_value_cases(block: str) -> dict[int, str]:
+    result: dict[int, str] = {}
+    current: int | None = None
+    for line in block.splitlines():
+        stripped = line.strip()
+        case_match = re.match(r"case (\d+):", stripped)
+        if case_match:
+            current = int(case_match.group(1))
+            continue
+        if current is not None and stripped and not stripped.startswith("case "):
+            result[current] = stripped.strip('"')
+            current = None
+    return result
+
+
+def parse_single_u32_cases(block: str) -> dict[int, int]:
+    raw = parse_single_value_cases(block)
+    return {key: int(value) for key, value in raw.items()}
+
+
+def parse_base_cells(block: str) -> dict[tuple[int, int, int], int]:
+    result: dict[tuple[int, int, int], int] = {}
+    current: tuple[int, int, int] | None = None
+    for line in block.splitlines():
+        stripped = line.strip()
+        case_match = re.match(r"case (\d+) (\d+) (\d+):", stripped)
+        if case_match:
+            current = tuple(int(case_match.group(i)) for i in range(1, 4))  # type: ignore[assignment]
+            continue
+        if current is not None and stripped and not stripped.startswith("case "):
+            bits = 0
+            for token in re.findall(r"(cell_[a-z_]+)\(\)", stripped):
+                bits |= CELL_BITS[token]
+            result[current] = bits
+            current = None
+    return result
+
+
+def build_extra_skills_json() -> tuple[int, str]:
+    source = FIGHT_PATH.read_text()
+    skill_count = parse_skill_count(source)
+    names = parse_single_value_cases(extract_block(source, "skill_name"))
+    damages = parse_single_u32_cases(extract_block(source, "skill_damage"))
+    ranks = parse_single_u32_cases(extract_block(source, "skill_rank"))
+    class_ids = parse_single_u32_cases(extract_block(source, "skill_class_id"))
+    widths = parse_single_u32_cases(extract_block(source, "skill_base_w"))
+    heights = parse_single_u32_cases(extract_block(source, "skill_base_h"))
+    base_cells = parse_base_cells(extract_block(source, "skill_base_cell"))
+
+    extras: dict[int, dict[str, object]] = {}
+    for skill_id in sorted(names):
+        if skill_id <= 13:
+            continue
+        width = widths[skill_id]
+        height = heights[skill_id]
+        cells: dict[str, int] = {}
+        for y in range(height):
+            for x in range(width):
+                bits = base_cells.get((skill_id, y, x), 0)
+                if bits != 0:
+                    cells[f"{x},{y}"] = bits
+        extras[skill_id] = {
+            "name": names[skill_id],
+            "damage": damages[skill_id],
+            "rank": ranks[skill_id],
+            "classId": class_ids[skill_id],
+            "w": width,
+            "h": height,
+            "cells": cells,
+        }
+    return skill_count, json.dumps(extras, separators=(",", ":"))
+
 
 def encode_symbol(module_path: str, name: str, with_dollar: bool = True) -> str:
     separator = "#" if name.startswith("_") else "/"
@@ -1560,7 +1635,10 @@ def build_extra_patch(bundle_kind: str) -> str:
 
 def build_patch(module_path: str, bundle_kind: str) -> str:
     text = PATCH_TEMPLATE.replace("__VIBI_EXTRA_PATCH__", build_extra_patch(bundle_kind))
+    extra_skill_count, extra_skills_json = build_extra_skills_json()
     replacements = {
+        "__EXTRA_SKILL_COUNT__": str(extra_skill_count),
+        "__EXTRA_SKILLS_JSON__": extra_skills_json,
         "__SKILL_COUNT_RAW_FN__": encode_symbol("/shared/fight", "skill_count", with_dollar=False),
         "__SKILL_COUNT_FN__": encode_symbol("/shared/fight", "skill_count"),
         "__SKILL_DAMAGE_RAW_FN__": encode_symbol("/shared/fight", "skill_damage", with_dollar=False),

@@ -36,10 +36,33 @@ SKILLS = {
     13: "Ra5",
     14: "Me6",
     15: "Me7",
+    16: "Me8",
+    17: "Me10",
+    18: "Me11",
+    19: "Me12",
+    20: "Me13",
+    21: "Ra6",
+    22: "Ra7",
+    23: "Ra8",
+    24: "Ra9",
+    25: "Ra10",
+    26: "Ra11",
+    27: "Ma4",
+    28: "Ma5",
+    29: "Ma6",
+    30: "Ma7",
+    31: "Ma8",
+    32: "Ma9",
+    33: "Ma10",
 }
 
 # Lethal skills in the current ruleset: direct damage or fire that can end fights.
-ELIGIBLE_SKILL_IDS = [1, 2, 3, 4, 6, 8, 10, 11, 12, 13, 14, 15]
+ELIGIBLE_SKILL_IDS = [
+    1, 2, 3, 4, 6, 8, 10, 11, 12, 13, 14, 15,
+    16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26,
+    27, 28, 29, 30, 31, 32, 33,
+]
 DEFAULT_ROUND_CAP = 40
 
 
@@ -190,17 +213,37 @@ def run_matchups(chrome_bin: str, pairs: list[tuple[int, int]], round_cap: int) 
     return results
 
 
-def summary_for_skill(results: list[dict[str, object]], target_skill: str) -> dict[str, list[str]]:
+def aggregate_outcome(results: list[dict[str, object]], skill_a: str, skill_b: str) -> str:
+    if skill_a == skill_b:
+        return "draw"
+    wins_a = 0
+    wins_b = 0
+    for item in results:
+        player = str(item["player_skill"])
+        bot = str(item["bot_skill"])
+        winner = str(item["winner"])
+        if {player, bot} != {skill_a, skill_b}:
+            continue
+        if winner == skill_a:
+            wins_a += 1
+        elif winner == skill_b:
+            wins_b += 1
+    if wins_a > wins_b:
+        return "win"
+    if wins_b > wins_a:
+        return "loss"
+    return "draw"
+
+
+def summary_for_skill(results: list[dict[str, object]], target_skill: str, eligible_names: list[str]) -> dict[str, list[str]]:
     wins: list[str] = []
     losses: list[str] = []
     draws: list[str] = []
-    for item in results:
-        if item["player_skill"] != target_skill:
-            continue
-        opponent = str(item["bot_skill"])
-        if item["outcome"] == "win":
+    for opponent in eligible_names:
+        outcome = aggregate_outcome(results, target_skill, opponent)
+        if outcome == "win":
             wins.append(opponent)
-        elif item["outcome"] == "loss":
+        elif outcome == "loss":
             losses.append(opponent)
         else:
             draws.append(opponent)
@@ -215,7 +258,7 @@ def build_report(results: list[dict[str, object]], round_cap: int) -> dict[str, 
     eligible_names = [skill_name(skill_id) for skill_id in ELIGIBLE_SKILL_IDS]
     summary: dict[str, dict[str, list[str]]] = {}
     for name in eligible_names:
-        summary[name] = summary_for_skill(results, name)
+        summary[name] = summary_for_skill(results, name, eligible_names)
     return {
         "mode": "botvbot",
         "round_cap": round_cap,
@@ -255,29 +298,31 @@ def main() -> None:
     if args.duel:
         player_skill = skill_id_from_name(args.duel[0])
         bot_skill = skill_id_from_name(args.duel[1])
-        results = run_matchups(chrome_bin, [(player_skill, bot_skill)], round_cap)
+        pairs = [(player_skill, bot_skill)]
+        if player_skill != bot_skill:
+            pairs.append((bot_skill, player_skill))
+        results = run_matchups(chrome_bin, pairs, round_cap)
     elif args.skill:
         player_skill = skill_id_from_name(args.skill)
-        results = run_matchups(
-            chrome_bin,
-            [(player_skill, bot_skill) for bot_skill in ELIGIBLE_SKILL_IDS],
-            round_cap,
-        )
+        pairs = [(player_skill, bot_skill) for bot_skill in ELIGIBLE_SKILL_IDS]
+        pairs += [(bot_skill, player_skill) for bot_skill in ELIGIBLE_SKILL_IDS if bot_skill != player_skill]
+        results = run_matchups(chrome_bin, pairs, round_cap)
     else:
-        results = run_matchups(
-            chrome_bin,
-            [(player_skill, bot_skill) for player_skill in ELIGIBLE_SKILL_IDS for bot_skill in ELIGIBLE_SKILL_IDS],
-            round_cap,
-        )
+        pairs: list[tuple[int, int]] = []
+        for idx, player_skill in enumerate(ELIGIBLE_SKILL_IDS):
+            pairs.append((player_skill, player_skill))
+            for bot_skill in ELIGIBLE_SKILL_IDS[idx + 1:]:
+                pairs.append((player_skill, bot_skill))
+                pairs.append((bot_skill, player_skill))
+        results = run_matchups(chrome_bin, pairs, round_cap)
 
     report = build_report(results, round_cap)
 
     if args.duel:
-        duel = report["matchups"][0]
-        print(
-            f'{duel["player_skill"]} vs {duel["bot_skill"]}: {duel["outcome"]} '
-            f'(reason={duel["reason"]}, round={duel["round"]})'
-        )
+        player_name = skill_name(player_skill)
+        bot_name = skill_name(bot_skill)
+        outcome = aggregate_outcome(results, player_name, bot_name)
+        print(f"{player_name} vs {bot_name}: {outcome}")
     elif args.skill:
         target = skill_name(skill_id_from_name(args.skill))
         print_skill_summary(target, report["summary"][target])

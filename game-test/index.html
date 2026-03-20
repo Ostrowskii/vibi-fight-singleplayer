@@ -121224,120 +121224,87 @@ const __vibiOrigSkillNameBase = $n2f7368617265642f66696768742f736b696c6c5f6e616d
 const __vibiOrigSkillBaseWBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f77;
 const __vibiOrigSkillBaseHBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f68;
 const __vibiOrigSkillBaseCellBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f63656c6c;
+const __VIBI_EXTRA_SKILLS = {"14":{"name":"Me6","damage":10,"rank":6,"classId":0,"w":5,"h":1,"cells":{"0,0":16,"1,0":2,"2,0":2,"3,0":2,"4,0":3}},"15":{"name":"Me7","damage":10,"rank":7,"classId":0,"w":3,"h":3,"cells":{"0,0":1,"0,1":1,"1,1":1,"1,2":1,"2,2":1}},"16":{"name":"Me8","damage":10,"rank":8,"classId":0,"w":3,"h":2,"cells":{"1,0":1,"0,1":1,"1,1":1,"2,1":1}},"17":{"name":"Me10","damage":10,"rank":10,"classId":0,"w":3,"h":3,"cells":{"1,0":1,"0,1":1,"1,1":1,"2,1":1,"1,2":1}},"18":{"name":"Me11","damage":10,"rank":11,"classId":0,"w":3,"h":3,"cells":{"0,0":1,"0,1":1,"0,2":1,"1,2":1,"2,2":1}},"19":{"name":"Me12","damage":10,"rank":12,"classId":0,"w":3,"h":2,"cells":{"0,0":1,"2,0":1,"0,1":1,"1,1":1,"2,1":1}},"20":{"name":"Me13","damage":10,"rank":13,"classId":0,"w":3,"h":3,"cells":{"0,0":1,"2,0":1,"0,1":1,"2,1":1,"0,2":1,"2,2":1}},"21":{"name":"Ra6","damage":10,"rank":6,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"7,0":1,"0,1":16,"2,1":16,"7,1":1,"0,2":16,"2,2":16,"7,2":1,"0,3":16,"2,3":16,"7,3":1,"0,4":16,"2,4":16,"7,4":1}},"22":{"name":"Ra7","damage":10,"rank":7,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"8,0":1,"0,1":16,"2,1":16,"6,1":1,"0,2":16,"2,2":16,"0,3":16,"2,3":16,"6,3":1,"0,4":16,"2,4":16,"8,4":1}},"23":{"name":"Ra8","damage":10,"rank":8,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"6,0":1,"7,0":1,"8,0":1,"0,1":16,"2,1":16,"6,1":1,"7,1":1,"8,1":1,"0,2":16,"2,2":16,"6,2":1,"7,2":1,"8,2":1,"0,3":16,"2,3":16,"0,4":16,"2,4":16}},"24":{"name":"Ra9","damage":10,"rank":9,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"8,0":1,"0,1":16,"2,1":16,"7,1":1,"0,2":16,"2,2":16,"6,2":1,"0,3":16,"2,3":16,"5,3":1,"0,4":16,"2,4":16,"4,4":1}},"25":{"name":"Ra10","damage":10,"rank":10,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"0,1":16,"2,1":16,"0,2":16,"2,2":16,"6,2":1,"0,3":16,"2,3":16,"6,3":1,"7,3":1,"8,3":1,"0,4":16,"2,4":16,"6,4":1,"7,4":1,"8,4":1}},"26":{"name":"Ra11","damage":10,"rank":11,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"6,0":1,"8,0":1,"0,1":16,"2,1":16,"7,1":1,"0,2":16,"2,2":16,"0,3":16,"2,3":16,"7,3":1,"0,4":16,"2,4":16,"6,4":1,"8,4":1}},"27":{"name":"Ma4","damage":10,"rank":4,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"6,0":8,"0,1":16,"5,1":8,"6,1":9,"1,2":16,"6,2":8}},"28":{"name":"Ma5","damage":10,"rank":5,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"5,0":4,"0,1":16,"4,1":5,"6,1":5,"1,2":16,"5,2":4}},"29":{"name":"Ma6","damage":10,"rank":6,"classId":2,"w":7,"h":5,"cells":{"2,0":16,"1,1":16,"4,1":8,"5,1":9,"6,1":8,"0,2":16,"4,2":8,"5,2":8,"6,2":8,"1,3":16,"4,3":8,"5,3":9,"6,3":8,"2,4":16}},"30":{"name":"Ma7","damage":10,"rank":7,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"5,0":4,"6,0":5,"0,1":16,"4,1":4,"5,1":4,"6,1":4,"1,2":16,"5,2":4,"6,2":5}},"31":{"name":"Ma8","damage":10,"rank":8,"classId":2,"w":7,"h":5,"cells":{"2,0":16,"6,0":9,"1,1":16,"5,1":9,"0,2":16,"4,2":9,"1,3":16,"5,3":9,"2,4":16,"6,4":9}},"32":{"name":"Ma9","damage":10,"rank":9,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"5,0":8,"0,1":16,"4,1":9,"5,1":8,"6,1":9,"1,2":16,"5,2":8}},"33":{"name":"Ma10","damage":10,"rank":10,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"6,0":5,"0,1":16,"5,1":4,"6,1":4,"1,2":16,"6,2":5}}};
+
+function __vibiExtraSkillMeta(skill) {
+  return __VIBI_EXTRA_SKILLS[skill >>> 0] || null;
+}
 
 function __vibiExtraSkillBaseCell(skill, x, y) {
-  skill >>>= 0;
-  x >>>= 0;
-  y >>>= 0;
-  if (skill === 14) {
-    if (y !== 0) {
-      return 0;
-    }
-    if (x === 0) {
-      return 16;
-    }
-    if (x === 1 || x === 2 || x === 3) {
-      return 2;
-    }
-    if (x === 4) {
-      return 3;
-    }
-    return 0;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (!extra) {
+    return __vibiOrigSkillBaseCellBase(skill >>> 0, x >>> 0, y >>> 0);
   }
-  if (skill === 15) {
-    if (y === 0 && x === 0) {
-      return 1;
-    }
-    if (y === 1 && (x === 0 || x === 1)) {
-      return 1;
-    }
-    if (y === 2 && (x === 1 || x === 2)) {
-      return 1;
-    }
-    return 0;
-  }
-  return __vibiOrigSkillBaseCellBase(skill, x, y);
+  const key = (x >>> 0) + "," + (y >>> 0);
+  const value = extra.cells[key];
+  return value === undefined ? 0 : (value >>> 0);
 }
 
 const __vibiSkillCountOverride = function() {
-  return 15;
+  return 33;
 };
-n2f7368617265642f66696768742f736b696c6c5f636f756e74 = __vibiSkillCountOverride;
 $n2f7368617265642f66696768742f736b696c6c5f636f756e74 = __vibiSkillCountOverride;
 
 const __vibiSkillDamageOverride = function(skill) {
-  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
-    return 10;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.damage >>> 0;
   }
   return __vibiOrigSkillDamageBase(skill >>> 0);
 };
-n2f7368617265642f66696768742f736b696c6c5f64616d616765 = __vibiSkillDamageOverride;
 $n2f7368617265642f66696768742f736b696c6c5f64616d616765 = __vibiSkillDamageOverride;
 
 const __vibiSkillRankOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 6;
-  }
-  if ((skill >>> 0) === 15) {
-    return 7;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.rank >>> 0;
   }
   return __vibiOrigSkillRankBase(skill >>> 0);
 };
-n2f7368617265642f66696768742f736b696c6c5f72616e6b = __vibiSkillRankOverride;
 $n2f7368617265642f66696768742f736b696c6c5f72616e6b = __vibiSkillRankOverride;
 
 const __vibiSkillClassIdOverride = function(skill) {
-  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
-    return 0;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.classId >>> 0;
   }
   return __vibiOrigSkillClassIdBase(skill >>> 0);
 };
-n2f7368617265642f66696768742f736b696c6c5f636c6173735f6964 = __vibiSkillClassIdOverride;
 $n2f7368617265642f66696768742f736b696c6c5f636c6173735f6964 = __vibiSkillClassIdOverride;
 
 const __vibiSkillNameOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return "Me6";
-  }
-  if ((skill >>> 0) === 15) {
-    return "Me7";
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.name;
   }
   return __vibiOrigSkillNameBase(skill >>> 0);
 };
-n2f7368617265642f66696768742f736b696c6c5f6e616d65 = __vibiSkillNameOverride;
 $n2f7368617265642f66696768742f736b696c6c5f6e616d65 = __vibiSkillNameOverride;
 
 const __vibiSkillBaseWOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 5;
-  }
-  if ((skill >>> 0) === 15) {
-    return 3;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.w >>> 0;
   }
   return __vibiOrigSkillBaseWBase(skill >>> 0);
 };
-n2f7368617265642f66696768742f736b696c6c5f626173655f77 = __vibiSkillBaseWOverride;
 $n2f7368617265642f66696768742f736b696c6c5f626173655f77 = __vibiSkillBaseWOverride;
 
 const __vibiSkillBaseHOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 1;
-  }
-  if ((skill >>> 0) === 15) {
-    return 3;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.h >>> 0;
   }
   return __vibiOrigSkillBaseHBase(skill >>> 0);
 };
-n2f7368617265642f66696768742f736b696c6c5f626173655f68 = __vibiSkillBaseHOverride;
 $n2f7368617265642f66696768742f736b696c6c5f626173655f68 = __vibiSkillBaseHOverride;
 
 const __vibiSkillBaseCellOverride = function(skill, x, y) {
   return __vibiExtraSkillBaseCell(skill >>> 0, x >>> 0, y >>> 0);
 };
-n2f7368617265642f66696768742f736b696c6c5f626173655f63656c6c = __vibiSkillBaseCellOverride;
 $n2f7368617265642f66696768742f736b696c6c5f626173655f63656c6c = __vibiSkillBaseCellOverride;
 
-const __vibiSkillCount = n2f7368617265642f66696768742f736b696c6c5f636f756e74();
+const __vibiSkillCount = $n2f7368617265642f66696768742f736b696c6c5f636f756e74();
 const __vibiGridPool = Array.from({ length: 256 }, () => new Uint32Array(9));
 let __vibiGridPoolIndex = 0;
 const __vibiSkillCache = new Array((__vibiSkillCount >>> 0) + 1);
@@ -121695,6 +121662,8 @@ __run_app = function(app) {
 
 
 
+
+
 /* __vibi_turn_patch:start */
 const __vibiTurnOrigSkillCountBase = $n2f7368617265642f66696768742f736b696c6c5f636f756e74;
 const __vibiTurnOrigSkillDamageBase = $n2f7368617265642f66696768742f736b696c6c5f64616d616765;
@@ -121704,101 +121673,76 @@ const __vibiTurnOrigSkillNameBase = $n2f7368617265642f66696768742f736b696c6c5f6e
 const __vibiTurnOrigSkillBaseWBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f77;
 const __vibiTurnOrigSkillBaseHBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f68;
 const __vibiTurnOrigSkillBaseCellBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f63656c6c;
+const __VIBI_TURN_EXTRA_SKILLS = {"14":{"name":"Me6","damage":10,"rank":6,"classId":0,"w":5,"h":1,"cells":{"0,0":16,"1,0":2,"2,0":2,"3,0":2,"4,0":3}},"15":{"name":"Me7","damage":10,"rank":7,"classId":0,"w":3,"h":3,"cells":{"0,0":1,"0,1":1,"1,1":1,"1,2":1,"2,2":1}},"16":{"name":"Me8","damage":10,"rank":8,"classId":0,"w":3,"h":2,"cells":{"1,0":1,"0,1":1,"1,1":1,"2,1":1}},"17":{"name":"Me10","damage":10,"rank":10,"classId":0,"w":3,"h":3,"cells":{"1,0":1,"0,1":1,"1,1":1,"2,1":1,"1,2":1}},"18":{"name":"Me11","damage":10,"rank":11,"classId":0,"w":3,"h":3,"cells":{"0,0":1,"0,1":1,"0,2":1,"1,2":1,"2,2":1}},"19":{"name":"Me12","damage":10,"rank":12,"classId":0,"w":3,"h":2,"cells":{"0,0":1,"2,0":1,"0,1":1,"1,1":1,"2,1":1}},"20":{"name":"Me13","damage":10,"rank":13,"classId":0,"w":3,"h":3,"cells":{"0,0":1,"2,0":1,"0,1":1,"2,1":1,"0,2":1,"2,2":1}},"21":{"name":"Ra6","damage":10,"rank":6,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"7,0":1,"0,1":16,"2,1":16,"7,1":1,"0,2":16,"2,2":16,"7,2":1,"0,3":16,"2,3":16,"7,3":1,"0,4":16,"2,4":16,"7,4":1}},"22":{"name":"Ra7","damage":10,"rank":7,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"8,0":1,"0,1":16,"2,1":16,"6,1":1,"0,2":16,"2,2":16,"0,3":16,"2,3":16,"6,3":1,"0,4":16,"2,4":16,"8,4":1}},"23":{"name":"Ra8","damage":10,"rank":8,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"6,0":1,"7,0":1,"8,0":1,"0,1":16,"2,1":16,"6,1":1,"7,1":1,"8,1":1,"0,2":16,"2,2":16,"6,2":1,"7,2":1,"8,2":1,"0,3":16,"2,3":16,"0,4":16,"2,4":16}},"24":{"name":"Ra9","damage":10,"rank":9,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"8,0":1,"0,1":16,"2,1":16,"7,1":1,"0,2":16,"2,2":16,"6,2":1,"0,3":16,"2,3":16,"5,3":1,"0,4":16,"2,4":16,"4,4":1}},"25":{"name":"Ra10","damage":10,"rank":10,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"0,1":16,"2,1":16,"0,2":16,"2,2":16,"6,2":1,"0,3":16,"2,3":16,"6,3":1,"7,3":1,"8,3":1,"0,4":16,"2,4":16,"6,4":1,"7,4":1,"8,4":1}},"26":{"name":"Ra11","damage":10,"rank":11,"classId":1,"w":9,"h":5,"cells":{"0,0":16,"2,0":16,"6,0":1,"8,0":1,"0,1":16,"2,1":16,"7,1":1,"0,2":16,"2,2":16,"0,3":16,"2,3":16,"7,3":1,"0,4":16,"2,4":16,"6,4":1,"8,4":1}},"27":{"name":"Ma4","damage":10,"rank":4,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"6,0":8,"0,1":16,"5,1":8,"6,1":9,"1,2":16,"6,2":8}},"28":{"name":"Ma5","damage":10,"rank":5,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"5,0":4,"0,1":16,"4,1":5,"6,1":5,"1,2":16,"5,2":4}},"29":{"name":"Ma6","damage":10,"rank":6,"classId":2,"w":7,"h":5,"cells":{"2,0":16,"1,1":16,"4,1":8,"5,1":9,"6,1":8,"0,2":16,"4,2":8,"5,2":8,"6,2":8,"1,3":16,"4,3":8,"5,3":9,"6,3":8,"2,4":16}},"30":{"name":"Ma7","damage":10,"rank":7,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"5,0":4,"6,0":5,"0,1":16,"4,1":4,"5,1":4,"6,1":4,"1,2":16,"5,2":4,"6,2":5}},"31":{"name":"Ma8","damage":10,"rank":8,"classId":2,"w":7,"h":5,"cells":{"2,0":16,"6,0":9,"1,1":16,"5,1":9,"0,2":16,"4,2":9,"1,3":16,"5,3":9,"2,4":16,"6,4":9}},"32":{"name":"Ma9","damage":10,"rank":9,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"5,0":8,"0,1":16,"4,1":9,"5,1":8,"6,1":9,"1,2":16,"5,2":8}},"33":{"name":"Ma10","damage":10,"rank":10,"classId":2,"w":7,"h":3,"cells":{"1,0":16,"6,0":5,"0,1":16,"5,1":4,"6,1":4,"1,2":16,"6,2":5}}};
+
+function __vibiTurnExtraSkillMeta(skill) {
+  return __VIBI_TURN_EXTRA_SKILLS[skill >>> 0] || null;
+}
 
 function __vibiTurnExtraSkillBaseCell(skill, x, y) {
-  skill >>>= 0;
-  x >>>= 0;
-  y >>>= 0;
-  if (skill === 14) {
-    if (y !== 0) {
-      return 0;
-    }
-    if (x === 0) {
-      return 16;
-    }
-    if (x === 1 || x === 2 || x === 3) {
-      return 2;
-    }
-    if (x === 4) {
-      return 3;
-    }
-    return 0;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (!extra) {
+    return __vibiTurnOrigSkillBaseCellBase(skill >>> 0, x >>> 0, y >>> 0);
   }
-  if (skill === 15) {
-    if (y === 0 && x === 0) {
-      return 1;
-    }
-    if (y === 1 && (x === 0 || x === 1)) {
-      return 1;
-    }
-    if (y === 2 && (x === 1 || x === 2)) {
-      return 1;
-    }
-    return 0;
-  }
-  return __vibiTurnOrigSkillBaseCellBase(skill, x, y);
+  const key = (x >>> 0) + "," + (y >>> 0);
+  const value = extra.cells[key];
+  return value === undefined ? 0 : (value >>> 0);
 }
 
 const __vibiTurnSkillCountOverride = function() {
-  return 15;
+  return 33;
 };
 $n2f7368617265642f66696768742f736b696c6c5f636f756e74 = __vibiTurnSkillCountOverride;
 
 const __vibiTurnSkillDamageOverride = function(skill) {
-  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
-    return 10;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.damage >>> 0;
   }
   return __vibiTurnOrigSkillDamageBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f64616d616765 = __vibiTurnSkillDamageOverride;
 
 const __vibiTurnSkillRankOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 6;
-  }
-  if ((skill >>> 0) === 15) {
-    return 7;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.rank >>> 0;
   }
   return __vibiTurnOrigSkillRankBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f72616e6b = __vibiTurnSkillRankOverride;
 
 const __vibiTurnSkillClassIdOverride = function(skill) {
-  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
-    return 0;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.classId >>> 0;
   }
   return __vibiTurnOrigSkillClassIdBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f636c6173735f6964 = __vibiTurnSkillClassIdOverride;
 
 const __vibiTurnSkillNameOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return "Me6";
-  }
-  if ((skill >>> 0) === 15) {
-    return "Me7";
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.name;
   }
   return __vibiTurnOrigSkillNameBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f6e616d65 = __vibiTurnSkillNameOverride;
 
 const __vibiTurnSkillBaseWOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 5;
-  }
-  if ((skill >>> 0) === 15) {
-    return 3;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.w >>> 0;
   }
   return __vibiTurnOrigSkillBaseWBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f626173655f77 = __vibiTurnSkillBaseWOverride;
 
 const __vibiTurnSkillBaseHOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 1;
-  }
-  if ((skill >>> 0) === 15) {
-    return 3;
+  const extra = __vibiTurnExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.h >>> 0;
   }
   return __vibiTurnOrigSkillBaseHBase(skill >>> 0);
 };
@@ -122457,6 +122401,8 @@ $n2f67616d652d746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74
 };
 
 /* __vibi_turn_patch:end */
+
+
 
 
 

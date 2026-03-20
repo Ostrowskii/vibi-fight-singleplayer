@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+FIGHT_PATH = ROOT / "src" / "shared" / "fight" / "_.bend"
 TARGETS = [
     ROOT / "fight" / "index.html",
     ROOT / "game-test" / "index.html",
@@ -35,101 +38,76 @@ const __vibiOrigSkillNameBase = $n2f7368617265642f66696768742f736b696c6c5f6e616d
 const __vibiOrigSkillBaseWBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f77;
 const __vibiOrigSkillBaseHBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f68;
 const __vibiOrigSkillBaseCellBase = $n2f7368617265642f66696768742f736b696c6c5f626173655f63656c6c;
+const __VIBI_EXTRA_SKILLS = __EXTRA_SKILLS_JSON__;
+
+function __vibiExtraSkillMeta(skill) {
+  return __VIBI_EXTRA_SKILLS[skill >>> 0] || null;
+}
 
 function __vibiExtraSkillBaseCell(skill, x, y) {
-  skill >>>= 0;
-  x >>>= 0;
-  y >>>= 0;
-  if (skill === 14) {
-    if (y !== 0) {
-      return 0;
-    }
-    if (x === 0) {
-      return 16;
-    }
-    if (x === 1 || x === 2 || x === 3) {
-      return 2;
-    }
-    if (x === 4) {
-      return 3;
-    }
-    return 0;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (!extra) {
+    return __vibiOrigSkillBaseCellBase(skill >>> 0, x >>> 0, y >>> 0);
   }
-  if (skill === 15) {
-    if (y === 0 && x === 0) {
-      return 1;
-    }
-    if (y === 1 && (x === 0 || x === 1)) {
-      return 1;
-    }
-    if (y === 2 && (x === 1 || x === 2)) {
-      return 1;
-    }
-    return 0;
-  }
-  return __vibiOrigSkillBaseCellBase(skill, x, y);
+  const key = (x >>> 0) + "," + (y >>> 0);
+  const value = extra.cells[key];
+  return value === undefined ? 0 : (value >>> 0);
 }
 
 const __vibiSkillCountOverride = function() {
-  return 15;
+  return __EXTRA_SKILL_COUNT__;
 };
 $n2f7368617265642f66696768742f736b696c6c5f636f756e74 = __vibiSkillCountOverride;
 
 const __vibiSkillDamageOverride = function(skill) {
-  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
-    return 10;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.damage >>> 0;
   }
   return __vibiOrigSkillDamageBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f64616d616765 = __vibiSkillDamageOverride;
 
 const __vibiSkillRankOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 6;
-  }
-  if ((skill >>> 0) === 15) {
-    return 7;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.rank >>> 0;
   }
   return __vibiOrigSkillRankBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f72616e6b = __vibiSkillRankOverride;
 
 const __vibiSkillClassIdOverride = function(skill) {
-  if ((skill >>> 0) === 14 || (skill >>> 0) === 15) {
-    return 0;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.classId >>> 0;
   }
   return __vibiOrigSkillClassIdBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f636c6173735f6964 = __vibiSkillClassIdOverride;
 
 const __vibiSkillNameOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return "Me6";
-  }
-  if ((skill >>> 0) === 15) {
-    return "Me7";
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.name;
   }
   return __vibiOrigSkillNameBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f6e616d65 = __vibiSkillNameOverride;
 
 const __vibiSkillBaseWOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 5;
-  }
-  if ((skill >>> 0) === 15) {
-    return 3;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.w >>> 0;
   }
   return __vibiOrigSkillBaseWBase(skill >>> 0);
 };
 $n2f7368617265642f66696768742f736b696c6c5f626173655f77 = __vibiSkillBaseWOverride;
 
 const __vibiSkillBaseHOverride = function(skill) {
-  if ((skill >>> 0) === 14) {
-    return 1;
-  }
-  if ((skill >>> 0) === 15) {
-    return 3;
+  const extra = __vibiExtraSkillMeta(skill >>> 0);
+  if (extra) {
+    return extra.h >>> 0;
   }
   return __vibiOrigSkillBaseHBase(skill >>> 0);
 };
@@ -491,6 +469,103 @@ __run_app = function(app) {
 /* __vibi_perf_patch:end */
 """
 
+CELL_BITS = {
+    "cell_attack": 1,
+    "cell_dist_attack": 1,
+    "cell_hook": 2,
+    "cell_ice": 4,
+    "cell_fire": 8,
+    "cell_player": 16,
+}
+
+
+def extract_block(source: str, name: str) -> str:
+    pattern = rf"^def {re.escape(name)}\([^\n]*\) -> [^:]+:\n(.*?)(?=^def |\Z)"
+    match = re.search(pattern, source, re.MULTILINE | re.DOTALL)
+    if not match:
+        raise RuntimeError(f"Could not find block for {name}")
+    return match.group(1)
+
+
+def parse_skill_count(source: str) -> int:
+    match = re.search(r"^def skill_count\(\) -> U32:\n\s+(\d+)", source, re.MULTILINE)
+    if not match:
+        raise RuntimeError("Could not find skill_count")
+    return int(match.group(1))
+
+
+def parse_single_value_cases(block: str) -> dict[int, str]:
+    result: dict[int, str] = {}
+    current: int | None = None
+    for line in block.splitlines():
+        stripped = line.strip()
+        case_match = re.match(r"case (\d+):", stripped)
+        if case_match:
+            current = int(case_match.group(1))
+            continue
+        if current is not None and stripped and not stripped.startswith("case "):
+            result[current] = stripped.strip('"')
+            current = None
+    return result
+
+
+def parse_single_u32_cases(block: str) -> dict[int, int]:
+    raw = parse_single_value_cases(block)
+    return {key: int(value) for key, value in raw.items()}
+
+
+def parse_base_cells(block: str) -> dict[tuple[int, int, int], int]:
+    result: dict[tuple[int, int, int], int] = {}
+    current: tuple[int, int, int] | None = None
+    for line in block.splitlines():
+        stripped = line.strip()
+        case_match = re.match(r"case (\d+) (\d+) (\d+):", stripped)
+        if case_match:
+            current = tuple(int(case_match.group(i)) for i in range(1, 4))  # type: ignore[assignment]
+            continue
+        if current is not None and stripped and not stripped.startswith("case "):
+            bits = 0
+            for token in re.findall(r"(cell_[a-z_]+)\(\)", stripped):
+                bits |= CELL_BITS[token]
+            result[current] = bits
+            current = None
+    return result
+
+
+def build_extra_skills_json() -> tuple[int, str]:
+    source = FIGHT_PATH.read_text()
+    skill_count = parse_skill_count(source)
+    names = parse_single_value_cases(extract_block(source, "skill_name"))
+    damages = parse_single_u32_cases(extract_block(source, "skill_damage"))
+    ranks = parse_single_u32_cases(extract_block(source, "skill_rank"))
+    class_ids = parse_single_u32_cases(extract_block(source, "skill_class_id"))
+    widths = parse_single_u32_cases(extract_block(source, "skill_base_w"))
+    heights = parse_single_u32_cases(extract_block(source, "skill_base_h"))
+    base_cells = parse_base_cells(extract_block(source, "skill_base_cell"))
+
+    extras: dict[int, dict[str, object]] = {}
+    for skill_id in sorted(names):
+        if skill_id <= 13:
+            continue
+        width = widths[skill_id]
+        height = heights[skill_id]
+        cells: dict[str, int] = {}
+        for y in range(height):
+            for x in range(width):
+                bits = base_cells.get((skill_id, y, x), 0)
+                if bits != 0:
+                    cells[f"{x},{y}"] = bits
+        extras[skill_id] = {
+            "name": names[skill_id],
+            "damage": damages[skill_id],
+            "rank": ranks[skill_id],
+            "classId": class_ids[skill_id],
+            "w": width,
+            "h": height,
+            "cells": cells,
+        }
+    return skill_count, json.dumps(extras, separators=(",", ":"))
+
 def detect_game_main_prefix(text: str) -> str:
     for prefix in GAME_MAIN_PREFIXES:
         if prefix + "235f72756e74696d655f656d707479" in text:
@@ -500,7 +575,13 @@ def detect_game_main_prefix(text: str) -> str:
 
 def build_patch(text: str) -> str:
     private_prefix = "$" + detect_game_main_prefix(text) + "235f"
-    return PATCH_TEMPLATE.replace("__GAME_PRIVATE__", private_prefix)
+    extra_skill_count, extra_skills_json = build_extra_skills_json()
+    return (
+        PATCH_TEMPLATE
+        .replace("__GAME_PRIVATE__", private_prefix)
+        .replace("__EXTRA_SKILL_COUNT__", str(extra_skill_count))
+        .replace("__EXTRA_SKILLS_JSON__", extra_skills_json)
+    )
 
 
 def patch_text(text: str) -> str:

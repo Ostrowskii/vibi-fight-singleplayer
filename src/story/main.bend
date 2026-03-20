@@ -359,25 +359,25 @@ def _campaign_player_hp(level: U32) -> U32:
 def _campaign_bot_loadout(level: U32) -> Loadout:
   match level:
     case 2:
-      loadout{14, 1, 0}
+      loadout{14, 33, 0}
     case 3:
-      loadout{15, 12, 0}
+      loadout{15, 21, 0}
     case 4:
-      loadout{1, 13, 0}
+      loadout{2, 22, 0}
     case 5:
-      loadout{2, 3, 7}
+      loadout{3, 12, 33}
     case 6:
-      loadout{2, 10, 5}
+      loadout{18, 13, 27}
     case 7:
-      loadout{3, 4, 9}
+      loadout{3, 10, 6}
     case 8:
-      loadout{4, 10, 7}
+      loadout{16, 24, 29}
     case 9:
-      loadout{4, 6, 5}
+      loadout{17, 23, 28}
     case 10:
-      loadout{2, 10, 11}
+      loadout{19, 25, 10}
     case 11:
-      loadout{4, 6, 11}
+      loadout{20, 11, 23}
     case 12:
       loadout{4, 8, 11}
     case _:
@@ -394,7 +394,7 @@ def _campaign_bot_armor(level: U32) -> ArmorSlots:
     case 6:
       armor_slots{0, 0, 1, 0}
     case 7:
-      armor_slots{0, 0, 0, 1}
+      armor_slots{1, 0, 0, 1}
     case 8:
       armor_slots{1, 0, 1, 0}
     case 9:
@@ -413,25 +413,25 @@ def _campaign_bot_hp(level: U32) -> U32:
     case 2:
       30
     case 3:
-      35
+      34
     case 4:
-      40
+      38
     case 5:
-      45
+      44
     case 6:
       50
     case 7:
-      55
+      58
     case 8:
-      60
+      66
     case 9:
-      65
+      75
     case 10:
-      70
+      85
     case 11:
-      80
+      96
     case 12:
-      90
+      108
     case _:
       30
 
@@ -440,23 +440,23 @@ def _campaign_reward_gold(level: U32) -> U32:
     case 2:
       220
     case 3:
-      240
+      250
     case 4:
-      280
+      290
     case 5:
-      320
+      340
     case 6:
-      360
+      400
     case 7:
-      420
+      480
     case 8:
-      500
+      570
     case 9:
-      600
+      670
     case 10:
-      720
+      790
     case 11:
-      880
+      930
     case 12:
       1100
     case _:
