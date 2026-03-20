@@ -12,6 +12,7 @@ Notas
   - `wins + 0.5 * draws`
 - so skills com dano letal entram no ranking principal
 - `Me5`, `Ma1` e `Ma3` ficam fora do ranking principal por serem utilitarias
+- `Me0` foi adicionada depois desse ranking como starter `1x2`; ela ainda nao entrou na matriz completa mais recente
 - `Me9` nao existe como skill separada; a versao corrigida de hook em linha foi absorvida por `Me6`
 
 Legenda
@@ -23,6 +24,17 @@ Legenda
 - I = gelo
 - H = hook
 - combinacoes como `DF`, `DI` e `DH` significam multiplos efeitos no mesmo tile
+
+
+Starter Nova Ainda Sem Rerank
+
+Me0
+classe: Melee
+status: atual no jogo
+nota: starter `1x2`, adicionada depois da ultima matriz completa
+[
+  ["A", "A"]
+]
 
 
 Muito Fracas

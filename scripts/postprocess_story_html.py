@@ -22,7 +22,7 @@ PATCH = r"""
 const __story_params = new URLSearchParams(window.location.search);
 
 const __STORY_SKILLS = {
-  1: {name: "Me1", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 0},
+  1: {name: "Me1", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 2100},
   2: {name: "Me2", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 900},
   3: {name: "Me3", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 1360},
   4: {name: "Me4", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 2300},
@@ -55,9 +55,10 @@ const __STORY_SKILLS = {
   31: {name: "Ma8", classLabel: "Mage", customDescription: "", legends: ["P", "D", "F"], damage: 10, pull: 0, cost: 340},
   32: {name: "Ma9", classLabel: "Mage", customDescription: "", legends: ["P", "D", "F"], damage: 10, pull: 0, cost: 240},
   33: {name: "Ma10", classLabel: "Mage", customDescription: "", legends: ["P", "D", "I"], damage: 10, pull: 0, cost: 180},
+  34: {name: "Me0", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 0},
 };
 
-const __STORY_SKILL_COUNT = 33;
+const __STORY_SKILL_COUNT = 34;
 
 const __STORY_LEGEND_COLORS = {
   P: "#58d8e8",
@@ -80,7 +81,7 @@ const __STORY_ARMORS = [
 const __STORY_SHOPS = {
   1: {title: "Wizard's Tower", eyebrow: "Loja de magia", skills: [33, 30, 32, 28, 31, 27, 5, 29, 6, 9], armors: []},
   2: {title: "The Bowyer's Workshop", eyebrow: "Loja de arqueiro", skills: [21, 22, 26, 12, 13, 24, 10, 25, 23, 11, 8], armors: []},
-  3: {title: "The Blacksmith's Forge", eyebrow: "Loja de espadas e armaduras", skills: [14, 7, 2, 18, 15, 3, 17, 19, 20, 16, 4], armors: [0, 1, 2, 3]},
+  3: {title: "The Blacksmith's Forge", eyebrow: "Loja de espadas e armaduras", skills: [14, 7, 2, 18, 15, 3, 17, 19, 20, 16, 1, 4], armors: [0, 1, 2, 3]},
 };
 
 function __story_parse_u32(name, fallback) {
@@ -226,7 +227,7 @@ function __story_parse_items() {
 
 function __story_parse_loadout() {
   return {
-    s1: __story_parse_u32("ps1", 1),
+    s1: __story_parse_u32("ps1", 34),
     s2: __story_parse_u32("ps2", 0),
     s3: __story_parse_u32("ps3", 0),
   };
@@ -340,11 +341,11 @@ function __story_duel_loadout(state) {
   if (!__story_loadout_empty(state.loadout)) {
     return state.loadout;
   }
-  return {s1: 1, s2: 0, s3: 0};
+  return {s1: 34, s2: 0, s3: 0};
 }
 
 function __story_owned_skills(state) {
-  const owned = [1];
+  const owned = [34];
   for (const skill of state.items) {
     const value = skill >>> 0;
     if (value !== 0 && !owned.includes(value)) {

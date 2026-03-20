@@ -54,12 +54,14 @@ SKILLS = {
     31: "Ma8",
     32: "Ma9",
     33: "Ma10",
+    34: "Me0",
 }
 
 # Lethal skills in the current ruleset: direct damage or fire that can end fights.
 ELIGIBLE_SKILL_IDS = [
     1, 2, 3, 4, 6, 8, 10, 11, 12, 13, 14, 15,
     16, 17, 18, 19, 20,
+    34,
     21, 22, 23, 24, 25, 26,
     27, 28, 29, 30, 31, 32, 33,
 ]

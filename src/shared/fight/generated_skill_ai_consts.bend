@@ -76,6 +76,8 @@ def skill_has_anchor_consts(skill: U32) -> U32:
       1
     case 33:
       1
+    case 34:
+      0
     case _:
       0
 
@@ -147,6 +149,8 @@ def skill_delta_diag_top_left_down_right(skill: U32) -> DeltaPos:
       delta_pos{1, 4, 1, 2}
     case 33:
       delta_pos{1, 5, 1, 2}
+    case 34:
+      delta_pos{0, 0, 0, 0}
     case _:
       delta_pos{0, 0, 0, 0}
 
@@ -218,6 +222,8 @@ def skill_delta_diag_down_left_top_right(skill: U32) -> DeltaPos:
       delta_pos{1, 4, 0, 2}
     case 33:
       delta_pos{1, 5, 0, 2}
+    case 34:
+      delta_pos{0, 0, 0, 0}
     case _:
       delta_pos{0, 0, 0, 0}
 
@@ -289,6 +295,8 @@ def skill_same_row_right_min_diff(skill: U32) -> U32:
       4
     case 33:
       5
+    case 34:
+      0
     case _:
       0
 
@@ -360,6 +368,8 @@ def skill_same_row_right_min_pos_count(skill: U32) -> U32:
       3
     case 33:
       3
+    case 34:
+      0
     case _:
       0
 
@@ -661,6 +671,8 @@ def skill_same_row_left_max_diff(skill: U32) -> U32:
       6
     case 33:
       6
+    case 34:
+      0
     case _:
       0
 
@@ -732,6 +744,8 @@ def skill_same_row_left_max_pos_count(skill: U32) -> U32:
       1
     case 33:
       1
+    case 34:
+      0
     case _:
       0
 
@@ -1001,5 +1015,7 @@ def skill_use_area(skill: U32) -> AreaBox:
       area_box{5, 0, 6, 2}
     case 33:
       area_box{6, 0, 6, 2}
+    case 34:
+      area_box{0, 0, 1, 0}
     case _:
       area_box{0, 0, 0, 0}

@@ -604,7 +604,7 @@ function __vibiBattleItemsRaw(params) {
   const values = [];
   for (const chunk of raw.split(",")) {
     const num = Number.parseInt(chunk, 10);
-    if (!Number.isFinite(num) || num <= 1 || num > __VIBI_SHARED_SKILL_COUNT || seen.has(num)) {
+    if (!Number.isFinite(num) || num < 1 || num > __VIBI_SHARED_SKILL_COUNT || seen.has(num)) {
       continue;
     }
     seen.add(num);
@@ -624,7 +624,7 @@ function __vibiBattleStoryHref() {
   next.set("screen", "city");
   next.set("level", String(__vibiBattleParseU32(params, "level", 1)));
   next.set("gold", String(__vibiBattleParseU32(params, "gold", 0)));
-  next.set("ps1", String(__vibiBattleParseU32(params, "ps1", 1)));
+  next.set("ps1", String(__vibiBattleParseU32(params, "ps1", 34)));
   next.set("ps2", String(__vibiBattleParseU32(params, "ps2", 0)));
   next.set("ps3", String(__vibiBattleParseU32(params, "ps3", 0)));
   next.set("ab", String(__vibiBattleFlag(params, "ab")));
@@ -995,7 +995,11 @@ function __vibiCampaignBotHp() {
   return total === 0 ? 30 : (total >>> 0);
 }
 
-function __vibiCampaignLoadoutMe1() {
+function __vibiCampaignStarterLoadout() {
+  return ({$: "loadout", s1: 34, s2: 0, s3: 0});
+}
+
+function __vibiCampaignFallbackBotLoadout() {
   return ({$: "loadout", s1: 1, s2: 0, s3: 0});
 }
 
@@ -1010,12 +1014,25 @@ function __vibiCampaignSkillParam(name, fallback) {
 function __vibiCampaignPlayerLoadout() {
   const loadout = ({
     $: "loadout",
-    s1: __vibiCampaignSkillParam("ps1", 1),
+    s1: __vibiCampaignSkillParam("ps1", 34),
     s2: __vibiCampaignSkillParam("ps2", 0),
     s3: __vibiCampaignSkillParam("ps3", 0),
   });
   if ((loadout.s1 >>> 0) === 0 && (loadout.s2 >>> 0) === 0 && (loadout.s3 >>> 0) === 0) {
-    return __vibiCampaignLoadoutMe1();
+    return __vibiCampaignStarterLoadout();
+  }
+  return loadout;
+}
+
+function __vibiCampaignBotLoadout() {
+  const loadout = ({
+    $: "loadout",
+    s1: __vibiCampaignSkillParam("bs1", 1),
+    s2: __vibiCampaignSkillParam("bs2", 0),
+    s3: __vibiCampaignSkillParam("bs3", 0),
+  });
+  if ((loadout.s1 >>> 0) === 0 && (loadout.s2 >>> 0) === 0 && (loadout.s3 >>> 0) === 0) {
+    return __vibiCampaignFallbackBotLoadout();
   }
   return loadout;
 }
@@ -1029,7 +1046,7 @@ function __vibiCampaignItemsRaw() {
   const values = [];
   for (const chunk of raw.split(",")) {
     const num = Number.parseInt(chunk, 10);
-    if (!Number.isFinite(num) || num <= 1 || num > __VIBI_SHARED_SKILL_COUNT || seen.has(num)) {
+    if (!Number.isFinite(num) || num < 1 || num > __VIBI_SHARED_SKILL_COUNT || seen.has(num)) {
       continue;
     }
     seen.add(num);
@@ -1077,7 +1094,7 @@ function __vibiCampaignApplyFightApp(app) {
   const playerHp = __vibiCampaignPlayerHp();
   const botHp = __vibiCampaignBotHp();
   const playerLoadout = __vibiCampaignPlayerLoadout();
-  const botLoadout = __vibiCampaignLoadoutMe1();
+  const botLoadout = __vibiCampaignBotLoadout();
   return ({
     $: "app_state",
     screen: app.screen,
@@ -1138,7 +1155,7 @@ function __vibiCampaignStoryHref(screen, level, gold) {
   params.set("screen", screen);
   params.set("level", String(level >>> 0));
   params.set("gold", String(gold >>> 0));
-  params.set("ps1", String(__vibiCampaignSkillParam("ps1", 1)));
+  params.set("ps1", String(__vibiCampaignSkillParam("ps1", 34)));
   params.set("ps2", String(__vibiCampaignSkillParam("ps2", 0)));
   params.set("ps3", String(__vibiCampaignSkillParam("ps3", 0)));
   params.set("ab", String(__vibiCampaignFlag("ab")));

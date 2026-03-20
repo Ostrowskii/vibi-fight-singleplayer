@@ -4,7 +4,7 @@ def default_hp() -> U32:
   50
 
 def skill_count() -> U32:
-  33
+  34
 
 def empty_item_slot() -> U32:
   0
@@ -91,6 +91,8 @@ def skill_damage(skill: U32) -> U32:
       10
     case 33:
       10
+    case 34:
+      10
     case _:
       0
 
@@ -162,6 +164,8 @@ def skill_rank(skill: U32) -> U32:
       9
     case 33:
       10
+    case 34:
+      0
     case _:
       0
 
@@ -233,6 +237,8 @@ def skill_class_id(skill: U32) -> U32:
       2
     case 33:
       2
+    case 34:
+      0
     case _:
       0
 
@@ -332,6 +338,8 @@ def skill_name(skill: U32) -> String:
       "Ma9"
     case 33:
       "Ma10"
+    case 34:
+      "Me0"
     case _:
       "?"
 
@@ -421,6 +429,8 @@ def skill_base_w(skill: U32) -> U32:
       7
     case 33:
       7
+    case 34:
+      2
     case _:
       0
 
@@ -492,6 +502,8 @@ def skill_base_h(skill: U32) -> U32:
       3
     case 33:
       3
+    case 34:
+      1
     case _:
       0
 
@@ -1199,6 +1211,11 @@ def skill_base_cell(skill: U32, x: U32, y: U32) -> U32:
       cell_player()
     case 33 2 6:
       cell_dist_attack() | cell_ice()
+
+    case 34 0 0:
+      cell_attack()
+    case 34 0 1:
+      cell_attack()
 
     case _ _ _:
       0

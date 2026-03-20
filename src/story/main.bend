@@ -283,7 +283,7 @@ def _story_screen_from_id(screen_id: U32) -> StoryScreen:
       city{}
 
 def _campaign_default_loadout() -> Loadout:
-  loadout{1, 0, 0}
+  loadout{34, 0, 0}
 
 def _armor_empty() -> ArmorSlots:
   armor_slots{0, 0, 0, 0}
