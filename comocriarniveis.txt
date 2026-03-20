@@ -1,0 +1,28 @@
+Como Criar Niveis Da Campanha
+
+Preferencias fixas atuais
+
+- Todo bot da campanha deve ter pelo menos 1 skill melee.
+- Levels 4, 8 e 12 sao rodadas eliminatorias.
+- A partir do level 7, todo inimigo deve usar armadura completa:
+  - boots
+  - legs
+  - chest
+  - helmet
+
+Preferencias de apresentacao
+
+- Na city, quando o level atual for 4, 8 ou 12, o botao de entrar no combate deve mostrar:
+  - `Rodada eliminatoria`
+- Nos outros levels, o botao continua com:
+  - `Duel`
+
+- No combate em modo historia, a barra lateral deve ser diferente da do modo play.
+- No modo historia, a sidebar deve priorizar:
+  - controles e tutorial
+  - level atual
+  - se o duelo e eliminatorio ou nao
+
+Observacao
+
+- A ideia e manter o mesmo combate base para play e story, mudando o minimo necessario na interface e nas regras da campanha.

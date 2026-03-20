@@ -116,7 +116,7 @@ def _render_city(state: StoryState) -> HTML(StoryEvent):
             <div class="story-inventory__title">{text{"Inventario"}}</div>
             <div class="story-inventory__meta">{text{"Level " ++ U32.show(_story_level(state)) ++ " - Gold " ++ U32.show(_story_gold(state))}}</div>
           </div>
-          <a class="story-duel" href={_story_duel_href(state)}>{text{"Duel"}}</a>
+          <a class="story-duel" href={_story_duel_href(state)}>{text{_story_duel_label(state)}}</a>
         </div>
 
         <div class="story-inventory__body">
@@ -394,19 +394,40 @@ def _campaign_bot_armor(level: U32) -> ArmorSlots:
     case 6:
       armor_slots{0, 0, 1, 0}
     case 7:
-      armor_slots{1, 0, 0, 1}
+      armor_slots{1, 1, 1, 1}
     case 8:
-      armor_slots{1, 0, 1, 0}
+      armor_slots{1, 1, 1, 1}
     case 9:
-      armor_slots{0, 1, 1, 0}
+      armor_slots{1, 1, 1, 1}
     case 10:
-      armor_slots{1, 1, 0, 1}
+      armor_slots{1, 1, 1, 1}
     case 11:
-      armor_slots{0, 1, 1, 1}
+      armor_slots{1, 1, 1, 1}
     case 12:
       armor_slots{1, 1, 1, 1}
     case _:
       armor_slots{0, 0, 0, 0}
+
+def _story_duel_label(state: StoryState) -> String:
+  _story_duel_label_level(_story_level(state))
+
+def _story_duel_label_level(level: U32) -> String:
+  match _campaign_level_is_gate(level):
+    case 0:
+      "Duel"
+    case _:
+      "Rodada eliminatoria"
+
+def _campaign_level_is_gate(level: U32) -> U32:
+  match level:
+    case 4:
+      1
+    case 8:
+      1
+    case 12:
+      1
+    case _:
+      0
 
 def _campaign_bot_hp(level: U32) -> U32:
   match level:

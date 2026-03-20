@@ -122195,6 +122195,85 @@ $n2f67616d652d746573742f6d61696e235f6275696c645f626f745f706c616e = function(play
 const __VIBI_LOBBY_HREF = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
 const __VIBI_LOBBY_LABEL = "Voltar lobby";
 
+function __vibiBattleSearchParams() {
+  if (typeof window === "undefined") {
+    return new URLSearchParams();
+  }
+  return new URLSearchParams(window.location.search);
+}
+
+function __vibiBattleParseU32(params, name, fallback) {
+  const raw = params.get(name);
+  if (raw === null || raw === "") {
+    return fallback >>> 0;
+  }
+  const num = Number.parseInt(raw, 10);
+  if (!Number.isFinite(num) || num < 0) {
+    return fallback >>> 0;
+  }
+  return num >>> 0;
+}
+
+function __vibiBattleFlag(params, name) {
+  return __vibiBattleParseU32(params, name, 0) === 0 ? 0 : 1;
+}
+
+function __vibiBattleItemsRaw(params) {
+  const raw = (params.get("items") || "").trim();
+  if (!raw) {
+    return "";
+  }
+  const seen = new Set();
+  const values = [];
+  for (const chunk of raw.split(",")) {
+    const num = Number.parseInt(chunk, 10);
+    if (!Number.isFinite(num) || num <= 1 || num > __VIBI_SHARED_SKILL_COUNT || seen.has(num)) {
+      continue;
+    }
+    seen.add(num);
+    values.push(num >>> 0);
+  }
+  return values.join(",");
+}
+
+function __vibiBattleIsCampaign() {
+  const params = __vibiBattleSearchParams();
+  return (params.get("campaign") || "") === "1";
+}
+
+function __vibiBattleStoryHref() {
+  const params = __vibiBattleSearchParams();
+  const next = new URLSearchParams();
+  next.set("screen", "city");
+  next.set("level", String(__vibiBattleParseU32(params, "level", 1)));
+  next.set("gold", String(__vibiBattleParseU32(params, "gold", 0)));
+  next.set("ps1", String(__vibiBattleParseU32(params, "ps1", 1)));
+  next.set("ps2", String(__vibiBattleParseU32(params, "ps2", 0)));
+  next.set("ps3", String(__vibiBattleParseU32(params, "ps3", 0)));
+  next.set("ab", String(__vibiBattleFlag(params, "ab")));
+  next.set("al", String(__vibiBattleFlag(params, "al")));
+  next.set("ac", String(__vibiBattleFlag(params, "ac")));
+  next.set("ah", String(__vibiBattleFlag(params, "ah")));
+  const items = __vibiBattleItemsRaw(params);
+  if (items) {
+    next.set("items", items);
+  }
+  return "../story/?" + next.toString();
+}
+
+function __vibiBattleReturnLink() {
+  if (__vibiBattleIsCampaign()) {
+    return {
+      href: __vibiBattleStoryHref(),
+      label: "Voltar city",
+    };
+  }
+  return {
+    href: __VIBI_LOBBY_HREF,
+    label: __VIBI_LOBBY_LABEL,
+  };
+}
+
 const __vibiOrigDefaultSetupSkill = $n2f7368617265642f66696768742f64656661756c745f73657475705f736b696c6c;
 $n2f7368617265642f66696768742f64656661756c745f73657475705f736b696c6c = function(side, slot) {
   switch (slot >>> 0) {
@@ -122331,20 +122410,21 @@ function __vibiPatchBattleLobbyButton() {
   let link = Array.from(actions.querySelectorAll("a")).find((node) => {
     const text = (node.textContent || "").trim();
     const href = node.getAttribute("href") || "";
-    return href === __VIBI_LOBBY_HREF || text === "Voltar lobby" || text === "Voltar para lobby";
+    return href === __VIBI_LOBBY_HREF || text === "Voltar lobby" || text === "Voltar para lobby" || text === "Voltar city";
   });
   if (!link) {
     link = document.createElement("a");
   }
+  const nav = __vibiBattleReturnLink();
   const className = "button button--menu button--menu-secondary nav-link";
   if (link.className !== className) {
     link.className = className;
   }
-  if ((link.getAttribute("href") || "") != __VIBI_LOBBY_HREF) {
-    link.href = __VIBI_LOBBY_HREF;
+  if ((link.getAttribute("href") || "") != nav.href) {
+    link.href = nav.href;
   }
-  if ((link.textContent || "") !== __VIBI_LOBBY_LABEL) {
-    link.textContent = __VIBI_LOBBY_LABEL;
+  if ((link.textContent || "") !== nav.label) {
+    link.textContent = nav.label;
   }
   if (reset && reset.parentNode === actions) {
     if (reset.nextElementSibling !== link) {
@@ -122401,6 +122481,8 @@ $n2f67616d652d746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74
 };
 
 /* __vibi_turn_patch:end */
+
+
 
 
 

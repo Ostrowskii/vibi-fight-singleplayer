@@ -572,6 +572,85 @@ COMMON_EXTRA_PATCH = r"""
 const __VIBI_LOBBY_HREF = "https://ostrowskii.github.io/vibi-fight-singleplayer/play/";
 const __VIBI_LOBBY_LABEL = "Voltar lobby";
 
+function __vibiBattleSearchParams() {
+  if (typeof window === "undefined") {
+    return new URLSearchParams();
+  }
+  return new URLSearchParams(window.location.search);
+}
+
+function __vibiBattleParseU32(params, name, fallback) {
+  const raw = params.get(name);
+  if (raw === null || raw === "") {
+    return fallback >>> 0;
+  }
+  const num = Number.parseInt(raw, 10);
+  if (!Number.isFinite(num) || num < 0) {
+    return fallback >>> 0;
+  }
+  return num >>> 0;
+}
+
+function __vibiBattleFlag(params, name) {
+  return __vibiBattleParseU32(params, name, 0) === 0 ? 0 : 1;
+}
+
+function __vibiBattleItemsRaw(params) {
+  const raw = (params.get("items") || "").trim();
+  if (!raw) {
+    return "";
+  }
+  const seen = new Set();
+  const values = [];
+  for (const chunk of raw.split(",")) {
+    const num = Number.parseInt(chunk, 10);
+    if (!Number.isFinite(num) || num <= 1 || num > __VIBI_SHARED_SKILL_COUNT || seen.has(num)) {
+      continue;
+    }
+    seen.add(num);
+    values.push(num >>> 0);
+  }
+  return values.join(",");
+}
+
+function __vibiBattleIsCampaign() {
+  const params = __vibiBattleSearchParams();
+  return (params.get("campaign") || "") === "1";
+}
+
+function __vibiBattleStoryHref() {
+  const params = __vibiBattleSearchParams();
+  const next = new URLSearchParams();
+  next.set("screen", "city");
+  next.set("level", String(__vibiBattleParseU32(params, "level", 1)));
+  next.set("gold", String(__vibiBattleParseU32(params, "gold", 0)));
+  next.set("ps1", String(__vibiBattleParseU32(params, "ps1", 1)));
+  next.set("ps2", String(__vibiBattleParseU32(params, "ps2", 0)));
+  next.set("ps3", String(__vibiBattleParseU32(params, "ps3", 0)));
+  next.set("ab", String(__vibiBattleFlag(params, "ab")));
+  next.set("al", String(__vibiBattleFlag(params, "al")));
+  next.set("ac", String(__vibiBattleFlag(params, "ac")));
+  next.set("ah", String(__vibiBattleFlag(params, "ah")));
+  const items = __vibiBattleItemsRaw(params);
+  if (items) {
+    next.set("items", items);
+  }
+  return "../story/?" + next.toString();
+}
+
+function __vibiBattleReturnLink() {
+  if (__vibiBattleIsCampaign()) {
+    return {
+      href: __vibiBattleStoryHref(),
+      label: "Voltar city",
+    };
+  }
+  return {
+    href: __VIBI_LOBBY_HREF,
+    label: __VIBI_LOBBY_LABEL,
+  };
+}
+
 const __vibiOrigDefaultSetupSkill = __DEFAULT_SETUP_SKILL_FN__;
 __DEFAULT_SETUP_SKILL_FN__ = function(side, slot) {
   switch (slot >>> 0) {
@@ -708,20 +787,21 @@ function __vibiPatchBattleLobbyButton() {
   let link = Array.from(actions.querySelectorAll("a")).find((node) => {
     const text = (node.textContent || "").trim();
     const href = node.getAttribute("href") || "";
-    return href === __VIBI_LOBBY_HREF || text === "Voltar lobby" || text === "Voltar para lobby";
+    return href === __VIBI_LOBBY_HREF || text === "Voltar lobby" || text === "Voltar para lobby" || text === "Voltar city";
   });
   if (!link) {
     link = document.createElement("a");
   }
+  const nav = __vibiBattleReturnLink();
   const className = "button button--menu button--menu-secondary nav-link";
   if (link.className !== className) {
     link.className = className;
   }
-  if ((link.getAttribute("href") || "") != __VIBI_LOBBY_HREF) {
-    link.href = __VIBI_LOBBY_HREF;
+  if ((link.getAttribute("href") || "") != nav.href) {
+    link.href = nav.href;
   }
-  if ((link.textContent || "") !== __VIBI_LOBBY_LABEL) {
-    link.textContent = __VIBI_LOBBY_LABEL;
+  if ((link.textContent || "") !== nav.label) {
+    link.textContent = nav.label;
   }
   if (reset && reset.parentNode === actions) {
     if (reset.nextElementSibling !== link) {
@@ -1118,7 +1198,7 @@ function __vibiEnsureCampaignModalStyle() {
   }
   const style = document.createElement("style");
   style.id = "vibi-campaign-modal-style";
-  style.textContent = ".vibi-campaign-note{margin:0;color:#6b593c;line-height:1.6;text-align:center;}.vibi-campaign-action{min-width:160px;}";
+  style.textContent = ".vibi-campaign-note{margin:0;color:#6b593c;line-height:1.6;text-align:center;}.vibi-campaign-action{min-width:160px;}.vibi-campaign-tutorial{white-space:normal;}";
   document.head.appendChild(style);
 }
 
@@ -1189,6 +1269,71 @@ function __vibiObserveCampaignOutcomeModal() {
       return;
     }
     const observer = new MutationObserver(() => __vibiPatchCampaignOutcomeModal());
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, {once: true});
+  } else {
+    start();
+  }
+}
+
+function __vibiPatchCampaignSidebar() {
+  if (!__vibiCampaignEnabled() || typeof document === "undefined") {
+    return;
+  }
+  const sidebar = document.querySelector(".sidebar");
+  if (!sidebar) {
+    return;
+  }
+  const cards = Array.from(sidebar.querySelectorAll(".card"));
+  if (cards.length < 3) {
+    return;
+  }
+  const level = __vibiCampaignLevel();
+  const gate = (__vibiCampaignIsGateLevel(level) >>> 0) !== 0;
+  const reward = __vibiCampaignReward();
+  const status = cards[0];
+  status.innerHTML =
+    '<div class="stat-label">Campanha</div>' +
+    '<div class="stat-value sidebar-round">Level ' + (level >>> 0) + '</div>' +
+    '<div class="stat-label stat-label--spaced">Tipo</div>' +
+    '<p class="sidebar-phase">' + (gate ? 'Rodada eliminatoria' : 'Duelo comum') + '</p>' +
+    '<p class="help help--spaced">' + (gate ? 'Se perder aqui, a campanha acaba.' : 'Se perder aqui, voce avanca mesmo sem vencer.') + '</p>' +
+    '<p class="help help--spaced">Recompensa deste duelo: ' + (reward >>> 0) + ' gold.</p>';
+
+  const controls = cards[2];
+  const label = controls.querySelector(".stat-label");
+  if (label && label.textContent !== "Controles e tutorial") {
+    label.textContent = "Controles e tutorial";
+  }
+  let tutorial = controls.querySelector(".vibi-campaign-tutorial");
+  if (!tutorial) {
+    tutorial = document.createElement("p");
+    tutorial.className = "help help--spaced vibi-campaign-tutorial";
+    controls.appendChild(tutorial);
+  }
+  const tutorialText = "Tutorial: planeje ate 3 acoes. Use WASD/setas para mover ou ajustar a mira, 1/2/3 para entrar na skill, Q/E para girar, Space para confirmar a mira e Enter para resolver o round.";
+  if ((tutorial.textContent || "") !== tutorialText) {
+    tutorial.textContent = tutorialText;
+  }
+}
+
+function __vibiObserveCampaignSidebar() {
+  if (!__vibiCampaignEnabled() || typeof document === "undefined") {
+    return;
+  }
+  const start = () => {
+    __vibiEnsureCampaignModalStyle();
+    __vibiPatchCampaignSidebar();
+    if (typeof MutationObserver === "undefined" || !document.body) {
+      return;
+    }
+    const observer = new MutationObserver(() => __vibiPatchCampaignSidebar());
     observer.observe(document.body, {
       childList: true,
       subtree: true,
@@ -1516,6 +1661,7 @@ __ON_MATCH_EVENT_FN__ = function(evt, state, lobby) {
 };
 
 __vibiObserveCampaignOutcomeModal();
+__vibiObserveCampaignSidebar();
 """
 
 CELL_BITS = {

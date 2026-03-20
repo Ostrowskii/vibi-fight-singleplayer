@@ -179,14 +179,31 @@ function __story_campaign_bot_armor(level) {
     case 4: return [0, 1, 0, 0];
     case 5: return [1, 1, 0, 0];
     case 6: return [0, 0, 1, 0];
-    case 7: return [1, 0, 0, 1];
-    case 8: return [1, 0, 1, 0];
-    case 9: return [0, 1, 1, 0];
-    case 10: return [1, 1, 0, 1];
-    case 11: return [0, 1, 1, 1];
+    case 7: return [1, 1, 1, 1];
+    case 8: return [1, 1, 1, 1];
+    case 9: return [1, 1, 1, 1];
+    case 10: return [1, 1, 1, 1];
+    case 11: return [1, 1, 1, 1];
     case 12: return [1, 1, 1, 1];
     default: return [0, 0, 0, 0];
   }
+}
+
+function __story_campaign_is_gate_level(level) {
+  switch (level >>> 0) {
+    case 4:
+    case 8:
+    case 12:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+function __story_duel_label(state) {
+  return (__story_campaign_is_gate_level(state.level >>> 0) >>> 0) !== 0
+    ? "Rodada eliminatoria"
+    : "Duel";
 }
 
 function __story_parse_items() {
@@ -591,7 +608,7 @@ function __story_render_inventory_shell(state) {
         '<div class="story-inventory__title">Inventario</div>',
         '<div class="story-inventory__meta">Level ' + (state.level >>> 0) + ' - Gold ' + (state.gold >>> 0) + '</div>',
       '</div>',
-      '<a class="story-duel" href="' + __story_build_duel_href(state) + '">Duel</a>',
+      '<a class="story-duel" href="' + __story_build_duel_href(state) + '">' + __story_duel_label(state) + '</a>',
     '</div>',
     '<div class="story-inventory__body">',
       '<div class="story-inventory__column story-inventory__column--sidebar">',
