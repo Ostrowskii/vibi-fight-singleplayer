@@ -1336,7 +1336,14 @@ function __vibiPatchCampaignSidebar() {
   const controls = cards[2];
   const controlsHtml =
     '<div class="stat-label">Controles e tutorial</div>' +
-    '<p class="help vibi-campaign-tutorial">Tutorial: planeje ate 3 acoes. Use WASD/setas para mover ou ajustar a mira, 1/2/3 para entrar na skill, Q/E para girar, Space para confirmar a mira e Enter para resolver o round.</p>';
+    '<p class="help vibi-campaign-tutorial"><strong>1 / 2 / 3:</strong> selecione a skill equipada.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>WASD / setas:</strong> mova o personagem ou ajuste a mira da habilidade.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Q / E:</strong> gire a habilidade.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Espaco:</strong> conclui a acao atual.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial">Se voce estiver mirando uma skill, o <strong>Espaco</strong> confirma o encaixe da habilidade.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Esc:</strong> sai da mira ou desfaz a ultima decisao.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Enter:</strong> resolve o round com a fila montada.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Dica:</strong> voce pode planejar ate 3 acoes por round, entao vale movimentar antes de atacar.</p>';
   if (controls.innerHTML !== controlsHtml) {
     controls.innerHTML = controlsHtml;
   }
