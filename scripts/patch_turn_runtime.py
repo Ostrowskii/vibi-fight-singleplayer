@@ -1313,33 +1313,32 @@ function __vibiPatchCampaignSidebar() {
   }
   const level = __vibiCampaignLevel();
   const gate = (__vibiCampaignIsGateLevel(level) >>> 0) !== 0;
-  const reward = __vibiCampaignReward();
   const status = cards[0];
-  const statusHtml =
-    '<div class="stat-label">Campanha</div>' +
-    '<div class="stat-value sidebar-round">Level ' + (level >>> 0) + '</div>' +
-    '<div class="stat-label stat-label--spaced">Tipo</div>' +
-    '<p class="sidebar-phase">' + (gate ? 'Rodada eliminatoria' : 'Duelo comum') + '</p>' +
-    '<p class="help help--spaced">' + (gate ? 'Se perder aqui, a campanha acaba.' : 'Se perder aqui, voce avanca mesmo sem vencer.') + '</p>' +
-    '<p class="help help--spaced">Recompensa deste duelo: ' + (reward >>> 0) + ' gold.</p>';
+  const statusHtml = gate
+    ? (
+      '<div class="stat-label">Campanha</div>' +
+      '<div class="stat-value sidebar-round">Level ' + (level >>> 0) + '</div>' +
+      '<p class="help help--spaced">Se perder aqui, a campanha acaba.</p>'
+    )
+    : (
+      '<div class="stat-label">Campanha</div>' +
+      '<div class="stat-value sidebar-round">Level ' + (level >>> 0) + '</div>'
+    );
   if (status.innerHTML !== statusHtml) {
     status.innerHTML = statusHtml;
   }
 
+  const actions = cards[1];
+  if (actions && actions.parentNode === sidebar) {
+    actions.remove();
+  }
+
   const controls = cards[2];
-  const label = controls.querySelector(".stat-label");
-  if (label && label.textContent !== "Controles e tutorial") {
-    label.textContent = "Controles e tutorial";
-  }
-  let tutorial = controls.querySelector(".vibi-campaign-tutorial");
-  if (!tutorial) {
-    tutorial = document.createElement("p");
-    tutorial.className = "help help--spaced vibi-campaign-tutorial";
-    controls.appendChild(tutorial);
-  }
-  const tutorialText = "Tutorial: planeje ate 3 acoes. Use WASD/setas para mover ou ajustar a mira, 1/2/3 para entrar na skill, Q/E para girar, Space para confirmar a mira e Enter para resolver o round.";
-  if ((tutorial.textContent || "") !== tutorialText) {
-    tutorial.textContent = tutorialText;
+  const controlsHtml =
+    '<div class="stat-label">Controles e tutorial</div>' +
+    '<p class="help vibi-campaign-tutorial">Tutorial: planeje ate 3 acoes. Use WASD/setas para mover ou ajustar a mira, 1/2/3 para entrar na skill, Q/E para girar, Space para confirmar a mira e Enter para resolver o round.</p>';
+  if (controls.innerHTML !== controlsHtml) {
+    controls.innerHTML = controlsHtml;
   }
 }
 
