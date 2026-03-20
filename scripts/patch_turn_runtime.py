@@ -1709,7 +1709,7 @@ function __vibiCityDuelEnsureStyle() {
   const style = document.createElement("style");
   style.id = "vibi-city-duel-style";
   style.textContent =
-    ".sidebar{visibility:hidden;}" +
+    ".shell > .sidebar{visibility:hidden;}" +
     ".vibi-city-duel-ui{position:fixed;top:24px;right:24px;z-index:24;width:min(340px,calc(100vw - 32px));display:grid;justify-items:end;gap:12px;pointer-events:none;}" +
     ".vibi-city-duel-ui > *{pointer-events:auto;}" +
     ".vibi-city-duel-trigger{min-width:136px;box-shadow:0 10px 24px rgba(42,33,21,.18);}" +
@@ -1719,7 +1719,7 @@ function __vibiCityDuelEnsureStyle() {
     ".vibi-city-duel-list{margin:8px 0 0;padding-left:18px;display:grid;gap:8px;color:var(--muted);}" +
     ".vibi-city-duel-list li{line-height:1.5;}" +
     "@media (max-width:960px){.vibi-city-duel-ui{top:16px;right:16px;width:min(300px,calc(100vw - 24px));}}" +
-    "@media (max-width:720px){.sidebar{display:none !important;}.vibi-city-duel-ui{position:static;width:auto;margin:12px;justify-items:stretch;}.vibi-city-duel-trigger{justify-self:end;}}";
+    "@media (max-width:720px){.shell > .sidebar{display:none !important;}.vibi-city-duel-ui{position:static;width:auto;margin:12px;justify-items:stretch;}.vibi-city-duel-trigger{justify-self:end;}}";
   document.head.appendChild(style);
 }
 
@@ -1815,8 +1815,8 @@ function __vibiCityDuelEnsureUi() {
     root.className = "vibi-city-duel-ui";
     root.innerHTML =
       '<button type="button" class="button button--menu button--menu-secondary vibi-city-duel-trigger" aria-expanded="false">Tutorial</button>' +
-      '<aside class="sidebar vibi-city-duel-status"></aside>' +
-      '<aside class="sidebar vibi-city-duel-tutorial vibi-city-duel-tutorial--hidden"></aside>';
+      '<aside class="vibi-city-duel-status"></aside>' +
+      '<aside class="vibi-city-duel-tutorial vibi-city-duel-tutorial--hidden"></aside>';
     (document.body || document.documentElement).appendChild(root);
     const button = root.querySelector(".vibi-city-duel-trigger");
     if (button) {
