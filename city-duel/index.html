@@ -123292,18 +123292,23 @@ function __vibiCityDuelEnsureStyle() {
   style.id = "vibi-city-duel-style";
   style.textContent =
     ".sidebar{visibility:hidden;}" +
-    ".vibi-city-duel-sidebar{position:fixed;top:24px;right:24px;z-index:24;width:min(320px,calc(100vw - 32px));display:grid;gap:12px;pointer-events:none;}" +
-    ".vibi-city-duel-sidebar .card{pointer-events:auto;}" +
-    ".vibi-city-duel-sidebar .help{white-space:normal;}" +
-    "@media (max-width:960px){.vibi-city-duel-sidebar{top:16px;right:16px;width:min(280px,calc(100vw - 24px));}}" +
-    "@media (max-width:720px){.sidebar{display:none !important;}.vibi-city-duel-sidebar{position:static;width:auto;margin:0 12px 12px;}}";
+    ".vibi-city-duel-ui{position:fixed;top:24px;right:24px;z-index:24;width:min(340px,calc(100vw - 32px));display:grid;justify-items:end;gap:12px;pointer-events:none;}" +
+    ".vibi-city-duel-ui > *{pointer-events:auto;}" +
+    ".vibi-city-duel-trigger{min-width:136px;box-shadow:0 10px 24px rgba(42,33,21,.18);}" +
+    ".vibi-city-duel-status,.vibi-city-duel-tutorial{width:100%;}" +
+    ".vibi-city-duel-status .help,.vibi-city-duel-tutorial .help{white-space:normal;}" +
+    ".vibi-city-duel-tutorial--hidden{display:none;}" +
+    ".vibi-city-duel-list{margin:8px 0 0;padding-left:18px;display:grid;gap:8px;color:var(--muted);}" +
+    ".vibi-city-duel-list li{line-height:1.5;}" +
+    "@media (max-width:960px){.vibi-city-duel-ui{top:16px;right:16px;width:min(300px,calc(100vw - 24px));}}" +
+    "@media (max-width:720px){.sidebar{display:none !important;}.vibi-city-duel-ui{position:static;width:auto;margin:12px;justify-items:stretch;}.vibi-city-duel-trigger{justify-self:end;}}";
   document.head.appendChild(style);
 }
 
-function __vibiCityDuelSidebarHtml() {
+function __vibiCityDuelStatusHtml() {
   const level = __vibiCampaignLevel();
   const gate = (__vibiCampaignIsGateLevel(level) >>> 0) !== 0;
-  const statusHtml = gate
+  return gate
     ? (
       '<div class="card">' +
         '<div class="stat-label">Campanha</div>' +
@@ -123317,50 +123322,110 @@ function __vibiCityDuelSidebarHtml() {
         '<div class="stat-value sidebar-round">Level ' + (level >>> 0) + '</div>' +
       '</div>'
     );
-
-  const controlsHtml =
-    '<div class="card">' +
-      '<div class="stat-label">Controles e tutorial</div>' +
-      '<p class="help"><strong>1 / 2 / 3:</strong> selecione a skill equipada.</p>' +
-      '<p class="help help--spaced"><strong>WASD / setas:</strong> mova o personagem ou ajuste a mira da habilidade.</p>' +
-      '<p class="help help--spaced"><strong>Q / E:</strong> gire a habilidade.</p>' +
-      '<p class="help help--spaced"><strong>Espaco:</strong> conclui a acao atual.</p>' +
-      '<p class="help help--spaced">Se voce estiver mirando uma skill, o <strong>Espaco</strong> confirma o encaixe da habilidade.</p>' +
-      '<p class="help help--spaced"><strong>Esc:</strong> sai da mira ou desfaz a ultima decisao.</p>' +
-      '<p class="help help--spaced"><strong>Enter:</strong> resolve o round com a fila montada.</p>' +
-      '<p class="help help--spaced"><strong>Importante:</strong> depois de um ataque, nao da mais para mover naquele round.</p>' +
-      '<p class="help help--spaced"><strong>Melee e mage:</strong> no maximo <strong>2 moves + 1 ataque</strong>.</p>' +
-      '<p class="help help--spaced"><strong>Ranged:</strong> ganha mais um ajuste de movimento com <strong>WASD / setas</strong> enquanto a habilidade esta ativa.</p>' +
-      '<p class="help help--spaced"><strong>Dica:</strong> planeje o deslocamento antes do ataque para aproveitar melhor cada round.</p>' +
-    '</div>';
-
-  return statusHtml + controlsHtml;
 }
 
-function __vibiCityDuelEnsureSidebar() {
+function __vibiCityDuelTutorialHtml() {
+  return (
+    '<div class="card">' +
+      '<div class="stat-label">Tutorial</div>' +
+      '<div class="stat-label stat-label--spaced">Como jogar</div>' +
+      '<ul class="vibi-city-duel-list">' +
+        '<li><strong>Objetivo:</strong> derrube o bot antes que ele derrube voce.</li>' +
+        '<li><strong>Round:</strong> monte sua sequencia, conquiste posicao e ataque na hora certa.</li>' +
+        '<li><strong>Posicionamento:</strong> esquiva e angulo importam tanto quanto o dano.</li>' +
+      '</ul>' +
+      '<div class="stat-label stat-label--spaced">Controles</div>' +
+      '<ul class="vibi-city-duel-list">' +
+        '<li><strong>1 / 2 / 3:</strong> seleciona a skill equipada.</li>' +
+        '<li><strong>WASD / setas:</strong> move o personagem ou ajusta a mira.</li>' +
+        '<li><strong>Q / E:</strong> gira a skill.</li>' +
+        '<li><strong>Espaco:</strong> confirma e conclui a acao atual.</li>' +
+        '<li><strong>Esc:</strong> sai da mira ou desfaz a ultima decisao.</li>' +
+        '<li><strong>Enter:</strong> resolve o round com a fila montada.</li>' +
+      '</ul>' +
+      '<div class="stat-label stat-label--spaced">Regras</div>' +
+      '<ul class="vibi-city-duel-list">' +
+        '<li><strong>Importante:</strong> nao da para mover depois de usar skill/ataque.</li>' +
+        '<li><strong>Melee e mage:</strong> no maximo <strong>2 moves + 1 ataque</strong>.</li>' +
+        '<li><strong>Ranged:</strong> ganha um ajuste extra de movimento enquanto a skill esta ativa.</li>' +
+        '<li><strong>Dica:</strong> monte o deslocamento antes do ataque para aproveitar melhor o round.</li>' +
+      '</ul>' +
+    '</div>'
+  );
+}
+
+function __vibiCityDuelTutorialOpen(root) {
+  if (!root) {
+    return false;
+  }
+  return (root.getAttribute("data-tutorial-open") || "0") === "1";
+}
+
+function __vibiCityDuelApplyTutorialState(root, open) {
+  if (!root) {
+    return;
+  }
+  const next = open ? "1" : "0";
+  if ((root.getAttribute("data-tutorial-open") || "0") !== next) {
+    root.setAttribute("data-tutorial-open", next);
+  }
+  const button = root.querySelector(".vibi-city-duel-trigger");
+  if (button) {
+    if ((button.getAttribute("aria-expanded") || "false") !== (open ? "true" : "false")) {
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    const label = open ? "Fechar tutorial" : "Tutorial";
+    if ((button.textContent || "") !== label) {
+      button.textContent = label;
+    }
+  }
+  const panel = root.querySelector(".vibi-city-duel-tutorial");
+  if (panel) {
+    panel.classList.toggle("vibi-city-duel-tutorial--hidden", !open);
+  }
+}
+
+function __vibiCityDuelEnsureUi() {
   if (!__vibiCampaignEnabled() || typeof document === "undefined") {
     return;
   }
   __vibiCityDuelEnsureStyle();
-  let node = document.getElementById("vibi-city-duel-sidebar");
-  if (!node) {
-    node = document.createElement("aside");
-    node.id = "vibi-city-duel-sidebar";
-    node.className = "sidebar vibi-city-duel-sidebar";
-    (document.body || document.documentElement).appendChild(node);
+  let root = document.getElementById("vibi-city-duel-ui");
+  if (!root) {
+    root = document.createElement("div");
+    root.id = "vibi-city-duel-ui";
+    root.className = "vibi-city-duel-ui";
+    root.innerHTML =
+      '<button type="button" class="button button--menu button--menu-secondary vibi-city-duel-trigger" aria-expanded="false">Tutorial</button>' +
+      '<aside class="sidebar vibi-city-duel-status"></aside>' +
+      '<aside class="sidebar vibi-city-duel-tutorial vibi-city-duel-tutorial--hidden"></aside>';
+    (document.body || document.documentElement).appendChild(root);
+    const button = root.querySelector(".vibi-city-duel-trigger");
+    if (button) {
+      button.addEventListener("click", () => {
+        __vibiCityDuelApplyTutorialState(root, !__vibiCityDuelTutorialOpen(root));
+      });
+    }
   }
-  const html = __vibiCityDuelSidebarHtml();
-  if (node.innerHTML !== html) {
-    node.innerHTML = html;
+  const status = root.querySelector(".vibi-city-duel-status");
+  const statusHtml = __vibiCityDuelStatusHtml();
+  if (status && status.innerHTML !== statusHtml) {
+    status.innerHTML = statusHtml;
   }
+  const tutorial = root.querySelector(".vibi-city-duel-tutorial");
+  const tutorialHtml = __vibiCityDuelTutorialHtml();
+  if (tutorial && tutorial.innerHTML !== tutorialHtml) {
+    tutorial.innerHTML = tutorialHtml;
+  }
+  __vibiCityDuelApplyTutorialState(root, __vibiCityDuelTutorialOpen(root));
 }
 
-function __vibiObserveCityDuelSidebar() {
+function __vibiObserveCityDuelUi() {
   if (!__vibiCampaignEnabled() || typeof document === "undefined") {
     return;
   }
   const start = () => {
-    __vibiCityDuelEnsureSidebar();
+    __vibiCityDuelEnsureUi();
   };
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start, {once: true});
@@ -123370,9 +123435,11 @@ function __vibiObserveCityDuelSidebar() {
 }
 
 __vibiObserveCampaignOutcomeModal();
-__vibiObserveCityDuelSidebar();
+__vibiObserveCityDuelUi();
 
 /* __vibi_turn_patch:end */
+
+
 
 
 
