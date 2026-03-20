@@ -32,6 +32,7 @@ jobs:
           test -f index.html
           test -f play/index.html
           test -f fight/index.html
+          test -f city-duel/index.html
           test -f lobby-test/index.html
           test -f game-test/index.html
           test -f story/index.html
@@ -41,6 +42,8 @@ jobs:
           cp play/index.html dist/play/index.html
           mkdir -p dist/fight
           cp fight/index.html dist/fight/index.html
+          mkdir -p dist/city-duel
+          cp city-duel/index.html dist/city-duel/index.html
           mkdir -p dist/lobby-test
           cp lobby-test/index.html dist/lobby-test/index.html
           mkdir -p dist/game-test

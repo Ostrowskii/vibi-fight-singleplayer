@@ -21,10 +21,10 @@ def render(state: MenuState) -> HTML(MenuEvent):
     <section class="menu-card">
       <div class="menu-eyebrow">{text{"Vibi Fight"}}</div>
       <h1 class="menu-title">{text{"Escolha como entrar"}}</h1>
-      <p class="menu-copy">{text{"Play abre o lobby da luta casual. Play Story fica reservado para a campanha."}}</p>
+      <p class="menu-copy">{text{"Campanha leva para o modo historia. Area de testes abre o lobby da luta casual."}}</p>
       <div class="menu-actions">
-        <a class="menu-link menu-link--primary" href="./play/">{text{"Play"}}</a>
-        <a class="menu-link" href="./story/">{text{"Play Story"}}</a>
+        <a class="menu-link menu-link--primary" href="./story/">{text{"Campanha"}}</a>
+        <a class="menu-link" href="./play/">{text{"Area de testes"}}</a>
       </div>
     </section>
   </main>

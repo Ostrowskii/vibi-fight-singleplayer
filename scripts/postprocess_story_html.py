@@ -434,7 +434,7 @@ function __story_build_duel_href(state) {
   if (state.items.length > 0) {
     params.set("items", state.items.join(","));
   }
-  return "../fight/?" + params.toString();
+  return "../city-duel/?" + params.toString();
 }
 
 function __story_sync_url(state) {

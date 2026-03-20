@@ -31,6 +31,12 @@ TARGETS = [
         "marker": "const __fight_params =",
         "bundle_kind": "fight",
     },
+    {
+        "path": ROOT / "city-duel" / "index.html",
+        "module_path": "/game_test/main",
+        "marker": "const __fight_params =",
+        "bundle_kind": "city_duel",
+    },
 ]
 
 
@@ -929,7 +935,7 @@ __GAME_TEST_APP_FROM_SLOTS_ITEMS_FN__ = function(ps1, ps2, ps3, bs1, bs2, bs3, p
 """
 
 
-FIGHT_EXTRA_PATCH = r"""
+FIGHT_SHARED_EXTRA_PATCH = r"""
 const __VIBI_CAMPAIGN_PARAMS = new URLSearchParams(window.location.search);
 
 function __vibiCampaignEnabled() {
@@ -1689,6 +1695,10 @@ __ON_MATCH_EVENT_FN__ = function(evt, state, lobby) {
   return nextState;
 };
 
+"""
+
+
+CITY_DUEL_EXTRA_PATCH = r"""
 __vibiObserveCampaignOutcomeModal();
 __vibiObserveCampaignSidebar();
 """
@@ -1804,7 +1814,10 @@ def build_extra_patch(bundle_kind: str) -> str:
     elif bundle_kind == "game_test":
         parts.append(GAME_TEST_EXTRA_PATCH.strip())
     elif bundle_kind == "fight":
-        parts.append(FIGHT_EXTRA_PATCH.strip())
+        parts.append(FIGHT_SHARED_EXTRA_PATCH.strip())
+    elif bundle_kind == "city_duel":
+        parts.append(FIGHT_SHARED_EXTRA_PATCH.strip())
+        parts.append(CITY_DUEL_EXTRA_PATCH.strip())
     return "\n\n".join(part for part in parts if part) + "\n"
 
 

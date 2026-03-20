@@ -231,7 +231,7 @@ def _story_duel_href(state: StoryState) -> String:
   armor = _story_armor(state);
   bot_loadout = _campaign_bot_loadout(level);
   bot_armor = _campaign_bot_armor(level);
-  "../fight/?campaign=1"
+  "../city-duel/?campaign=1"
   ++ "&level=" ++ U32.show(level)
   ++ "&gold=" ++ U32.show(_story_gold(state))
   ++ "&reward=" ++ U32.show(_campaign_reward_gold(level))

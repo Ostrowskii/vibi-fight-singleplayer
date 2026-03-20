@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIGHT_PATH = ROOT / "src" / "shared" / "fight" / "_.bend"
 TARGETS = [
     ROOT / "fight" / "index.html",
+    ROOT / "city-duel" / "index.html",
     ROOT / "game-test" / "index.html",
 ]
 
