@@ -121628,9 +121628,7 @@ __run_app = function(app) {
     }
     hasPendingRender = false;
     const next = __app_decode_html(render(state));
-    const nextDom = __app_mount(next, dispatch);
-    root.replaceChildren(nextDom);
-    dom = nextDom;
+    dom = __app_patch(dom, view, next, dispatch);
     view = next;
   }
 
@@ -121655,6 +121653,8 @@ __run_app = function(app) {
   root.replaceChildren(dom);
 };
 /* __vibi_perf_patch:end */
+
+
 
 
 
@@ -122489,6 +122489,8 @@ $n2f67616d652d746573742f6d61696e2f67616d655f746573745f6170705f66726f6d5f736c6f74
 };
 
 /* __vibi_turn_patch:end */
+
+
 
 
 

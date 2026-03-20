@@ -443,9 +443,7 @@ __run_app = function(app) {
     }
     hasPendingRender = false;
     const next = __app_decode_html(render(state));
-    const nextDom = __app_mount(next, dispatch);
-    root.replaceChildren(nextDom);
-    dom = nextDom;
+    dom = __app_patch(dom, view, next, dispatch);
     view = next;
   }
 

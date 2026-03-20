@@ -1699,8 +1699,96 @@ __ON_MATCH_EVENT_FN__ = function(evt, state, lobby) {
 
 
 CITY_DUEL_EXTRA_PATCH = r"""
+function __vibiCityDuelEnsureStyle() {
+  if (typeof document === "undefined" || !document.head) {
+    return;
+  }
+  if (document.getElementById("vibi-city-duel-style")) {
+    return;
+  }
+  const style = document.createElement("style");
+  style.id = "vibi-city-duel-style";
+  style.textContent =
+    ".sidebar{visibility:hidden;}" +
+    ".vibi-city-duel-sidebar{position:fixed;top:24px;right:24px;z-index:24;width:min(320px,calc(100vw - 32px));display:grid;gap:12px;pointer-events:none;}" +
+    ".vibi-city-duel-sidebar .card{pointer-events:auto;}" +
+    ".vibi-city-duel-sidebar .help{white-space:normal;}" +
+    "@media (max-width:960px){.vibi-city-duel-sidebar{top:16px;right:16px;width:min(280px,calc(100vw - 24px));}}" +
+    "@media (max-width:720px){.sidebar{display:none !important;}.vibi-city-duel-sidebar{position:static;width:auto;margin:0 12px 12px;}}";
+  document.head.appendChild(style);
+}
+
+function __vibiCityDuelSidebarHtml() {
+  const level = __vibiCampaignLevel();
+  const gate = (__vibiCampaignIsGateLevel(level) >>> 0) !== 0;
+  const statusHtml = gate
+    ? (
+      '<div class="card">' +
+        '<div class="stat-label">Campanha</div>' +
+        '<div class="stat-value sidebar-round">Level ' + (level >>> 0) + '</div>' +
+        '<p class="help help--spaced">Se perder aqui, a campanha acaba.</p>' +
+      '</div>'
+    )
+    : (
+      '<div class="card">' +
+        '<div class="stat-label">Campanha</div>' +
+        '<div class="stat-value sidebar-round">Level ' + (level >>> 0) + '</div>' +
+      '</div>'
+    );
+
+  const controlsHtml =
+    '<div class="card">' +
+      '<div class="stat-label">Controles e tutorial</div>' +
+      '<p class="help"><strong>1 / 2 / 3:</strong> selecione a skill equipada.</p>' +
+      '<p class="help help--spaced"><strong>WASD / setas:</strong> mova o personagem ou ajuste a mira da habilidade.</p>' +
+      '<p class="help help--spaced"><strong>Q / E:</strong> gire a habilidade.</p>' +
+      '<p class="help help--spaced"><strong>Espaco:</strong> conclui a acao atual.</p>' +
+      '<p class="help help--spaced">Se voce estiver mirando uma skill, o <strong>Espaco</strong> confirma o encaixe da habilidade.</p>' +
+      '<p class="help help--spaced"><strong>Esc:</strong> sai da mira ou desfaz a ultima decisao.</p>' +
+      '<p class="help help--spaced"><strong>Enter:</strong> resolve o round com a fila montada.</p>' +
+      '<p class="help help--spaced"><strong>Importante:</strong> depois de um ataque, nao da mais para mover naquele round.</p>' +
+      '<p class="help help--spaced"><strong>Melee e mage:</strong> no maximo <strong>2 moves + 1 ataque</strong>.</p>' +
+      '<p class="help help--spaced"><strong>Ranged:</strong> ganha mais um ajuste de movimento com <strong>WASD / setas</strong> enquanto a habilidade esta ativa.</p>' +
+      '<p class="help help--spaced"><strong>Dica:</strong> planeje o deslocamento antes do ataque para aproveitar melhor cada round.</p>' +
+    '</div>';
+
+  return statusHtml + controlsHtml;
+}
+
+function __vibiCityDuelEnsureSidebar() {
+  if (!__vibiCampaignEnabled() || typeof document === "undefined") {
+    return;
+  }
+  __vibiCityDuelEnsureStyle();
+  let node = document.getElementById("vibi-city-duel-sidebar");
+  if (!node) {
+    node = document.createElement("aside");
+    node.id = "vibi-city-duel-sidebar";
+    node.className = "sidebar vibi-city-duel-sidebar";
+    (document.body || document.documentElement).appendChild(node);
+  }
+  const html = __vibiCityDuelSidebarHtml();
+  if (node.innerHTML !== html) {
+    node.innerHTML = html;
+  }
+}
+
+function __vibiObserveCityDuelSidebar() {
+  if (!__vibiCampaignEnabled() || typeof document === "undefined") {
+    return;
+  }
+  const start = () => {
+    __vibiCityDuelEnsureSidebar();
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, {once: true});
+  } else {
+    start();
+  }
+}
+
 __vibiObserveCampaignOutcomeModal();
-__vibiObserveCampaignSidebar();
+__vibiObserveCityDuelSidebar();
 """
 
 CELL_BITS = {
