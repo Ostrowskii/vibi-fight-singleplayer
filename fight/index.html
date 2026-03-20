@@ -122899,13 +122899,16 @@ function __vibiPatchCampaignSidebar() {
   const gate = (__vibiCampaignIsGateLevel(level) >>> 0) !== 0;
   const reward = __vibiCampaignReward();
   const status = cards[0];
-  status.innerHTML =
+  const statusHtml =
     '<div class="stat-label">Campanha</div>' +
     '<div class="stat-value sidebar-round">Level ' + (level >>> 0) + '</div>' +
     '<div class="stat-label stat-label--spaced">Tipo</div>' +
     '<p class="sidebar-phase">' + (gate ? 'Rodada eliminatoria' : 'Duelo comum') + '</p>' +
     '<p class="help help--spaced">' + (gate ? 'Se perder aqui, a campanha acaba.' : 'Se perder aqui, voce avanca mesmo sem vencer.') + '</p>' +
     '<p class="help help--spaced">Recompensa deste duelo: ' + (reward >>> 0) + ' gold.</p>';
+  if (status.innerHTML !== statusHtml) {
+    status.innerHTML = statusHtml;
+  }
 
   const controls = cards[2];
   const label = controls.querySelector(".stat-label");
@@ -123265,6 +123268,10 @@ __vibiObserveCampaignOutcomeModal();
 __vibiObserveCampaignSidebar();
 
 /* __vibi_turn_patch:end */
+
+
+
+
 
 
 
