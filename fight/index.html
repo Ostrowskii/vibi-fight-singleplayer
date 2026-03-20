@@ -122927,7 +122927,10 @@ function __vibiPatchCampaignSidebar() {
     '<p class="help help--spaced vibi-campaign-tutorial">Se voce estiver mirando uma skill, o <strong>Espaco</strong> confirma o encaixe da habilidade.</p>' +
     '<p class="help help--spaced vibi-campaign-tutorial"><strong>Esc:</strong> sai da mira ou desfaz a ultima decisao.</p>' +
     '<p class="help help--spaced vibi-campaign-tutorial"><strong>Enter:</strong> resolve o round com a fila montada.</p>' +
-    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Dica:</strong> voce pode planejar ate 3 acoes por round, entao vale movimentar antes de atacar.</p>';
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Importante:</strong> depois de um ataque, nao da mais para mover naquele round.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Melee e mage:</strong> no maximo <strong>2 moves + 1 ataque</strong>.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Ranged:</strong> ganha mais um ajuste de movimento com <strong>WASD / setas</strong> enquanto a habilidade esta ativa.</p>' +
+    '<p class="help help--spaced vibi-campaign-tutorial"><strong>Dica:</strong> planeje o deslocamento antes do ataque para aproveitar melhor cada round.</p>';
   if (controls.innerHTML !== controlsHtml) {
     controls.innerHTML = controlsHtml;
   }
@@ -123274,6 +123277,8 @@ __vibiObserveCampaignOutcomeModal();
 __vibiObserveCampaignSidebar();
 
 /* __vibi_turn_patch:end */
+
+
 
 
 
