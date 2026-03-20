@@ -1715,6 +1715,7 @@ function __vibiCityDuelEnsureStyle() {
     ".vibi-city-duel-trigger{min-width:136px;box-shadow:0 10px 24px rgba(42,33,21,.18);}" +
     ".vibi-city-duel-status,.vibi-city-duel-tutorial{width:100%;}" +
     ".vibi-city-duel-status .help,.vibi-city-duel-tutorial .help{white-space:normal;}" +
+    ".vibi-city-duel-tutorial .card{max-height:min(70vh,520px);overflow-y:auto;overflow-x:hidden;}" +
     ".vibi-city-duel-tutorial--hidden{display:none;}" +
     ".vibi-city-duel-list{margin:8px 0 0;padding-left:18px;display:grid;gap:8px;color:var(--muted);}" +
     ".vibi-city-duel-list li{line-height:1.5;}" +
@@ -1750,7 +1751,6 @@ function __vibiCityDuelTutorialHtml() {
       '<ul class="vibi-city-duel-list">' +
         '<li><strong>Objetivo:</strong> derrube o bot antes que ele derrube voce.</li>' +
         '<li><strong>Round:</strong> monte sua sequencia, conquiste posicao e ataque na hora certa.</li>' +
-        '<li><strong>Posicionamento:</strong> esquiva e angulo importam tanto quanto o dano.</li>' +
       '</ul>' +
       '<div class="stat-label stat-label--spaced">Controles</div>' +
       '<ul class="vibi-city-duel-list">' +
