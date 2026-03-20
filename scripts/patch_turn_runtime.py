@@ -914,9 +914,27 @@ function __vibiCampaignPlayerHp() {
   return hp === 0 ? 50 : (hp >>> 0);
 }
 
+function __vibiCampaignArmorBonus(bootsParam, legsParam, chestParam, helmetParam) {
+  let total = 0;
+  if ((__vibiCampaignFlag(bootsParam) >>> 0) !== 0) {
+    total = (total + 10) >>> 0;
+  }
+  if ((__vibiCampaignFlag(legsParam) >>> 0) !== 0) {
+    total = (total + 20) >>> 0;
+  }
+  if ((__vibiCampaignFlag(chestParam) >>> 0) !== 0) {
+    total = (total + 40) >>> 0;
+  }
+  if ((__vibiCampaignFlag(helmetParam) >>> 0) !== 0) {
+    total = (total + 30) >>> 0;
+  }
+  return total >>> 0;
+}
+
 function __vibiCampaignBotHp() {
   const hp = __vibiCampaignParseU32("bhp", 30);
-  return hp === 0 ? 30 : (hp >>> 0);
+  const total = ((hp === 0 ? 30 : (hp >>> 0)) + __vibiCampaignArmorBonus("bb", "bl", "bc", "bh")) >>> 0;
+  return total === 0 ? 30 : (total >>> 0);
 }
 
 function __vibiCampaignLoadoutMe1() {

@@ -228,16 +228,29 @@ def _story_armor_slot_class(equipped: U32) -> String:
 def _story_duel_href(state: StoryState) -> String:
   level = _story_level(state);
   loadout_value = _story_loadout(state);
+  armor = _story_armor(state);
+  bot_loadout = _campaign_bot_loadout(level);
+  bot_armor = _campaign_bot_armor(level);
   "../fight/?campaign=1"
   ++ "&level=" ++ U32.show(level)
   ++ "&gold=" ++ U32.show(_story_gold(state))
   ++ "&reward=" ++ U32.show(_campaign_reward_gold(level))
-  ++ "&php=" ++ U32.show(_campaign_player_hp(level))
+  ++ "&php=" ++ U32.show(_story_total_hp(state))
   ++ "&bhp=" ++ U32.show(_campaign_bot_hp(level))
   ++ "&ps1=" ++ U32.show(_loadout_slot(loadout_value, 0))
   ++ "&ps2=" ++ U32.show(_loadout_slot(loadout_value, 1))
   ++ "&ps3=" ++ U32.show(_loadout_slot(loadout_value, 2))
-  ++ "&bs1=1&bs2=0&bs3=0"
+  ++ "&bs1=" ++ U32.show(_loadout_slot(bot_loadout, 0))
+  ++ "&bs2=" ++ U32.show(_loadout_slot(bot_loadout, 1))
+  ++ "&bs3=" ++ U32.show(_loadout_slot(bot_loadout, 2))
+  ++ "&ab=" ++ U32.show(_armor_slot(armor, 0))
+  ++ "&al=" ++ U32.show(_armor_slot(armor, 1))
+  ++ "&ac=" ++ U32.show(_armor_slot(armor, 2))
+  ++ "&ah=" ++ U32.show(_armor_slot(armor, 3))
+  ++ "&bb=" ++ U32.show(_armor_slot(bot_armor, 0))
+  ++ "&bl=" ++ U32.show(_armor_slot(bot_armor, 1))
+  ++ "&bc=" ++ U32.show(_armor_slot(bot_armor, 2))
+  ++ "&bh=" ++ U32.show(_armor_slot(bot_armor, 3))
 
 def _story_end_eyebrow(won: U32) -> String:
   match won:
@@ -343,11 +356,111 @@ def _campaign_level_clamp_upper(level: U32, inside_range: U32) -> U32:
 def _campaign_player_hp(level: U32) -> U32:
   50
 
+def _campaign_bot_loadout(level: U32) -> Loadout:
+  match level:
+    case 2:
+      loadout{14, 1, 0}
+    case 3:
+      loadout{15, 12, 0}
+    case 4:
+      loadout{1, 13, 0}
+    case 5:
+      loadout{2, 3, 7}
+    case 6:
+      loadout{2, 10, 5}
+    case 7:
+      loadout{3, 4, 9}
+    case 8:
+      loadout{4, 10, 7}
+    case 9:
+      loadout{4, 6, 5}
+    case 10:
+      loadout{2, 10, 11}
+    case 11:
+      loadout{4, 6, 11}
+    case 12:
+      loadout{4, 8, 11}
+    case _:
+      loadout{1, 0, 0}
+
+def _campaign_bot_armor(level: U32) -> ArmorSlots:
+  match level:
+    case 3:
+      armor_slots{1, 0, 0, 0}
+    case 4:
+      armor_slots{0, 1, 0, 0}
+    case 5:
+      armor_slots{1, 1, 0, 0}
+    case 6:
+      armor_slots{0, 0, 1, 0}
+    case 7:
+      armor_slots{0, 0, 0, 1}
+    case 8:
+      armor_slots{1, 0, 1, 0}
+    case 9:
+      armor_slots{0, 1, 1, 0}
+    case 10:
+      armor_slots{1, 1, 0, 1}
+    case 11:
+      armor_slots{0, 1, 1, 1}
+    case 12:
+      armor_slots{1, 1, 1, 1}
+    case _:
+      armor_slots{0, 0, 0, 0}
+
 def _campaign_bot_hp(level: U32) -> U32:
-  30
+  match level:
+    case 2:
+      30
+    case 3:
+      35
+    case 4:
+      40
+    case 5:
+      45
+    case 6:
+      50
+    case 7:
+      55
+    case 8:
+      60
+    case 9:
+      65
+    case 10:
+      70
+    case 11:
+      80
+    case 12:
+      90
+    case _:
+      30
 
 def _campaign_reward_gold(level: U32) -> U32:
-  200
+  match level:
+    case 2:
+      220
+    case 3:
+      240
+    case 4:
+      280
+    case 5:
+      320
+    case 6:
+      360
+    case 7:
+      420
+    case 8:
+      500
+    case 9:
+      600
+    case 10:
+      720
+    case 11:
+      880
+    case 12:
+      1100
+    case _:
+      200
 
 def _loadout_slot(loadout_value: Loadout, idx: U32) -> U32:
   match loadout_value:

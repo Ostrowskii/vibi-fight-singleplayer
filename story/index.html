@@ -57987,21 +57987,21 @@ function __run_app(app) {
 const __story_params = new URLSearchParams(window.location.search);
 
 const __STORY_SKILLS = {
-  1: {name: "Me1", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
-  2: {name: "Me2", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
-  3: {name: "Me3", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
-  4: {name: "Me4", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
-  5: {name: "Ma1", classLabel: "Mage", customDescription: "", legends: ["P", "I"], damage: 0, pull: 0},
-  6: {name: "Ma2", classLabel: "Mage", customDescription: "", legends: ["P", "F"], damage: 0, pull: 0},
-  7: {name: "Me5", classLabel: "Melee", customDescription: "", legends: ["H"], damage: 0, pull: 2},
-  8: {name: "Ra1", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
-  9: {name: "Ma3", classLabel: "Mage", customDescription: "", legends: ["P", "I"], damage: 0, pull: 0},
-  10: {name: "Ra2", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
-  11: {name: "Ra3", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
-  12: {name: "Ra4", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
-  13: {name: "Ra5", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0},
-  14: {name: "Me6", classLabel: "Melee", customDescription: "", legends: ["P", "D", "H"], damage: 10, pull: 4},
-  15: {name: "Me7", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0},
+  1: {name: "Me1", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 0},
+  2: {name: "Me2", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 520},
+  3: {name: "Me3", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 560},
+  4: {name: "Me4", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 920},
+  5: {name: "Ma1", classLabel: "Mage", customDescription: "", legends: ["P", "I"], damage: 0, pull: 0, cost: 680},
+  6: {name: "Ma2", classLabel: "Mage", customDescription: "", legends: ["P", "F"], damage: 0, pull: 0, cost: 2200},
+  7: {name: "Me5", classLabel: "Melee", customDescription: "", legends: ["H"], damage: 0, pull: 2, cost: 380},
+  8: {name: "Ra1", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0, cost: 3000},
+  9: {name: "Ma3", classLabel: "Mage", customDescription: "", legends: ["P", "I"], damage: 0, pull: 0, cost: 1200},
+  10: {name: "Ra2", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0, cost: 820},
+  11: {name: "Ra3", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0, cost: 2600},
+  12: {name: "Ra4", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0, cost: 300},
+  13: {name: "Ra5", classLabel: "Ranged", customDescription: "", legends: ["P", "D"], damage: 10, pull: 0, cost: 340},
+  14: {name: "Me6", classLabel: "Melee", customDescription: "", legends: ["P", "D", "H"], damage: 10, pull: 4, cost: 180},
+  15: {name: "Me7", classLabel: "Melee", customDescription: "", legends: ["A"], damage: 10, pull: 0, cost: 220},
 };
 
 const __STORY_LEGEND_COLORS = {
@@ -58016,10 +58016,10 @@ const __STORY_LEGEND_COLORS = {
 const __STORY_LEGEND_ORDER = ["P", "A", "D", "H", "I", "F"];
 
 const __STORY_ARMORS = [
-  {param: "ab", name: "Calcado", hp: 10},
-  {param: "al", name: "Calca", hp: 20},
-  {param: "ac", name: "Peitoral", hp: 40},
-  {param: "ah", name: "Capacete", hp: 30},
+  {param: "ab", name: "Calcado", hp: 10, cost: 250},
+  {param: "al", name: "Calca", hp: 20, cost: 450},
+  {param: "ac", name: "Peitoral", hp: 40, cost: 1100},
+  {param: "ah", name: "Capacete", hp: 30, cost: 700},
 ];
 
 const __STORY_SHOPS = {
@@ -58065,6 +58065,73 @@ function __story_parse_level() {
     return 12;
   }
   return level >>> 0;
+}
+
+function __story_campaign_bot_loadout(level) {
+  switch (level >>> 0) {
+    case 2: return {s1: 14, s2: 1, s3: 0};
+    case 3: return {s1: 15, s2: 12, s3: 0};
+    case 4: return {s1: 1, s2: 13, s3: 0};
+    case 5: return {s1: 2, s2: 3, s3: 7};
+    case 6: return {s1: 2, s2: 10, s3: 5};
+    case 7: return {s1: 3, s2: 4, s3: 9};
+    case 8: return {s1: 4, s2: 10, s3: 7};
+    case 9: return {s1: 4, s2: 6, s3: 5};
+    case 10: return {s1: 2, s2: 10, s3: 11};
+    case 11: return {s1: 4, s2: 6, s3: 11};
+    case 12: return {s1: 4, s2: 8, s3: 11};
+    default: return {s1: 1, s2: 0, s3: 0};
+  }
+}
+
+function __story_campaign_bot_hp(level) {
+  switch (level >>> 0) {
+    case 2: return 30;
+    case 3: return 35;
+    case 4: return 40;
+    case 5: return 45;
+    case 6: return 50;
+    case 7: return 55;
+    case 8: return 60;
+    case 9: return 65;
+    case 10: return 70;
+    case 11: return 80;
+    case 12: return 90;
+    default: return 30;
+  }
+}
+
+function __story_campaign_reward_gold(level) {
+  switch (level >>> 0) {
+    case 2: return 220;
+    case 3: return 240;
+    case 4: return 280;
+    case 5: return 320;
+    case 6: return 360;
+    case 7: return 420;
+    case 8: return 500;
+    case 9: return 600;
+    case 10: return 720;
+    case 11: return 880;
+    case 12: return 1100;
+    default: return 200;
+  }
+}
+
+function __story_campaign_bot_armor(level) {
+  switch (level >>> 0) {
+    case 3: return [1, 0, 0, 0];
+    case 4: return [0, 1, 0, 0];
+    case 5: return [1, 1, 0, 0];
+    case 6: return [0, 0, 1, 0];
+    case 7: return [0, 0, 0, 1];
+    case 8: return [1, 0, 1, 0];
+    case 9: return [0, 1, 1, 0];
+    case 10: return [1, 1, 0, 1];
+    case 11: return [0, 1, 1, 1];
+    case 12: return [1, 1, 1, 1];
+    default: return [0, 0, 0, 0];
+  }
 }
 
 function __story_parse_items() {
@@ -58269,22 +58336,28 @@ function __story_build_story_search(screen, state) {
 function __story_build_duel_href(state) {
   const params = new URLSearchParams();
   const duelLoadout = __story_duel_loadout(state);
+  const botLoadout = __story_campaign_bot_loadout(state.level >>> 0);
+  const botArmor = __story_campaign_bot_armor(state.level >>> 0);
   params.set("campaign", "1");
   params.set("level", String(state.level >>> 0));
   params.set("gold", String(state.gold >>> 0));
-  params.set("reward", "200");
+  params.set("reward", String(__story_campaign_reward_gold(state.level >>> 0)));
   params.set("php", String(__story_total_hp(state)));
-  params.set("bhp", "30");
+  params.set("bhp", String(__story_campaign_bot_hp(state.level >>> 0)));
   params.set("ps1", String(duelLoadout.s1 >>> 0));
   params.set("ps2", String(duelLoadout.s2 >>> 0));
   params.set("ps3", String(duelLoadout.s3 >>> 0));
-  params.set("bs1", "1");
-  params.set("bs2", "0");
-  params.set("bs3", "0");
+  params.set("bs1", String(botLoadout.s1 >>> 0));
+  params.set("bs2", String(botLoadout.s2 >>> 0));
+  params.set("bs3", String(botLoadout.s3 >>> 0));
   params.set("ab", String(state.armor[0] >>> 0));
   params.set("al", String(state.armor[1] >>> 0));
   params.set("ac", String(state.armor[2] >>> 0));
   params.set("ah", String(state.armor[3] >>> 0));
+  params.set("bb", String(botArmor[0] >>> 0));
+  params.set("bl", String(botArmor[1] >>> 0));
+  params.set("bc", String(botArmor[2] >>> 0));
+  params.set("bh", String(botArmor[3] >>> 0));
   if (state.items.length > 0) {
     params.set("items", state.items.join(","));
   }
@@ -58497,8 +58570,13 @@ function __story_purchase_name(kind, value) {
   return __story_skill_name(value >>> 0);
 }
 
-function __story_purchase_cost(_kind, _value) {
-  return 100;
+function __story_purchase_cost(kind, value) {
+  if (kind === "armor") {
+    const armor = __STORY_ARMORS[value >>> 0];
+    return armor ? (armor.cost >>> 0) : 0;
+  }
+  const meta = __story_skill_meta(value >>> 0);
+  return meta ? (meta.cost >>> 0) : 0;
 }
 
 function __story_render_purchase_art(kind, value, large) {
@@ -58882,6 +58960,8 @@ function __story_start_patch() {
 
 __story_start_patch();
 /* __vibi_story_patch:end */
+
+
 
 
 
